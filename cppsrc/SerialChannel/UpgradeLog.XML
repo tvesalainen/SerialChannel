@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="SerialChannel">
+</Property><Property Name="Solution File" Value="C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel.sln">
+</Property><Property Name="User Options File" Value="C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel.suo">
+</Property><Property Name="Date" Value="22. joulukuuta 2011">
+</Property><Property Name="Time" Value="17:08">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="SerialChannel.sln" Description="File successfully backed up as C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel.sln.old">
+</Event><Event ErrorLevel="0" Project="" Source="SerialChannel.suo" Description="File successfully backed up as C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel.suo.old">
+</Event><Event ErrorLevel="0" Project="SerialChannel" Source="SerialChannel\SerialChannel.vcproj" Description="Converting project file 'C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\SerialChannel.vcproj'.">
+</Event><Event ErrorLevel="1" Project="SerialChannel" Source="SerialChannel\SerialChannel.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="0" Project="SerialChannel" Source="SerialChannel\SerialChannel.vcproj" Description="Done converting to new project file 'C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\SerialChannel.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="SerialChannel" Source="SerialChannel\SerialChannel.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="SerialChannel.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="SerialChannel.sln" Description="Converted">
+</Event></UpgradeLog>
