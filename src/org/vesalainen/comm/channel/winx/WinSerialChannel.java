@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.vesalainen.loader.LibraryLoader;
 
 /**
  *
@@ -50,18 +51,11 @@ public class WinSerialChannel extends SerialChannel implements Runnable
     {
         try
         {
-            System.loadLibrary("SerialChannel64");
+            LibraryLoader.loadLibrary(WinSerialChannel.class, "SerialChannel");
         }
-        catch (UnsatisfiedLinkError ex)
+        catch (IOException | UnsatisfiedLinkError ex)
         {
-            try
-            {
-                System.loadLibrary("SerialChannel32");
-            }
-            catch (UnsatisfiedLinkError ex2)
-            {
-                throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex2.getMessage());
-            }
+            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex.getMessage());
         }
     }
 
@@ -105,7 +99,7 @@ public class WinSerialChannel extends SerialChannel implements Runnable
     {
         if (eventObserverMap == null)
         {
-            eventObserverMap = new HashMap<CommEventObserver,Set<CommEvent.Type>>();
+            eventObserverMap = new HashMap<>();
             observedEvents = EnumSet.noneOf(CommEvent.Type.class);
         }
         Set<CommEvent.Type> set = EnumSet.copyOf(Arrays.asList(types));
@@ -245,6 +239,7 @@ System.err.println("Event="+ev)                ;
 
     private static native void setDebug(boolean on);
 
+    @Override
     public boolean isConnected()
     {
         return connected(handle);
@@ -536,6 +531,7 @@ System.err.println("Event="+ev)                ;
         {
             WinSerialChannel sc = new WinSerialChannel("COM8", WinSerialChannel.Speed.CBR_115200);
             ByteBuffer bb = ByteBuffer.allocateDirect(10);
+            sc.connect();
             sc.read(bb);
             System.err.println(bb);
             sc.close();
