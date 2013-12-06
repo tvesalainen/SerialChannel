@@ -28,10 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.vesalainen.comm.channel.winx.WinCommError;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
-import org.vesalainen.comm.channel.winx.WinCommStatus;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
