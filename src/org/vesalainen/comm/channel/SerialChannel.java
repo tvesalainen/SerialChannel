@@ -22,7 +22,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.vesalainen.comm.channel.winx.WinCommEvent;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
@@ -34,7 +40,7 @@ import java.util.List;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author tkv
  */
-public abstract class SerialChannel extends AbstractInterruptibleChannel
+public abstract class SerialChannel extends AbstractInterruptibleChannel implements Runnable
 {
     public enum Speed {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
     protected static final int[] SPEED = new int[] {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
@@ -50,6 +56,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel
     protected DataBits dataBits;
     protected FlowControl flowControl;
 
+    protected Map<CommEventObserver,Set<CommEvent.Type>> eventObserverMap;
+    protected Set<CommEvent.Type> observedEvents;
+    protected Thread eventObserverThread;
+    
     protected SerialChannel()
     {
     }
@@ -107,20 +117,6 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel
         this.port = port;
     }
     /**
-     * Adds an event observer for given events.
-     * @param observer
-     * @param types
-     * @throws IOException 
-     */
-    public abstract void addEventObserver(CommEventObserver observer, CommEvent.Type... types) throws IOException;
-    /**
-     * Removes event observer.
-     * @param observer
-     * @return
-     * @throws IOException 
-     */
-    public abstract boolean removeEventObserver(CommEventObserver observer) throws IOException;
-    /**
      * Creates actual connection.
      * @throws IOException 
      */
@@ -135,7 +131,11 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel
      * @param bufferSize
      * @return 
      */
-    public abstract InputStream getInputStream(int bufferSize);
+    public InputStream getInputStream(int bufferSize)
+    {
+        return new SerialInputStream(this, bufferSize);
+    }
+
     /**
      * Returns OutputStream. Allocates direct ByteBuffer bufferSize length. Note 
      * that write doesn't actually write anything before the buffer comes full.
@@ -143,7 +143,11 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel
      * @param bufferSize
      * @return 
      */
-    public abstract OutputStream getOutputStream(int bufferSize);
+    public OutputStream getOutputStream(int bufferSize)
+    {
+        return new SerialOutputStream(this, bufferSize);
+    }
+
     /**
      * Returns true if channel is connected.
      * @return 
@@ -239,4 +243,155 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel
     {
         this.stopBits = stopBits;
     }
+    @Override
+    protected void implCloseChannel() throws IOException
+    {
+        if (eventObserverThread != null)
+        {
+            eventObserverThread.interrupt();
+        }
+        doClose();
+    }
+
+    protected abstract void doClose() throws IOException;
+    
+    /**
+     * Adds an event observer for given events.
+     * @param observer
+     * @param types
+     * @throws IOException 
+     */
+    public void addEventObserver(CommEventObserver observer, CommEvent.Type... types) throws IOException
+    {
+        if (eventObserverMap == null)
+        {
+            eventObserverMap = new HashMap<>();
+            observedEvents = EnumSet.noneOf(CommEvent.Type.class);
+        }
+        Set<CommEvent.Type> set = EnumSet.copyOf(Arrays.asList(types));
+        eventObserverMap.put(observer, set);
+        observedEvents.addAll(set);
+        setEventMask(WinCommEvent.createEventMask(observedEvents));
+        if (eventObserverThread == null && !observedEvents.isEmpty())
+        {
+            eventObserverThread = new Thread(this);
+            eventObserverThread.start();
+        }
+    }
+
+    protected abstract void setEventMask(int mask) throws IOException;
+
+    protected abstract int waitEvent() throws IOException;
+
+    /**
+     * Removes event observer.
+     * @param observer
+     * @return
+     * @throws IOException 
+     */
+    public boolean removeEventObserver(CommEventObserver observer) throws IOException
+    {
+        return eventObserverMap.remove(observer) != null;
+    }
+
+    protected abstract CommError getError(CommStat stat) throws IOException;
+    
+    @Override
+    public void run()
+    {
+        while (true)
+        {
+            try
+            {
+                int ev = waitEvent();
+                WinCommEvent event = new WinCommEvent(ev);
+                CommStatus commStatus = null;
+                CommError commError = null;
+                for (CommEventObserver observer : eventObserverMap.keySet())
+                {
+                    for (CommEvent.Type type : eventObserverMap.get(observer))
+                    {
+                        switch (type)
+                        {
+                            case BREAK:
+                                if (event.isBreakEvent())
+                                {
+                                    observer.commEvent(type);
+                                }
+                                break;
+                            case CTS:
+                                if (event.isCtsEvent())
+                                {
+                                    if (commStatus == null)
+                                    {
+                                        commStatus = getCommStatus();
+                                    }
+                                    observer.commSignalChange(type, commStatus.isCts());
+                                }
+                                break;
+                            case DSR:
+                                if (event.isDsrEvent())
+                                {
+                                    if (commStatus == null)
+                                    {
+                                        commStatus = getCommStatus();
+                                    }
+                                    observer.commSignalChange(type, commStatus.isDsr());
+                                }
+                                break;
+                            case ERROR:
+                                if (event.isErrorEvent())
+                                {
+                                    if (commError == null)
+                                    {
+                                        commError = getError(null);
+                                    }
+                                    observer.commError(commError, null);
+                                }
+                                break;
+                            case RING:
+                                if (event.isRingEvent())
+                                {
+                                    observer.commEvent(type);
+                                }
+                                break;
+                            case RLSD:
+                                if (event.isRlsdEvent())
+                                {
+                                    if (commStatus == null)
+                                    {
+                                        commStatus = getCommStatus();
+                                    }
+                                    observer.commSignalChange(type, commStatus.isRlsd());
+                                }
+                                break;
+                            case CHAR:
+                                if (event.isCharEvent())
+                                {
+                                    observer.commEvent(type);
+                                }
+                                break;
+                            case FLAG:
+                                if (event.isFlagEvent())
+                                {
+                                    observer.commEvent(type);
+                                }
+                                break;
+                            case EMPTY:
+                                if (event.isEmptyEvent())
+                                {
+                                    observer.commEvent(type);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                ex.printStackTrace();
+            }
+        }
+    }
+
 }
