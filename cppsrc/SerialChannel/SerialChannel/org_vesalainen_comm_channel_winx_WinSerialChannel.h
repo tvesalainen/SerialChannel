@@ -9,6 +9,8 @@ extern "C" {
 #endif
 #undef org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION
 #define org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION 4L
+#undef org_vesalainen_comm_channel_winx_WinSerialChannel_InitialSleep
+#define org_vesalainen_comm_channel_winx_WinSerialChannel_InitialSleep 10L
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    initialize
