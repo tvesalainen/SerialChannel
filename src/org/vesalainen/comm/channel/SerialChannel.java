@@ -28,10 +28,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.vesalainen.comm.channel.winx.WinCommError;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
-import org.vesalainen.comm.channel.winx.WinCommStatus;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
@@ -54,10 +52,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
 
     protected String port;
     protected Speed speed;
-    protected Parity parity;
-    protected StopBits stopBits;
-    protected DataBits dataBits;
-    protected FlowControl flowControl;
+    protected Parity parity = Parity.NONE;
+    protected StopBits stopBits = StopBits.STOPBITS_10;
+    protected DataBits dataBits = DataBits.DATABITS_8;
+    protected FlowControl flowControl = FlowControl.NONE;
 
     protected Map<CommEventObserver,Set<CommEvent.Type>> eventObserverMap;
     protected Set<CommEvent.Type> observedEvents;
@@ -75,7 +73,12 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     public static SerialChannel getInstance(String port, Speed speed) throws IOException
     {
-        return new WinSerialChannel(port, speed);
+        String osName = System.getProperty("os.name");
+        if (osName.contains("indows"))
+        {
+            return new WinSerialChannel(port, speed);
+        }
+        throw new UnsupportedOperationException(osName+" not supported");
     }
     /**
      * Creates a SerialChannel
@@ -86,7 +89,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     public static SerialChannel getInstance(String port, int speed) throws IOException
     {
-        return new WinSerialChannel(port, speed);
+        return getInstance(port, Speed.valueOf("CBR_"+speed));
     }
     /**
      * Creates a SerialChannel
@@ -101,7 +104,11 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     public static SerialChannel getInstance(String port, Speed speed, Parity parity, DataBits dataBits, StopBits stopBits, FlowControl flowControl) throws IOException
     {
-        return new WinSerialChannel(port, speed, parity, dataBits, stopBits, flowControl);
+        return getInstance(port, speed)
+                .setParity(parity)
+                .setDataBits(dataBits)
+                .setStopBits(stopBits)
+                .setFlowControl(flowControl);
     }
     /**
      * Returns the port.
@@ -202,9 +209,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return dataBits;
     }
 
-    public void setDataBits(DataBits dataBits)
+    public SerialChannel setDataBits(DataBits dataBits)
     {
         this.dataBits = dataBits;
+        return this;
     }
 
     public FlowControl getFlowControl()
@@ -212,9 +220,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return flowControl;
     }
 
-    public void setFlowControl(FlowControl flowControl)
+    public SerialChannel setFlowControl(FlowControl flowControl)
     {
         this.flowControl = flowControl;
+        return this;
     }
 
     public Parity getParity()
@@ -222,9 +231,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return parity;
     }
 
-    public void setParity(Parity parity)
+    public SerialChannel setParity(Parity parity)
     {
         this.parity = parity;
+        return this;
     }
 
     public Speed getSpeed()
@@ -232,9 +242,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return speed;
     }
 
-    public void setSpeed(Speed speed)
+    public SerialChannel setSpeed(Speed speed)
     {
         this.speed = speed;
+        return this;
     }
 
     public StopBits getStopBits()
@@ -242,9 +253,10 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return stopBits;
     }
 
-    public void setStopBits(StopBits stopBits)
+    public SerialChannel setStopBits(StopBits stopBits)
     {
         this.stopBits = stopBits;
+        return this;
     }
     @Override
     protected void implCloseChannel() throws IOException

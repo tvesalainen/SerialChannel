@@ -16,24 +16,12 @@
  */
 package org.vesalainen.comm.channel.winx;
 
-import org.vesalainen.comm.channel.CommEvent;
-import org.vesalainen.comm.channel.CommEventObserver;
 import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.vesalainen.comm.channel.CommError;
 import org.vesalainen.comm.channel.CommStat;
 import org.vesalainen.comm.channel.CommStatus;
@@ -65,16 +53,6 @@ public class WinSerialChannel extends SerialChannel
 
     public WinSerialChannel(String port, Speed speed)
     {
-        this(port, speed, Parity.NONE, DataBits.DATABITS_8, StopBits.STOPBITS_10, FlowControl.NONE);
-    }
-
-    public WinSerialChannel(String port, int speed)
-    {
-        this(port, Speed.valueOf("CBR_"+speed), Parity.NONE, DataBits.DATABITS_8, StopBits.STOPBITS_10, FlowControl.NONE);
-    }
-
-    public WinSerialChannel(String port, Speed speed, Parity parity, DataBits dataBits, StopBits stopBits, FlowControl flowControl)
-    {
         int version = version();
         if (version != VERSION)
         {
@@ -82,10 +60,6 @@ public class WinSerialChannel extends SerialChannel
         }
         this.port = port;
         this.speed = speed;
-        this.parity = parity;
-        this.stopBits = stopBits;
-        this.dataBits = dataBits;
-        this.flowControl = flowControl;
     }
 
     @Override
