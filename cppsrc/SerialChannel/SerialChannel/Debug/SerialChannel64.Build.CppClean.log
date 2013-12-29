@@ -1,33 +1,34 @@
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.DLL
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\Debug\SerialChannel64.exp
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.ILK
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\Debug\SerialChannel64.lib
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.PDB
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\cl.command.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\CL.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\CL.write.1.tlog
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\DLLMAIN.OBJ
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.4916.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.4916.write.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.4916-cvtres.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.4916-cvtres.write.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.command.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link.write.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link-cvtres.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\link-cvtres.write.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\mt.command.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\mt.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\mt.write.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\rc.command.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\rc.read.1.tlog
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\rc.write.1.tlog
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL.OBJ
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\SerialChannel.write.1.tlog
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.DLL.EMBED.MANIFEST
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.DLL.EMBED.MANIFEST.RES
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.DLL.INTERMEDIATE.MANIFEST
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.PCH
-C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel\Debug\SerialChannel64_manifest.rc
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\STDAFX.OBJ
-C:\USERS\TKV\DOCUMENTS\VISUAL STUDIO 2008\PROJECTS\SERIALCHANNEL\SERIALCHANNEL\DEBUG\VC100.PDB
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.PCH
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\STDAFX.OBJ
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\VC110.PDB
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\DLLMAIN.OBJ
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL.OBJ
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.ILK
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.DLL
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\DEBUG\SERIALCHANNEL64.PDB
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\DEBUG\SERIALCHANNEL.RES
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.lib
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.exp
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\dllmain.obj
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\SerialChannel.obj
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\stdafx.obj
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\cl.command.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\CL.read.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\CL.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link-cvtres.read.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link-cvtres.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link-rc.read.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link-rc.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link.command.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link.read.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\link.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\rc.command.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\rc.read.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\rc.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\SerialChannel.write.1.tlog
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\SerialChannel.res
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\SerialChannel64.pch
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Debug\vc110.pdb
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.pdb
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.ilk

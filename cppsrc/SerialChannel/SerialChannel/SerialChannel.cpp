@@ -460,6 +460,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	DEBUG("ReadFile");
 	if (!ReadFile((HANDLE)handle, addr, len, &dwRead, &osReader)) 
 	{
+		DWORD le = GetLastError();
 		if (GetLastError() != ERROR_IO_PENDING)     // read not delayed?
 		{
 			if (barr != NULL)
@@ -928,9 +929,9 @@ char* configure(JNIEnv *env, HANDLE handle, int bauds, int parity, int databits,
 		return "SetCommState failed";
 	}
 
-	timeouts.ReadIntervalTimeout = (( framesize * 1000) / dcb.BaudRate) + 1;
-	timeouts.ReadTotalTimeoutMultiplier = 0;
-	timeouts.ReadTotalTimeoutConstant = 0;
+	timeouts.ReadIntervalTimeout = MAXDWORD; //(( framesize * 1000) / dcb.BaudRate) + 1;
+	timeouts.ReadTotalTimeoutMultiplier = MAXDWORD;
+	timeouts.ReadTotalTimeoutConstant = MAXDWORD-1;
 	timeouts.WriteTotalTimeoutMultiplier = 0;
 	timeouts.WriteTotalTimeoutConstant = 0;
 	if (!SetCommTimeouts(handle, &timeouts))

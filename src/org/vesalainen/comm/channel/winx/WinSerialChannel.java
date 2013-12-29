@@ -34,10 +34,8 @@ import org.vesalainen.loader.LibraryLoader;
 public class WinSerialChannel extends SerialChannel
 {
     public static final int VERSION = 4;
-    private static final int InitialSleep = 10;
 
     private long handle = -1;
-    private int sleep = InitialSleep;
 
     static
     {
@@ -146,21 +144,9 @@ public class WinSerialChannel extends SerialChannel
             {
                 begin();
                 count = doRead(handle, dst);
-                // for some reason Windows driver is not always in blocking mode?
-                sleep = sleep > InitialSleep ? sleep - 1 : InitialSleep;
-                while (count == 0)
-                {
-                    Thread.sleep(sleep);
-                    count = doRead(handle, dst);
-                    sleep++;
-                }
-                System.err.println(sleep);
+                System.err.println(count);
                 return count;
             }
-            catch (InterruptedException ex)
-            {
-                throw new IOException(ex);
-            }            
             finally
             {
                 end(count > 0);

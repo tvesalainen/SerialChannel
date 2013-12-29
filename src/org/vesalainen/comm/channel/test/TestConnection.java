@@ -46,7 +46,7 @@ public class TestConnection
             //WinSerialChannel.debug(true);
             sc.connect();
             //sc.addEventObserver(new EventPrinter(), CommEvent.Type.values());
-            InputStream is = sc.getInputStream(100);
+            InputStream is = sc.getInputStream(10);
             int cc = is.read();
             while (true)
             {
