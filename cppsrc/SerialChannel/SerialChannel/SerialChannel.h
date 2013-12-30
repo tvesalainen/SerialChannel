@@ -29,4 +29,17 @@
 #include "org_vesalainen_comm_channel_winx_WinSerialChannel.h"
 
 void exception(JNIEnv * env, const char* clazz, const char* message);
-char* configure(JNIEnv *env, HANDLE handle, int bauds, int parity, int databits, int stopbits, int flow);
+char* configure(
+	JNIEnv *env, 
+	HANDLE handle, 
+	int bauds, 
+	int parity, 
+	int databits, 
+	int stopbits, 
+	int flow,
+    int readIntervalTimeout,
+    int readTotalTimeoutMultiplier,
+    int readTotalTimeoutConstant,
+    int writeTotalTimeoutMultiplier,
+    int writeTotalTimeoutConstant
+	);

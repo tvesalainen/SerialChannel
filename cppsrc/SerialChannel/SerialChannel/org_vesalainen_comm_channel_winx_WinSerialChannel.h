@@ -8,16 +8,16 @@
 extern "C" {
 #endif
 #undef org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION
-#define org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION 4L
-#undef org_vesalainen_comm_channel_winx_WinSerialChannel_InitialSleep
-#define org_vesalainen_comm_channel_winx_WinSerialChannel_InitialSleep 10L
+#define org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION 5L
+#undef org_vesalainen_comm_channel_winx_WinSerialChannel_MAXDWORD
+#define org_vesalainen_comm_channel_winx_WinSerialChannel_MAXDWORD 4294967295i64
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    initialize
- * Signature: ([BIIIII)J
+ * Signature: ([BIIIIIJJJJJ)J
  */
 JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint, jlong, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel

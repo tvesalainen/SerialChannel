@@ -5,10 +5,8 @@
 package org.vesalainen.comm.channel.test;
 
 import java.io.InputStream;
-import org.vesalainen.comm.channel.CommEvent;
 import org.vesalainen.comm.channel.SerialChannel;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
-import org.vesalainen.comm.channel.winx.WinSerialChannel;
 
 /**
  * @author Timo Vesalainen
@@ -43,7 +41,7 @@ public class TestConnection
                 speed = Speed.valueOf("CBR_"+args[1]);
             }
             SerialChannel sc = SerialChannel.getInstance(port, speed);
-            //WinSerialChannel.debug(true);
+            //SerialChannel.debug(true);
             sc.connect();
             //sc.addEventObserver(new EventPrinter(), CommEvent.Type.values());
             InputStream is = sc.getInputStream(10);

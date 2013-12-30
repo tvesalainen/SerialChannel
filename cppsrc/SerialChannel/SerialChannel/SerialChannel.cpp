@@ -75,15 +75,28 @@ JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChanne
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_version
   (JNIEnv *env, jobject obj)
 {
-	return 4;
+	return org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION;
 }
 /*
  * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
  * Method:    initialize
  * Signature: ([BIZII)I
  */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize
-  (JNIEnv *env, jobject obj, jbyteArray port, jint bauds, jint parity, jint databits, jint stopbits, jint flow)
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize(
+	JNIEnv *env, 
+	jobject obj, 
+	jbyteArray port, 
+	jint bauds, 
+	jint parity, 
+	jint databits, 
+	jint stopbits, 
+	jint flow,
+    jlong readIntervalTimeout,
+    jlong readTotalTimeoutMultiplier,
+    jlong readTotalTimeoutConstant,
+    jlong writeTotalTimeoutMultiplier,
+    jlong writeTotalTimeoutConstant
+	)
 {
 	HANDLE hComm;
 	char szPort[32];
@@ -127,7 +140,20 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	}
 	(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
-	err = configure(env, hComm, bauds, parity, databits, stopbits, flow);
+	err = configure(
+		env, 
+		hComm, 
+		bauds, 
+		parity, 
+		databits, 
+		stopbits, 
+		flow,
+		(DWORD)readIntervalTimeout,
+		(DWORD)readTotalTimeoutMultiplier,
+		(DWORD)readTotalTimeoutConstant,
+		(DWORD)writeTotalTimeoutMultiplier,
+		(DWORD)writeTotalTimeoutConstant
+		);
 	if (err != NULL)
 	  // Error in SetCommState. Possibly a problem with the communications 
 	  // port handle or a problem with the DCB structure itself.
@@ -460,7 +486,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	DEBUG("ReadFile");
 	if (!ReadFile((HANDLE)handle, addr, len, &dwRead, &osReader)) 
 	{
-		DWORD le = GetLastError();
 		if (GetLastError() != ERROR_IO_PENDING)     // read not delayed?
 		{
 			if (barr != NULL)
@@ -812,7 +837,20 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 	}
 }
 
-char* configure(JNIEnv *env, HANDLE handle, int bauds, int parity, int databits, int stopbits, int flow)
+char* configure(
+	JNIEnv *env, 
+	HANDLE handle, 
+	int bauds, 
+	int parity, 
+	int databits, 
+	int stopbits, 
+	int flow,
+    DWORD readIntervalTimeout,
+    DWORD readTotalTimeoutMultiplier,
+    DWORD readTotalTimeoutConstant,
+    DWORD writeTotalTimeoutMultiplier,
+    DWORD writeTotalTimeoutConstant
+	)
 {
 	DCB dcb;
 	COMMTIMEOUTS timeouts;
@@ -938,11 +976,11 @@ char* configure(JNIEnv *env, HANDLE handle, int bauds, int parity, int databits,
 	  and then returns immediately.
 	- If no bytes arrive within the time specified by ReadTotalTimeoutConstant, ReadFile times out.
 	*/
-	timeouts.ReadIntervalTimeout = MAXDWORD;
-	timeouts.ReadTotalTimeoutMultiplier = MAXDWORD;
-	timeouts.ReadTotalTimeoutConstant = MAXDWORD-1;
-	timeouts.WriteTotalTimeoutMultiplier = 0;
-	timeouts.WriteTotalTimeoutConstant = 0;
+	timeouts.ReadIntervalTimeout = readIntervalTimeout;
+	timeouts.ReadTotalTimeoutMultiplier = readTotalTimeoutMultiplier;
+	timeouts.ReadTotalTimeoutConstant = readTotalTimeoutConstant;
+	timeouts.WriteTotalTimeoutMultiplier = writeTotalTimeoutMultiplier;
+	timeouts.WriteTotalTimeoutConstant = writeTotalTimeoutConstant;
 	if (!SetCommTimeouts(handle, &timeouts))
 	{
 	    return "SetCommTimeouts failed";

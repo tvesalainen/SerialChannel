@@ -1,10 +1,6 @@
-﻿Build started 30.12.2013 12:46:01.
+﻿Build started 30.12.2013 13:28:18.
      1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Release\SerialChannel64.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gz /TC /errorReport:prompt stdafx.cpp
-         stdafx.cpp
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc110.pdb" /Gz /TC /errorReport:prompt dllmain.cpp
-         dllmain.cpp
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Release\SerialChannel64.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gz /TC /errorReport:prompt SerialChannel.cpp
          SerialChannel.cpp
        Link:
@@ -20,4 +16,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.93
+Time Elapsed 00:00:00.65

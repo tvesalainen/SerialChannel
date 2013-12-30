@@ -33,7 +33,8 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class WinSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 4;
+    public static final int VERSION = 5;
+    public static final long MAXDWORD = 4294967295L;
 
     private long handle = -1;
 
@@ -63,10 +64,34 @@ public class WinSerialChannel extends SerialChannel
     @Override
     public void connect() throws IOException
     {
-        handle = initialize(port.getBytes(), SPEED[speed.ordinal()], parity.ordinal(), dataBits.ordinal(), stopBits.ordinal(), flowControl.ordinal());
+        handle = initialize(
+                port.getBytes(), 
+                SPEED[speed.ordinal()], 
+                parity.ordinal(), 
+                dataBits.ordinal(), 
+                stopBits.ordinal(), 
+                flowControl.ordinal(),
+                MAXDWORD,
+                MAXDWORD,
+                100,
+                0,
+                0
+        );
     }
 
-    private native long initialize(byte[] port, int baudRate, int parity, int dataBits, int stopBits, int flowControl) throws IOException;
+    private native long initialize(
+            byte[] port, 
+            int baudRate, 
+            int parity, 
+            int dataBits, 
+            int stopBits, 
+            int flowControl,
+            long readIntervalTimeout,
+            long readTotalTimeoutMultiplier,
+            long readTotalTimeoutConstant,
+            long writeTotalTimeoutMultiplier,
+            long writeTotalTimeoutConstant
+    ) throws IOException;
 
     private native int version();
 
@@ -144,7 +169,11 @@ public class WinSerialChannel extends SerialChannel
             {
                 begin();
                 count = doRead(handle, dst);
-                System.err.println(count);
+                while (count == 0)
+                {
+                    // unable to configure windows comm timeouts...
+                    count = doRead(handle, dst);
+                }
                 return count;
             }
             finally
