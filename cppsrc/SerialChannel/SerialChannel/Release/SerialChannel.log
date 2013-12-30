@@ -1,5 +1,5 @@
-﻿Build started 29.12.2013 15:08:06.
-     1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Rebuild target(s)).
+﻿Build started 30.12.2013 12:46:01.
+     1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Release\SerialChannel64.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gz /TC /errorReport:prompt stdafx.cpp
          stdafx.cpp
@@ -7,19 +7,17 @@
          dllmain.cpp
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /O2 /Oi /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Release\SerialChannel64.pch" /Fo"Release\\" /Fd"Release\vc110.pdb" /Gz /TC /errorReport:prompt SerialChannel.cpp
          SerialChannel.cpp
-       ResourceCompile:
-         C:\Program Files (x86)\Windows Kits\8.0\bin\x86\rc.exe /l"0x0409" /nologo /fo"Release\SerialChannel.res" SerialChannel.rc 
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.dll" /INCREMENTAL:NO /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.lib" /MACHINE:X64 /DLL Release\SerialChannel.res
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"..\..\..\src\SerialChannel64.dll" /INCREMENTAL:NO /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"..\..\..\src\SerialChannel64.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"..\..\..\src\SerialChannel64.lib" /MACHINE:X64 /DLL Release\SerialChannel.res
          Release\dllmain.obj
          Release\SerialChannel.obj
          Release\stdafx.obj
-            Creating library C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.lib and object C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.exp
+            Creating library ..\..\..\src\SerialChannel64.lib and object ..\..\..\src\SerialChannel64.exp
          Generating code
          Finished generating code
-         SerialChannel.vcxproj -> C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.dll
-     1>Done Building Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (Rebuild target(s)).
+         SerialChannel.vcxproj -> C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\..\..\..\src\SerialChannel64.dll
+     1>Done Building Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.94
+Time Elapsed 00:00:01.93

@@ -1,13 +1,13 @@
-C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\SERIALCHANNEL64.PCH
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\SERIALCHANNEL32.PCH
 C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\STDAFX.OBJ
 C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\VC110.PDB
 C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\DLLMAIN.OBJ
 C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\SERIALCHANNEL.OBJ
-C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\RELEASE\SERIALCHANNEL64.DLL
-C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\RELEASE\SERIALCHANNEL64.PDB
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\SRC\SERIALCHANNEL32.DLL
+C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\SRC\SERIALCHANNEL32.PDB
 C:\USERS\TKV\DOCUMENTS\NETBEANSPROJECTS\SERIALCHANNEL\CPPSRC\SERIALCHANNEL\SERIALCHANNEL\RELEASE\SERIALCHANNEL.RES
-C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.lib
-C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.exp
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\src\SerialChannel32.lib
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\src\SerialChannel32.exp
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\dllmain.obj
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\SerialChannel.obj
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\stdafx.obj
@@ -26,7 +26,5 @@ C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Seria
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\rc.write.1.tlog
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\SerialChannel.write.1.tlog
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\SerialChannel.res
-C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\SerialChannel64.pch
+C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\SerialChannel32.pch
 C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\Release\vc110.pdb
-C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.pdb
-C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Release\SerialChannel64.dll

@@ -928,8 +928,17 @@ char* configure(JNIEnv *env, HANDLE handle, int bauds, int parity, int databits,
 	{
 		return "SetCommState failed";
 	}
-
-	timeouts.ReadIntervalTimeout = MAXDWORD; //(( framesize * 1000) / dcb.BaudRate) + 1;
+	/*
+	If an application sets ReadIntervalTimeout and ReadTotalTimeoutMultiplier to MAXDWORD 
+	and sets ReadTotalTimeoutConstant to a value greater than zero and less than MAXDWORD, 
+	one of the following occurs when the ReadFile function is called:
+	- If there are any bytes in the input buffer, ReadFile returns immediately with the 
+	  bytes in the buffer.
+	- If there are no bytes in the input buffer, ReadFile waits until a byte arrives 
+	  and then returns immediately.
+	- If no bytes arrive within the time specified by ReadTotalTimeoutConstant, ReadFile times out.
+	*/
+	timeouts.ReadIntervalTimeout = MAXDWORD;
 	timeouts.ReadTotalTimeoutMultiplier = MAXDWORD;
 	timeouts.ReadTotalTimeoutConstant = MAXDWORD-1;
 	timeouts.WriteTotalTimeoutMultiplier = 0;
