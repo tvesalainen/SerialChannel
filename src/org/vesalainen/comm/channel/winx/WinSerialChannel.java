@@ -37,6 +37,11 @@ public class WinSerialChannel extends SerialChannel
     public static final int MAXDWORD = 0xffffffff;
 
     private long handle = -1;
+    private int readIntervalTimeout = MAXDWORD;
+    private int readTotalTimeoutMultiplier = MAXDWORD;
+    private int readTotalTimeoutConstant = 100;
+    private int writeTotalTimeoutMultiplier;
+    private int writeTotalTimeoutConstant;
 
     static
     {
@@ -71,11 +76,11 @@ public class WinSerialChannel extends SerialChannel
                 dataBits.ordinal(), 
                 stopBits.ordinal(), 
                 flowControl.ordinal(),
-                MAXDWORD,
-                MAXDWORD,
-                100,
-                0,
-                0
+                readIntervalTimeout,
+                readTotalTimeoutMultiplier,
+                readTotalTimeoutConstant,
+                writeTotalTimeoutMultiplier,
+                writeTotalTimeoutConstant
         );
     }
 
@@ -253,6 +258,62 @@ public class WinSerialChannel extends SerialChannel
         doClose(handle);
         handle = -1;
     }
+
+    public int getReadIntervalTimeout()
+    {
+        return readIntervalTimeout;
+    }
+
+    public WinSerialChannel setReadIntervalTimeout(int readIntervalTimeout)
+    {
+        this.readIntervalTimeout = readIntervalTimeout;
+        return this;
+    }
+
+    public int getReadTotalTimeoutMultiplier()
+    {
+        return readTotalTimeoutMultiplier;
+    }
+
+    public WinSerialChannel setReadTotalTimeoutMultiplier(int readTotalTimeoutMultiplier)
+    {
+        this.readTotalTimeoutMultiplier = readTotalTimeoutMultiplier;
+        return this;
+    }
+
+    public int getReadTotalTimeoutConstant()
+    {
+        return readTotalTimeoutConstant;
+    }
+
+    public WinSerialChannel setReadTotalTimeoutConstant(int readTotalTimeoutConstant)
+    {
+        this.readTotalTimeoutConstant = readTotalTimeoutConstant;
+        return this;
+    }
+
+    public int getWriteTotalTimeoutMultiplier()
+    {
+        return writeTotalTimeoutMultiplier;
+    }
+
+    public WinSerialChannel setWriteTotalTimeoutMultiplier(int writeTotalTimeoutMultiplier)
+    {
+        this.writeTotalTimeoutMultiplier = writeTotalTimeoutMultiplier;
+        return this;
+    }
+
+    public int getWriteTotalTimeoutConstant()
+    {
+        return writeTotalTimeoutConstant;
+    }
+
+    public WinSerialChannel setWriteTotalTimeoutConstant(int writeTotalTimeoutConstant)
+    {
+        this.writeTotalTimeoutConstant = writeTotalTimeoutConstant;
+        return this;
+    }
+    
     /**
      * @param args the command line arguments
      */

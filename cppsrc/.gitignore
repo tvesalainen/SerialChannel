@@ -26,3 +26,5 @@ _manifest.rc
 *.xml
 *.metagen
 *.bi
+*.sdf
+*.opensdf
