@@ -50,6 +50,8 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
     public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
 
+    private enum OS {Windows, Linux};
+    
     protected String port;
     protected Speed speed;
     protected Parity parity = Parity.NONE;
@@ -73,10 +75,20 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     public static SerialChannel getInstance(String port, Speed speed) throws IOException
     {
+        switch (getOS())
+        {
+            case Windows:
+                return new WinSerialChannel(port, speed);
+            default:
+                throw new UnsupportedOperationException("OS not supported");
+        }
+    }
+    private static OS getOS()
+    {
         String osName = System.getProperty("os.name");
         if (osName.contains("indows"))
         {
-            return new WinSerialChannel(port, speed);
+            return OS.Windows;
         }
         throw new UnsupportedOperationException(osName+" not supported");
     }
@@ -193,7 +205,13 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     public static void debug(boolean on)
     {
-        WinSerialChannel.debug(on);
+        switch (getOS())
+        {
+            case Windows:
+                WinSerialChannel.debug(on);
+            default:
+                throw new UnsupportedOperationException("OS not supported");
+        }
     }
     /**
      * Returns all available ports.
