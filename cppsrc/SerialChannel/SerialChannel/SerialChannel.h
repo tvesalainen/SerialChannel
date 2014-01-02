@@ -37,9 +37,9 @@ char* configure(
 	int databits, 
 	int stopbits, 
 	int flow,
-    int readIntervalTimeout,
-    int readTotalTimeoutMultiplier,
-    int readTotalTimeoutConstant,
-    int writeTotalTimeoutMultiplier,
-    int writeTotalTimeoutConstant
+    DWORD readIntervalTimeout,
+    DWORD readTotalTimeoutMultiplier,
+    DWORD readTotalTimeoutConstant,
+    DWORD writeTotalTimeoutMultiplier,
+    DWORD writeTotalTimeoutConstant
 	);

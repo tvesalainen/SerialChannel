@@ -33,8 +33,8 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class WinSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 5;
-    public static final long MAXDWORD = 4294967295L;
+    public static final int VERSION = 6;
+    public static final int MAXDWORD = 0xffffffff;
 
     private long handle = -1;
 
@@ -86,11 +86,11 @@ public class WinSerialChannel extends SerialChannel
             int dataBits, 
             int stopBits, 
             int flowControl,
-            long readIntervalTimeout,
-            long readTotalTimeoutMultiplier,
-            long readTotalTimeoutConstant,
-            long writeTotalTimeoutMultiplier,
-            long writeTotalTimeoutConstant
+            int readIntervalTimeout,
+            int readTotalTimeoutMultiplier,
+            int readTotalTimeoutConstant,
+            int writeTotalTimeoutMultiplier,
+            int writeTotalTimeoutConstant
     ) throws IOException;
 
     private native int version();

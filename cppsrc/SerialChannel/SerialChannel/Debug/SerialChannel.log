@@ -1,13 +1,8 @@
-﻿Build started 30.12.2013 14:25:55.
+﻿Build started 2.1.2014 12:44:06.
      1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\SerialChannel64.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gz /TC /errorReport:prompt SerialChannel.cpp
          SerialChannel.cpp
-     1>SerialChannel.cpp(854): warning C4028: formal parameter 8 different from declaration
-     1>SerialChannel.cpp(854): warning C4028: formal parameter 9 different from declaration
-     1>SerialChannel.cpp(854): warning C4028: formal parameter 10 different from declaration
-     1>SerialChannel.cpp(854): warning C4028: formal parameter 11 different from declaration
-     1>SerialChannel.cpp(854): warning C4028: formal parameter 12 different from declaration
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll" /INCREMENTAL /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.lib" /MACHINE:X64 /DLL Debug\SerialChannel.res
          Debug\dllmain.obj
@@ -18,4 +13,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:00.58
+Time Elapsed 00:00:00.68

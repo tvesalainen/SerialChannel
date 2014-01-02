@@ -91,11 +91,11 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	jint databits, 
 	jint stopbits, 
 	jint flow,
-    jlong readIntervalTimeout,
-    jlong readTotalTimeoutMultiplier,
-    jlong readTotalTimeoutConstant,
-    jlong writeTotalTimeoutMultiplier,
-    jlong writeTotalTimeoutConstant
+    jint readIntervalTimeout,
+    jint readTotalTimeoutMultiplier,
+    jint readTotalTimeoutConstant,
+    jint writeTotalTimeoutMultiplier,
+    jint writeTotalTimeoutConstant
 	)
 {
 	HANDLE hComm;
