@@ -22,14 +22,18 @@ public class TestConnection
         try
         {
             
+            for (String com : SerialChannel.getAllPorts())
+            {
+                System.err.println(com);
+            }
             String port = null;
             Speed speed = null;
             if (args.length < 2)
             {
-                System.err.println("usage: port speed");
-                System.exit(0);
-                //port = "COM1";
-                //speed = Speed.CBR_4800;
+                //System.err.println("usage: port speed");
+                //System.exit(0);
+                port = "COM3";
+                speed = Speed.CBR_38400;
             }
             else
             {
@@ -37,14 +41,17 @@ public class TestConnection
                 speed = Speed.valueOf("CBR_"+args[1]);
             }
             SerialChannel sc = SerialChannel.getInstance(port, speed);
+            //SerialChannel.debug(true);
             sc.connect();
-            InputStream is = sc.getInputStream(100);
+            //sc.addEventObserver(new EventPrinter(), CommEvent.Type.values());
+            InputStream is = sc.getInputStream(10);
             int cc = is.read();
-            while (cc > 0)
+            while (true)
             {
                 System.out.print((char)cc);
                 cc = is.read();
             }
+            //System.out.println(cc);
         }
         catch (Exception ex)
         {

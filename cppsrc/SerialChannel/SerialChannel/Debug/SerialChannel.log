@@ -1,39 +1,16 @@
-﻿Build started 25.12.2011 9:01:14.
-     1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (build target(s)).
-     1>InitializeBuildStatus:
-         Creating "Debug\SerialChannel.unsuccessfulbuild" because "AlwaysCreate" was specified.
-       ClCompile:
-         All outputs are up-to-date.
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"StdAfx.h" /Fp"Debug\SerialChannel32.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gz /TC /analyze- /errorReport:prompt stdafx.cpp
-         stdafx.cpp
-         All outputs are up-to-date.
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gz /TC /analyze- /errorReport:prompt dllmain.cpp
-         dllmain.cpp
-         All outputs are up-to-date.
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"StdAfx.h" /Fp"Debug\SerialChannel32.pch" /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gz /TC /analyze- /errorReport:prompt SerialChannel.cpp
+﻿Build started 2.1.2014 12:44:06.
+     1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\SerialChannel64.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gz /TC /errorReport:prompt SerialChannel.cpp
          SerialChannel.cpp
-       ResourceCompile:
-         All outputs are up-to-date.
-       ManifestResourceCompile:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\rc.exe /nologo /fo"Debug\SerialChannel32.dll.embed.manifest.res" Debug\SerialChannel32_manifest.rc 
        Link:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.dll" /INCREMENTAL /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Debug\SerialChannel32.dll.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.lib" /MACHINE:X86 /DLL Debug\SerialChannel.res
-         Debug\SerialChannel32.dll.embed.manifest.res
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll" /INCREMENTAL /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.lib" /MACHINE:X64 /DLL Debug\SerialChannel.res
          Debug\dllmain.obj
          Debug\SerialChannel.obj
          Debug\stdafx.obj
-            Creating library C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.lib and object C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.exp
-       Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"Debug\SerialChannel32.dll.embed.manifest" /manifest Debug\SerialChannel32.dll.intermediate.manifest
-         All outputs are up-to-date.
-       LinkEmbedManifest:
-         All outputs are up-to-date.
-         SerialChannel.vcxproj -> C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel32.dll
-       FinalizeBuildStatus:
-         Deleting file "Debug\SerialChannel.unsuccessfulbuild".
-         Touching "Debug\SerialChannel.lastbuildstate".
-     1>Done Building Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (build target(s)).
+         SerialChannel.vcxproj -> C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll
+     1>Done Building Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:02.53
+Time Elapsed 00:00:00.68

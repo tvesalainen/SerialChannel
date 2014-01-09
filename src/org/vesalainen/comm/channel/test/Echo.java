@@ -36,7 +36,11 @@ public class Echo extends WinSerialChannel implements Runnable
 
     public Echo(String port, Speed speed, Parity parity, DataBits dataBits, StopBits stopBits, FlowControl flowControl) throws IOException
     {
-        super(port, speed, parity, dataBits, stopBits, flowControl);
+        super(port, speed);
+        setParity(parity);
+        setDataBits(dataBits);
+        setStopBits(stopBits);
+        setFlowControl(flowControl);
         thread = new Thread(this);
         thread.start();
     }

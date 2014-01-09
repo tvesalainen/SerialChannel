@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <?xml version="1.0" encoding="UTF-8"?>
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
@@ -7,3 +8,18 @@
         </group>
     </open-files>
 </project-private>
+=======
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1"/>
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
+        <group>
+            <file>file:/C:/Users/tkv/Documents/NetBeansProjects/SerialChannel/src/org/vesalainen/comm/channel/test/TestConnection.java</file>
+            <file>file:/C:/Users/tkv/Documents/NetBeansProjects/SerialChannel/src/org/vesalainen/comm/channel/SerialInputStream.java</file>
+            <file>file:/C:/Users/tkv/Documents/NetBeansProjects/SerialChannel/src/org/vesalainen/comm/channel/winx/WinSerialChannel.java</file>
+            <file>file:/C:/Users/tkv/Documents/NetBeansProjects/SerialChannel/src/org/vesalainen/comm/channel/SerialChannel.java</file>
+        </group>
+    </open-files>
+</project-private>
+>>>>>>> a22718e661526975cd0b4816e95fa336e48b14fd

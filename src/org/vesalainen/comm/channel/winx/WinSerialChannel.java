@@ -16,36 +16,32 @@
  */
 package org.vesalainen.comm.channel.winx;
 
-import org.vesalainen.comm.channel.CommEvent;
-import org.vesalainen.comm.channel.CommEventObserver;
 import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.vesalainen.comm.channel.CommError;
+import org.vesalainen.comm.channel.CommStat;
+import org.vesalainen.comm.channel.CommStatus;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
  *
  * @author tkv
  */
-public class WinSerialChannel extends SerialChannel implements Runnable
+public class WinSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 4;
+    public static final int VERSION = 6;
+    public static final int MAXDWORD = 0xffffffff;
 
     private long handle = -1;
-    private Map<CommEventObserver,Set<CommEvent.Type>> eventObserverMap;
-    private Set<CommEvent.Type> observedEvents;
-    private Thread eventObserverThread;
+    private int readIntervalTimeout = MAXDWORD;
+    private int readTotalTimeoutMultiplier = MAXDWORD;
+    private int readTotalTimeoutConstant = 100;
+    private int writeTotalTimeoutMultiplier;
+    private int writeTotalTimeoutConstant;
 
     static
     {
@@ -61,16 +57,6 @@ public class WinSerialChannel extends SerialChannel implements Runnable
 
     public WinSerialChannel(String port, Speed speed)
     {
-        this(port, speed, Parity.NONE, DataBits.DATABITS_8, StopBits.STOPBITS_10, FlowControl.NONE);
-    }
-
-    public WinSerialChannel(String port, int speed)
-    {
-        this(port, Speed.valueOf("CBR_"+speed), Parity.NONE, DataBits.DATABITS_8, StopBits.STOPBITS_10, FlowControl.NONE);
-    }
-
-    public WinSerialChannel(String port, Speed speed, Parity parity, DataBits dataBits, StopBits stopBits, FlowControl flowControl)
-    {
         int version = version();
         if (version != VERSION)
         {
@@ -78,155 +64,50 @@ public class WinSerialChannel extends SerialChannel implements Runnable
         }
         this.port = port;
         this.speed = speed;
-        this.parity = parity;
-        this.stopBits = stopBits;
-        this.dataBits = dataBits;
-        this.flowControl = flowControl;
     }
 
     @Override
     public void connect() throws IOException
     {
-        handle = initialize(port.getBytes(), SPEED[speed.ordinal()], parity.ordinal(), dataBits.ordinal(), stopBits.ordinal(), flowControl.ordinal());
+        handle = initialize(
+                port.getBytes(), 
+                SPEED[speed.ordinal()], 
+                parity.ordinal(), 
+                dataBits.ordinal(), 
+                stopBits.ordinal(), 
+                flowControl.ordinal(),
+                readIntervalTimeout,
+                readTotalTimeoutMultiplier,
+                readTotalTimeoutConstant,
+                writeTotalTimeoutMultiplier,
+                writeTotalTimeoutConstant
+        );
     }
 
-    private native long initialize(byte[] port, int baudRate, int parity, int dataBits, int stopBits, int flowControl) throws IOException;
+    private native long initialize(
+            byte[] port, 
+            int baudRate, 
+            int parity, 
+            int dataBits, 
+            int stopBits, 
+            int flowControl,
+            int readIntervalTimeout,
+            int readTotalTimeoutMultiplier,
+            int readTotalTimeoutConstant,
+            int writeTotalTimeoutMultiplier,
+            int writeTotalTimeoutConstant
+    ) throws IOException;
 
     private native int version();
 
-    @Override
-    public void addEventObserver(CommEventObserver observer, CommEvent.Type... types) throws IOException
-    {
-        if (eventObserverMap == null)
-        {
-            eventObserverMap = new HashMap<>();
-            observedEvents = EnumSet.noneOf(CommEvent.Type.class);
-        }
-        Set<CommEvent.Type> set = EnumSet.copyOf(Arrays.asList(types));
-        eventObserverMap.put(observer, set);
-        observedEvents.addAll(set);
-        setEventMask(handle, WinCommEvent.createEventMask(observedEvents));
-        if (eventObserverThread == null && !observedEvents.isEmpty())
-        {
-            eventObserverThread = new Thread(this);
-            eventObserverThread.start();
-        }
-    }
-
     private native void setEventMask(long handle, int mask) throws IOException;
-
-    @Override
-    public boolean removeEventObserver(CommEventObserver observer) throws IOException
-    {
-        return eventObserverMap.remove(observer) != null;
-    }
-
-    @Override
-    public void run()
-    {
-        while (true)
-        {
-            try
-            {
-                int ev = waitEvent(handle);
-System.err.println("Event="+ev)                ;
-                WinCommEvent event = new WinCommEvent(ev);
-                WinCommStatus commStatus = null;
-                WinCommError commError = null;
-                WinCommStat commStat = null;
-                for (CommEventObserver observer : eventObserverMap.keySet())
-                {
-                    for (CommEvent.Type type : eventObserverMap.get(observer))
-                    {
-                        switch (type)
-                        {
-                            case BREAK:
-                                if (event.isBreakEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case CTS:
-                                if (event.isCtsEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isCts());
-                                }
-                                break;
-                            case DSR:
-                                if (event.isDsrEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isDsr());
-                                }
-                                break;
-                            case ERROR:
-                                if (event.isErrorEvent())
-                                {
-                                    if (commError == null)
-                                    {
-                                        commStat = new WinCommStat();
-                                        commError = getError(commStat);
-                                    }
-                                    observer.commError(commError, commStat);
-                                }
-                                break;
-                            case RING:
-                                if (event.isRingEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case RLSD:
-                                if (event.isRlsdEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isRlsd());
-                                }
-                                break;
-                            case CHAR:
-                                if (event.isCharEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case FLAG:
-                                if (event.isFlagEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case EMPTY:
-                                if (event.isEmptyEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                        }
-                    }
-                }
-            }
-            catch (IOException ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-    }
 
     private native int waitEvent(long handle) throws IOException;
 
-    private WinCommError getError(WinCommStat stat) throws IOException
+    @Override
+    protected CommError getError(CommStat stat) throws IOException
     {
-        int err = doGetError(handle, stat);
+        int err = doGetError(handle, (WinCommStat)stat);
         return new WinCommError(err);
     }
 
@@ -247,17 +128,6 @@ System.err.println("Event="+ev)                ;
 
     private native boolean connected(long handle);
     
-    @Override
-    protected void implCloseChannel() throws IOException
-    {
-        if (eventObserverThread != null)
-        {
-            eventObserverThread.interrupt();
-        }
-        doClose(handle);
-        handle = -1;
-    }
-
     @Override
     public void flush() throws IOException
     {
@@ -287,24 +157,12 @@ System.err.println("Event="+ev)                ;
     }
 
     @Override
-    public WinCommStatus getCommStatus() throws IOException
+    public CommStatus getCommStatus() throws IOException
     {
         return new WinCommStatus(this);
     }
 
     protected native int commStatus(long handle) throws IOException;
-
-    @Override
-    public InputStream getInputStream(int bufferSize)
-    {
-        return new SerialInputStream(this, bufferSize);
-    }
-
-    @Override
-    public OutputStream getOutputStream(int bufferSize)
-    {
-        return new SerialOutputStream(this, bufferSize);
-    }
 
     @Override
     public int read(ByteBuffer dst) throws IOException
@@ -316,6 +174,11 @@ System.err.println("Event="+ev)                ;
             {
                 begin();
                 count = doRead(handle, dst);
+                while (count == 0)
+                {
+                    // unable to configure windows comm timeouts...
+                    count = doRead(handle, dst);
+                }
                 return count;
             }
             finally
@@ -377,151 +240,80 @@ System.err.println("Event="+ev)                ;
         return "WinSerialChannel{" + "handle=" + handle + "port=" + port + '}';
     }
 
-    private static class SerialOutputStream extends OutputStream
+    @Override
+    protected void setEventMask(int mask) throws IOException
     {
-        private WinSerialChannel channel;
-        private ByteBuffer buffer;
-
-        public SerialOutputStream(WinSerialChannel channel, int bufferSize)
-        {
-            this.channel = channel;
-            buffer = ByteBuffer.allocateDirect(bufferSize);
-        }
-
-        @Override
-        public void flush() throws IOException
-        {
-            flushBuffer();
-            channel.flush();
-        }
-
-        @Override
-        public void write(int b) throws IOException
-        {
-            if (!buffer.hasRemaining())
-            {
-                flushBuffer();
-            }
-            buffer.put((byte)b);
-        }
-
-        public void flushBuffer() throws IOException
-        {
-            buffer.flip();
-            while (buffer.hasRemaining())
-            {
-                channel.write(buffer);
-            }
-            buffer.clear();
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException
-        {
-            while (len > 0)
-            {
-                if (!buffer.hasRemaining())
-                {
-                    flushBuffer();
-                }
-                int length = Math.min(len, buffer.remaining());
-                buffer.put(b, off, length);
-                len -= length;
-                off += length;
-            }
-        }
-
+        setEventMask(handle, mask);
     }
 
-    private static class SerialInputStream extends InputStream
+    @Override
+    protected int waitEvent() throws IOException
     {
-        private WinSerialChannel channel;
-        private ByteBuffer buffer;
-        private boolean online;
-
-        public SerialInputStream(WinSerialChannel channel, int bufferSize)
-        {
-            this.channel = channel;
-            buffer = ByteBuffer.allocateDirect(bufferSize);
-            buffer.flip();
-        }
-
-        @Override
-        public int read() throws IOException
-        {
-            /*
-            if (!online)
-            {
-                channel.waitOnline();
-                online = true;
-            }
-             */
-            if (!buffer.hasRemaining())
-            {
-                buffer.clear();
-                channel.read(buffer);
-                buffer.flip();
-            }
-            try
-            {
-                return buffer.get() & 0xff;
-            }
-            catch (BufferUnderflowException ex)
-            {
-                return -1;
-            }
-        }
-
-        @Override
-        public int available() throws IOException
-        {
-            return buffer.remaining();
-        }
-
-        @Override
-        public synchronized void mark(int readlimit)
-        {
-            if (buffer.remaining() < readlimit)
-            {
-                throw new IllegalArgumentException("Couldn't set mark for "+readlimit+" bytes");
-            }
-            buffer.mark();
-        }
-
-        @Override
-        public boolean markSupported()
-        {
-            return true;
-        }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException
-        {
-            if (!buffer.hasRemaining())
-            {
-                buffer.clear();
-                channel.read(buffer);
-                buffer.flip();
-            }
-            int length = Math.min(len, buffer.remaining());
-            buffer.get(b, off, length);
-            return length;
-        }
-
-        @Override
-        public synchronized void reset() throws IOException
-        {
-            buffer.reset();
-        }
-
-        @Override
-        public String toString()
-        {
-            return "SerialInputStream{" + "channel=" + channel + "buffer=" + buffer + '}';
-        }
-
-
+        return waitEvent(handle);
     }
+
+    @Override
+    protected void doClose() throws IOException
+    {
+        doClose(handle);
+        handle = -1;
+    }
+
+    public int getReadIntervalTimeout()
+    {
+        return readIntervalTimeout;
+    }
+
+    public WinSerialChannel setReadIntervalTimeout(int readIntervalTimeout)
+    {
+        this.readIntervalTimeout = readIntervalTimeout;
+        return this;
+    }
+
+    public int getReadTotalTimeoutMultiplier()
+    {
+        return readTotalTimeoutMultiplier;
+    }
+
+    public WinSerialChannel setReadTotalTimeoutMultiplier(int readTotalTimeoutMultiplier)
+    {
+        this.readTotalTimeoutMultiplier = readTotalTimeoutMultiplier;
+        return this;
+    }
+
+    public int getReadTotalTimeoutConstant()
+    {
+        return readTotalTimeoutConstant;
+    }
+
+    public WinSerialChannel setReadTotalTimeoutConstant(int readTotalTimeoutConstant)
+    {
+        this.readTotalTimeoutConstant = readTotalTimeoutConstant;
+        return this;
+    }
+
+    public int getWriteTotalTimeoutMultiplier()
+    {
+        return writeTotalTimeoutMultiplier;
+    }
+
+    public WinSerialChannel setWriteTotalTimeoutMultiplier(int writeTotalTimeoutMultiplier)
+    {
+        this.writeTotalTimeoutMultiplier = writeTotalTimeoutMultiplier;
+        return this;
+    }
+
+    public int getWriteTotalTimeoutConstant()
+    {
+        return writeTotalTimeoutConstant;
+    }
+
+    public WinSerialChannel setWriteTotalTimeoutConstant(int writeTotalTimeoutConstant)
+    {
+        this.writeTotalTimeoutConstant = writeTotalTimeoutConstant;
+        return this;
+    }
+    
     /**
      * @param args the command line arguments
      */
