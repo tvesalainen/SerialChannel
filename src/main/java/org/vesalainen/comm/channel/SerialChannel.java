@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.GatheringByteChannel;
+import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -41,7 +43,7 @@ import org.vesalainen.comm.channel.winx.WinCommStat;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author tkv
  */
-public abstract class SerialChannel extends AbstractInterruptibleChannel implements Runnable
+public abstract class SerialChannel extends AbstractInterruptibleChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
 {
     public enum Speed {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
     protected static final int[] SPEED = new int[] {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
@@ -328,6 +330,68 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     }
 
     protected abstract CommError getError(CommStat stat) throws IOException;
+
+    @Override
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
+    {
+        long res = 0;
+        for  (int ii=0;ii<length;ii++)
+        {
+            ByteBuffer bb = srcs[ii+offset];
+            if (bb.hasRemaining())
+            {
+                res += write(bb);
+                if (bb.hasRemaining())
+                {
+                    break;
+                }
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public long write(ByteBuffer[] srcs) throws IOException
+    {
+        return write(srcs, 0, srcs.length);
+    }
+
+    @Override
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
+    {
+        long res = 0;
+        for  (int ii=0;ii<length;ii++)
+        {
+            ByteBuffer bb = dsts[ii+offset];
+            if (bb.hasRemaining())
+            {
+                int rc = read(bb);
+                if (rc == -1)
+                {
+                    if (res == 0)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return res;
+                    }
+                }
+                res += rc;
+                if (bb.hasRemaining())
+                {
+                    break;
+                }
+            }
+        }
+        return res;
+    }
+
+    @Override
+    public long read(ByteBuffer[] dsts) throws IOException
+    {
+        return read(dsts, 0, dsts.length);
+    }
     
     @Override
     public void run()
