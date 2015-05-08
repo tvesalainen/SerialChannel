@@ -55,7 +55,7 @@ public class WinSerialChannel extends SerialChannel
         }
     }
 
-    public WinSerialChannel(String port, Speed speed)
+    public WinSerialChannel(String port, Speed speed, Parity parity, StopBits stopBits, DataBits dataBits, FlowControl flowControl)
     {
         int version = version();
         if (version != VERSION)
@@ -64,10 +64,14 @@ public class WinSerialChannel extends SerialChannel
         }
         this.port = port;
         this.speed = speed;
+        this.parity = parity;
+        this.stopBits = stopBits;
+        this.dataBits = dataBits;
+        this.flowControl = flowControl;
     }
 
     @Override
-    public void connect() throws IOException
+    protected void connect() throws IOException
     {
         handle = initialize(
                 port.getBytes(), 
@@ -176,7 +180,8 @@ public class WinSerialChannel extends SerialChannel
                 count = doRead(handle, dst);
                 while (count == 0)
                 {
-                    // unable to configure windows comm timeouts...
+                    setEventMask(0x0001);
+                    waitEvent();
                     count = doRead(handle, dst);
                 }
                 return count;
@@ -314,24 +319,4 @@ public class WinSerialChannel extends SerialChannel
         return this;
     }
     
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args)
-    {
-        try
-        {
-            WinSerialChannel sc = new WinSerialChannel("COM8", WinSerialChannel.Speed.CBR_115200);
-            ByteBuffer bb = ByteBuffer.allocateDirect(10);
-            sc.connect();
-            sc.read(bb);
-            System.err.println(bb);
-            sc.close();
-        }
-        catch (Exception ex)
-        {
-            ex.printStackTrace();
-        }
-    }
-
 }

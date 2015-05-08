@@ -20,7 +20,6 @@ package org.vesalainen.comm.channel;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import org.vesalainen.comm.channel.SerialChannel;
 
 /**
  *
@@ -78,6 +77,17 @@ class SerialOutputStream extends OutputStream
             len -= length;
             off += length;
         }
+    }
+    /**
+     * Flushed the buffer. This method doesn't close the channel.
+     * @throws IOException 
+     */
+    @Override
+    public void close() throws IOException
+    {
+        flush();
+        channel = null;
+        buffer = null;
     }
     
 }

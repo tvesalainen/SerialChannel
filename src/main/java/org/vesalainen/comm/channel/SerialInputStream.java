@@ -106,7 +106,17 @@ class SerialInputStream extends InputStream
     {
         buffer.reset();
     }
-
+    /**
+     * This method doesn't close the channel.
+     * @throws IOException 
+     */
+    @Override
+    public void close() throws IOException
+    {
+        channel = null;
+        buffer = null;
+    }
+    
     @Override
     public String toString()
     {

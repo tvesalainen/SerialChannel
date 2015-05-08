@@ -68,23 +68,6 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     protected SerialChannel()
     {
     }
-    /**
-     * Creates a SerialChannel
-     * @param port
-     * @param speed
-     * @return
-     * @throws IOException 
-     */
-    public static SerialChannel getInstance(String port, Speed speed) throws IOException
-    {
-        switch (getOS())
-        {
-            case Windows:
-                return new WinSerialChannel(port, speed);
-            default:
-                throw new UnsupportedOperationException("OS not supported");
-        }
-    }
     private static OS getOS()
     {
         String osName = System.getProperty("os.name");
@@ -95,36 +78,6 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         throw new UnsupportedOperationException(osName+" not supported");
     }
     /**
-     * Creates a SerialChannel
-     * @param port
-     * @param speed
-     * @return
-     * @throws IOException 
-     */
-    public static SerialChannel getInstance(String port, int speed) throws IOException
-    {
-        return getInstance(port, Speed.valueOf("CBR_"+speed));
-    }
-    /**
-     * Creates a SerialChannel
-     * @param port
-     * @param speed
-     * @param parity
-     * @param dataBits
-     * @param stopBits
-     * @param flowControl
-     * @return
-     * @throws IOException 
-     */
-    public static SerialChannel getInstance(String port, Speed speed, Parity parity, DataBits dataBits, StopBits stopBits, FlowControl flowControl) throws IOException
-    {
-        return getInstance(port, speed)
-                .setParity(parity)
-                .setDataBits(dataBits)
-                .setStopBits(stopBits)
-                .setFlowControl(flowControl);
-    }
-    /**
      * Returns the port.
      * @return 
      */
@@ -133,25 +86,18 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return port;
     }
     /**
-     * Sets the port. Setting port after connections has no effect.
-     * @param port 
-     */
-    public void setPort(String port)
-    {
-        this.port = port;
-    }
-    /**
      * Creates actual connection.
      * @throws IOException 
      */
-    public abstract void connect() throws IOException;
+    protected abstract void connect() throws IOException;
     /**
      * Flushes the buffers.
      * @throws IOException 
      */
     public abstract void flush() throws IOException;
     /**
-     * Returns InputStream. Allocates direct ByteBuffer bufferSize length.
+     * Returns InputStream. Allocates direct ByteBuffer bufferSize length. Note! closing the stream doesn't close the 
+     * channel.
      * @param bufferSize
      * @return 
      */
@@ -163,7 +109,8 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     /**
      * Returns OutputStream. Allocates direct ByteBuffer bufferSize length. Note 
      * that write doesn't actually write anything before the buffer comes full.
-     * Use flush to flush the buffer.
+     * Use flush to flush the buffer. Note! closing the stream doesn't close the 
+     * channel.
      * @param bufferSize
      * @return 
      */
@@ -183,6 +130,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      * @return Number of bytes read.
      * @throws IOException 
      */
+    @Override
     public abstract int read(ByteBuffer dst) throws IOException;
     /**
      * Waits until channel is online. Online means that there is connection to a host.
@@ -194,6 +142,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      * @return Returns number of characters written.
      * @throws IOException 
      */
+    @Override
     public abstract int write(ByteBuffer src) throws IOException;
     /**
      * Returns the status.
@@ -229,21 +178,9 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return dataBits;
     }
 
-    public SerialChannel setDataBits(DataBits dataBits)
-    {
-        this.dataBits = dataBits;
-        return this;
-    }
-
     public FlowControl getFlowControl()
     {
         return flowControl;
-    }
-
-    public SerialChannel setFlowControl(FlowControl flowControl)
-    {
-        this.flowControl = flowControl;
-        return this;
     }
 
     public Parity getParity()
@@ -251,21 +188,9 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return parity;
     }
 
-    public SerialChannel setParity(Parity parity)
-    {
-        this.parity = parity;
-        return this;
-    }
-
     public Speed getSpeed()
     {
         return speed;
-    }
-
-    public SerialChannel setSpeed(Speed speed)
-    {
-        this.speed = speed;
-        return this;
     }
 
     public StopBits getStopBits()
@@ -273,11 +198,6 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         return stopBits;
     }
 
-    public SerialChannel setStopBits(StopBits stopBits)
-    {
-        this.stopBits = stopBits;
-        return this;
-    }
     @Override
     protected void implCloseChannel() throws IOException
     {
@@ -493,4 +413,79 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         }
     }
 
+    public static class Builder
+    {
+        private String port;
+        private Speed speed;
+        private Parity parity = Parity.NONE;
+        private StopBits stopBits = StopBits.STOPBITS_10;
+        private DataBits dataBits = DataBits.DATABITS_8;
+        private FlowControl flowControl = FlowControl.NONE;
+
+        public Builder(String port, Speed speed)
+        {
+            this.port = port;
+            this.speed = speed;
+        }
+
+        public Builder(String port, int speed)
+        {
+            this.port = port;
+            this.speed = Speed.valueOf("CBR_"+speed);
+        }
+
+        public SerialChannel get() throws IOException
+        {
+            SerialChannel channel;
+            switch (getOS())
+            {
+                case Windows:
+                    channel = new WinSerialChannel(port, speed, parity, stopBits, dataBits, flowControl);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("OS not supported");
+            }
+            channel.connect();
+            return channel;
+        }
+        /**
+         * Sets the port.
+         * @param port 
+         * @return  
+         */
+        public Builder setPort(String port)
+        {
+            this.port = port;
+            return this;
+        }
+        public Builder setDataBits(DataBits dataBits)
+        {
+            this.dataBits = dataBits;
+            return this;
+        }
+
+        public Builder setFlowControl(FlowControl flowControl)
+        {
+            this.flowControl = flowControl;
+            return this;
+        }
+
+        public Builder setParity(Parity parity)
+        {
+            this.parity = parity;
+            return this;
+        }
+
+        public Builder setSpeed(Speed speed)
+        {
+            this.speed = speed;
+            return this;
+        }
+
+        public Builder setStopBits(StopBits stopBits)
+        {
+            this.stopBits = stopBits;
+            return this;
+        }
+    }
 }

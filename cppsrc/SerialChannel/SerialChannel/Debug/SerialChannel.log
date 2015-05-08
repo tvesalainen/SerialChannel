@@ -1,16 +1,22 @@
-﻿Build started 2.1.2014 12:44:06.
-     1>Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
+﻿Build started 7.5.2015 16:14:13.
+     1>Project "G:\tkv\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /Zi /nologo /W3 /WX- /Od /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\SerialChannel64.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gz /TC /errorReport:prompt SerialChannel.cpp
+         G:\Program Files\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yc"stdafx.h" /Fp"Debug\SerialChannel32.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gz /TC /analyze- /errorReport:prompt stdafx.cpp
+         stdafx.cpp
+         G:\Program Files\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gz /TC /analyze- /errorReport:prompt dllmain.cpp
+         dllmain.cpp
+         G:\Program Files\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\tkv\Documents\Visual Studio 2008\Projects\SerialChannel\SerialChannel" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _WINDOWS /D _USRDLL /D SERIALCHANNEL_EXPORTS /D _WINDLL /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\SerialChannel32.pch" /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gz /TC /analyze- /errorReport:prompt SerialChannel.cpp
          SerialChannel.cpp
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\x86_amd64\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll" /INCREMENTAL /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.lib" /MACHINE:X64 /DLL Debug\SerialChannel.res
+         G:\Program Files\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"..\..\..\src\main\resources\SerialChannel32.dll" /INCREMENTAL /NOLOGO Setupapi.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"..\..\..\src\main\resources\SerialChannel32.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"..\..\..\src\main\resources\SerialChannel32.lib" /MACHINE:X86 /SAFESEH /DLL Debug\SerialChannel.res
          Debug\dllmain.obj
          Debug\SerialChannel.obj
          Debug\stdafx.obj
-         SerialChannel.vcxproj -> C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\Debug\SerialChannel64.dll
-     1>Done Building Project "C:\Users\tkv\Documents\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (Build target(s)).
+     1>dllmain.obj : warning LNK4075: ignoring '/EDITANDCONTINUE' due to '/SAFESEH' specification
+            Creating library ..\..\..\src\main\resources\SerialChannel32.lib and object ..\..\..\src\main\resources\SerialChannel32.exp
+         SerialChannel.vcxproj -> G:\tkv\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\..\..\..\src\main\resources\SerialChannel32.dll
+     1>Done Building Project "G:\tkv\NetBeansProjects\SerialChannel\cppsrc\SerialChannel\SerialChannel\SerialChannel.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.68
+Time Elapsed 00:00:01.15

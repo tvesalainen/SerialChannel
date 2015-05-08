@@ -7,10 +7,10 @@
     </parent>    
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.vesalainen</groupId>
-    <artifactId>serialchannel</artifactId>
+    <artifactId>comm</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>Serial Channel</name>
+    <name>Serial communications library</name>
     <description>
         Library for serial communication
     </description>
