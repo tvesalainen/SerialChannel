@@ -20,6 +20,10 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <errno.h>
 #include "org_vesalainen_comm_channel_winx_WinSerialChannel.h"
 
 void exception(JNIEnv * env, const char* clazz, const char* message);
@@ -30,5 +34,5 @@ char* configure(
 	int parity, 
 	int databits, 
 	int stopbits, 
-	int flow,
+	int flow
 	);
