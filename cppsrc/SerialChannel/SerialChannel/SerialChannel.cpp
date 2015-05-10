@@ -224,13 +224,22 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_se
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_waitEvent
-  (JNIEnv *env, jobject obj, jlong handle)
+(JNIEnv *env, jobject obj, jlong handle, jint mask)
 {
 	DWORD dwCommEvent = 0;
 	DWORD dwRes;
 	HANDLE hComm = (HANDLE)handle;
 	OVERLAPPED osStatus = {0};
 
+	if (mask)
+	{
+		DEBUG("SetCommMask");
+		if (!SetCommMask((HANDLE)handle, mask))
+		{
+			exception(env, "java/io/IOException", NULL);
+			ERRORRETURNV
+		}
+	}
 	osStatus.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
 	if (osStatus.hEvent == NULL)
@@ -270,6 +279,120 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 	CloseHandle(osStatus.hEvent);
 	return dwCommEvent;
 }
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
+(JNIEnv *env, jobject obj, jlongArray handles, jintArray masks)
+{
+	jsize len;
+	jlong *pHandle;
+	jint *pMask;
+	DWORD dwCommEvent;
+	DWORD dwRes;
+	OVERLAPPED osStatus[MAXIMUM_WAIT_OBJECTS] = { 0 };
+	HANDLE waits[MAXIMUM_WAIT_OBJECTS];
+	DWORD timeout = 0;
+	int waitCount = 0;
+	int index[MAXIMUM_WAIT_OBJECTS] = { 0 };
+	int ii;
+
+	len = (*env)->GetArrayLength(env, handles);
+	if (len > MAXIMUM_WAIT_OBJECTS)
+	{
+		exception(env, "java/io/IOException", "too many channels");
+		ERRORRETURN
+	}
+	pHandle = (*env)->GetLongArrayElements(env, handles, NULL);
+	pMask = (*env)->GetIntArrayElements(env, masks, NULL);
+	for (ii = 0; ii < len; ii++)
+	{
+		DEBUG("SetCommMask");
+		if (!SetCommMask((HANDLE)pHandle[ii], pMask[ii]))
+		{
+			(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+			exception(env, "java/io/IOException", NULL);
+			ERRORRETURNV
+		}
+		pMask[ii] = 0;
+		osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+		if (osStatus[ii].hEvent == NULL)
+		{
+			(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+			exception(env, "java/io/IOException", NULL);
+			ERRORRETURN
+		}
+		DEBUG("WaitCommEvent");
+		if (!WaitCommEvent((HANDLE)pHandle[ii], &dwCommEvent, osStatus + ii))
+		{
+			if (GetLastError() != ERROR_IO_PENDING)
+			{
+				(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+				(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+				CloseHandle(osStatus[ii].hEvent);
+				exception(env, "java/io/IOException", NULL);
+				ERRORRETURN
+			}
+			index[waitCount] = ii;
+			waits[waitCount++] = osStatus[ii].hEvent;
+		}
+		else
+		{
+			CloseHandle(osStatus[ii].hEvent);
+			pMask[ii] = dwCommEvent;
+		}
+	}
+	if (waitCount == len)
+	{
+		timeout = INFINITE;
+	}
+	dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, timeout);
+	switch (dwRes)
+	{
+	case WAIT_TIMEOUT:
+		break;
+	case WAIT_FAILED:
+		(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+		(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+		for (ii = 0; ii < waitCount; ii++)
+		{
+			CloseHandle(waits[ii]);
+		}
+		exception(env, "java/io/IOException", NULL);
+		ERRORRETURN
+			break;
+	default:
+
+		for (ii = dwRes - WAIT_OBJECT_0; ii < waitCount; ii++)
+		{
+
+			if (!GetOverlappedResult((HANDLE)pHandle[index[ii]], osStatus + index[ii], &dwCommEvent, FALSE))
+			{
+				if (GetLastError() != ERROR_IO_INCOMPLETE)
+				{
+					(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+					(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+					for (ii = 0; ii < waitCount; ii++)
+					{
+						CloseHandle(waits[ii]);
+					}
+					exception(env, "java/io/IOException", NULL);
+					ERRORRETURN
+				}
+			}
+			else
+			{
+				CloseHandle(waits[ii]);
+				pMask[index[ii]] = dwCommEvent;
+			}
+		}
+		break;
+	}
+	(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+	(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+	return 1;
+}
+
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doGetError
   (JNIEnv *env, jobject obj, jlong handle, jobject commStat)
@@ -285,119 +408,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	return errors;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doWaitOnline
-  (JNIEnv *env, jobject obj, jlong handle)
-{
-	DWORD dwModemStat;
-	DWORD dwCommEvent;
-	DWORD dwRes;
-	HANDLE hComm = (HANDLE)handle;
-	OVERLAPPED osStatus = {0};
-
-	DEBUG("GetCommModemStatus");
-	if (GetCommModemStatus(hComm, &dwModemStat))
-	{
-		if ((dwModemStat & MS_RLSD_ON) == 0)
-		{
-			DEBUG("No line");
-			if (!SetCommMask(hComm, EV_RLSD))
-			{
-				exception(env, "java/io/IOException", NULL);
-				ERRORRETURNV
-			}
-			// Create the overlapped event. Must be closed before exiting
-			// to avoid a handle leak.
-			osStatus.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-			if (osStatus.hEvent == NULL)
-			{
-				exception(env, "java/io/IOException", NULL);
-				ERRORRETURNV
-			}
-			DEBUG("WaitCommEvent connection");
-			if (!WaitCommEvent((HANDLE)handle, &dwCommEvent, &osStatus))
-			{
-				if (GetLastError() != ERROR_IO_PENDING)
-				{
-					CloseHandle(osStatus.hEvent);
-					exception(env, "java/io/IOException", NULL);
-					ERRORRETURNV
-				}
-				DEBUG("WaitForSingleObject connection");
-				dwRes = WaitForSingleObject(osStatus.hEvent, INFINITE);
-				switch(dwRes)
-				{
-				  case WAIT_OBJECT_0:
-					if (!GetOverlappedResult((HANDLE)handle, &osStatus, &dwCommEvent, FALSE))
-					{
-						CloseHandle(osStatus.hEvent);
-						exception(env, "java/io/IOException", NULL);
-						ERRORRETURNV
-					}
-
-					break;
-				  default:
-					CloseHandle(osStatus.hEvent);
-					exception(env, "java/io/IOException", NULL);
-					ERRORRETURNV
-					break;
-				}
-			}
-			DEBUG("Got connection");
-			CloseHandle(osStatus.hEvent);
-		}
-		if (!SetCommMask(hComm, EV_RXCHAR))
-		{
-			exception(env, "java/io/IOException", NULL);
-			ERRORRETURNV
-		}
-		// Create the overlapped event. Must be closed before exiting
-		// to avoid a handle leak.
-		osStatus.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-		if (osStatus.hEvent == NULL)
-		{
-			exception(env, "java/io/IOException", NULL);
-			ERRORRETURNV
-		}
-		DEBUG("WaitCommEvent data");
-		if (!WaitCommEvent((HANDLE)handle, &dwCommEvent, &osStatus))
-		{
-			if (GetLastError() != ERROR_IO_PENDING)
-			{
-				CloseHandle(osStatus.hEvent);
-				exception(env, "java/io/IOException", NULL);
-				ERRORRETURNV
-			}
-			DEBUG("WaitForSingleObject data");
-			dwRes = WaitForSingleObject(osStatus.hEvent, INFINITE);
-			switch(dwRes)
-			{
-			  case WAIT_OBJECT_0:
-				if (!GetOverlappedResult((HANDLE)handle, &osStatus, &dwCommEvent, FALSE))
-				{
-					CloseHandle(osStatus.hEvent);
-					exception(env, "java/io/IOException", NULL);
-					ERRORRETURNV
-				}
-				break;
-			  default:
-				CloseHandle(osStatus.hEvent);
-				exception(env, "java/io/IOException", NULL);
-				ERRORRETURNV
-				break;
-			}
-			DEBUG("Got data");
-			CloseHandle(osStatus.hEvent);
-		}
-	}
-	else
-	{
-		CloseHandle(osStatus.hEvent);
-		exception(env, "java/io/IOException", NULL);
-		ERRORRETURNV
-	}
-}
 /*
  * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
  * Method:    doRead

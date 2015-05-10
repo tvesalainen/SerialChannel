@@ -25,15 +25,15 @@ import java.util.Set;
  */
 public class WinCommEvent implements CommEvent
 {
-    private static final int BREAK = 0x0040;
-    private static final int CTS = 0x0008;
-    private static final int DSR = 0x0010;
-    private static final int ERR = 0x0080;
-    private static final int RING = 0x0100;
-    private static final int RLSD = 0x0020;
-    private static final int CHAR = 0x0001;
-    private static final int FLAG = 0x0002;
-    private static final int EMPTY = 0x0004;
+    public static final int BREAK = 0x0040;
+    public static final int CTS = 0x0008;
+    public static final int DSR = 0x0010;
+    public static final int ERR = 0x0080;
+    public static final int RING = 0x0100;
+    public static final int RLSD = 0x0020;
+    public static final int CHAR = 0x0001;
+    public static final int FLAG = 0x0002;
+    public static final int EMPTY = 0x0004;
 
     private int event;
 

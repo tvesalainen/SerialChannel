@@ -26,9 +26,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="jni.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Ntddser.h">
       <Filter>Header Files</Filter>
     </ClInclude>

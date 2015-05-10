@@ -23,7 +23,10 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
+import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -43,8 +46,9 @@ import org.vesalainen.comm.channel.winx.WinCommStat;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author tkv
  */
-public abstract class SerialChannel extends AbstractInterruptibleChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
+public abstract class SerialChannel extends AbstractSelectableChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
 {
+
     public enum Speed {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
     protected static final int[] SPEED = new int[] {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
     public enum Parity {NONE, ODD, EVEN, MARK, SPACE};
@@ -65,8 +69,11 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     protected Set<CommEvent.Type> observedEvents;
     protected Thread eventObserverThread;
     
+    protected boolean block = true;
+    
     protected SerialChannel()
     {
+        super(SerialSelectorProvider.provider());
     }
     private static OS getOS()
     {
@@ -77,6 +84,25 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         }
         throw new UnsupportedOperationException(osName+" not supported");
     }
+
+    public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected) throws IOException
+    {
+        OS os = getOS();
+        switch (os)
+        {
+            case Windows:
+                return WinSerialChannel.doSelect(keys, selected);
+            default:
+                throw new UnsupportedOperationException(os+" not supported");
+        }
+    }
+    
+    @Override
+    protected void implConfigureBlocking(boolean block) throws IOException
+    {
+        this.block = block;
+    }
+
     /**
      * Returns the port.
      * @return 
@@ -132,10 +158,6 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
      */
     @Override
     public abstract int read(ByteBuffer dst) throws IOException;
-    /**
-     * Waits until channel is online. Online means that there is connection to a host.
-     */
-    public abstract void waitOnline();
     /**
      * Writes data at buffers position and then increments the position.
      * @param src
@@ -199,7 +221,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
     }
 
     @Override
-    protected void implCloseChannel() throws IOException
+    protected void implCloseSelectableChannel() throws IOException
     {
         if (eventObserverThread != null)
         {
@@ -236,7 +258,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
 
     protected abstract void setEventMask(int mask) throws IOException;
 
-    protected abstract int waitEvent() throws IOException;
+    protected abstract int waitEvent(int mask) throws IOException;
 
     /**
      * Removes event observer.
@@ -320,7 +342,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         {
             try
             {
-                int ev = waitEvent();
+                int ev = waitEvent(0);
                 WinCommEvent event = new WinCommEvent(ev);
                 CommStatus commStatus = null;
                 CommError commError = null;
@@ -421,6 +443,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         private StopBits stopBits = StopBits.STOPBITS_10;
         private DataBits dataBits = DataBits.DATABITS_8;
         private FlowControl flowControl = FlowControl.NONE;
+        private boolean block = true;
 
         public Builder(String port, Speed speed)
         {
@@ -445,6 +468,7 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
                 default:
                     throw new UnsupportedOperationException("OS not supported");
             }
+            channel.configureBlocking(block);
             channel.connect();
             return channel;
         }
@@ -485,6 +509,12 @@ public abstract class SerialChannel extends AbstractInterruptibleChannel impleme
         public Builder setStopBits(StopBits stopBits)
         {
             this.stopBits = stopBits;
+            return this;
+        }
+
+        public Builder setBlocking(boolean block)
+        {
+            this.block = block;
             return this;
         }
     }

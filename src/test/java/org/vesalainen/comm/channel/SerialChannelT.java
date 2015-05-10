@@ -8,6 +8,9 @@ package org.vesalainen.comm.channel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -67,7 +70,55 @@ public class SerialChannelT
         }
     }
     @Test
-    public void test2()
+    public void testSelect()
+    {
+        List<String> ports = SerialChannel.getAllPorts();
+        assertNotNull(ports);
+        if (ports.size() >= 2)
+        {
+            try
+            {
+                SerialSelector selector = new SerialSelector();
+                Builder builder1 = new Builder("COM17", Speed.CBR_1200)
+                        .setBlocking(false);
+                //Builder builder2 = new Builder(ports.get(1), Speed.CBR_1200)
+                  //      .setBlocking(false);
+                try (SerialChannel c1 = builder1.get();
+                    //SerialChannel c2 = builder2.get()
+                        )
+                {
+                    ByteBuffer bb = ByteBuffer.allocate(20);
+                    SelectionKey sk1 = selector.register(c1, OP_READ, null);
+                    while (true)
+                    {
+                        int cnt = selector.select();
+                        if (cnt > 0)
+                        {
+                            for (SelectionKey sk : selector.selectedKeys())
+                            {
+                                if (sk.isReadable())
+                                {
+                                    c1.read(bb);
+                                    bb.flip();
+                                    while (bb.hasRemaining())
+                                    {
+                                        System.err.print((char)bb.get());
+                                    }
+                                    bb.clear();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                fail(ex.getMessage());
+            }
+        }
+    }
+    //@Test
+    public void regressionTest()
     {
         ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getAllPorts();

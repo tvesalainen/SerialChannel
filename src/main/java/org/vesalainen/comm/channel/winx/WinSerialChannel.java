@@ -20,11 +20,19 @@ import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.vesalainen.comm.channel.CommError;
 import org.vesalainen.comm.channel.CommStat;
 import org.vesalainen.comm.channel.CommStatus;
+import org.vesalainen.comm.channel.SerialSelectionKey;
+import static org.vesalainen.comm.channel.winx.WinCommEvent.CHAR;
+import static org.vesalainen.comm.channel.winx.WinCommEvent.EMPTY;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -33,7 +41,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class WinSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 6;
+    public static final int VERSION = 7;
     public static final int MAXDWORD = 0xffffffff;
 
     private long handle = -1;
@@ -87,7 +95,49 @@ public class WinSerialChannel extends SerialChannel
                 writeTotalTimeoutConstant
         );
     }
-
+    
+    @Override
+    public int validOps()
+    {
+        return OP_READ;
+    }
+    
+    public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected) throws IOException
+    {
+        selected.clear();
+        long[] handles = new long[keys.size()];
+        int[] masks = new int[handles.length];
+        int index = 0;
+        for (SelectionKey sk : keys)
+        {
+            WinSerialChannel channel = (WinSerialChannel) sk.channel();
+            handles[index] = channel.handle;
+            int interestOps = sk.interestOps();
+            int mask = 0;
+            if ((interestOps & OP_READ) != 0)
+            {
+                mask |= CHAR;
+            }
+            masks[index] = mask;
+            index++;
+        }
+        int rc = WinSerialChannel.doSelect(handles, masks);
+        if (rc != 0)
+        {
+            index = 0;
+            for (SelectionKey sk : keys)
+            {
+                if (masks[index] != 0)
+                {
+                    SerialSelectionKey ssk = (SerialSelectionKey) sk;
+                    ssk.readyOps(OP_READ);
+                    selected.add(sk);
+                }
+                index++;
+            }
+        }
+        return rc;
+    }
     private native long initialize(
             byte[] port, 
             int baudRate, 
@@ -106,7 +156,9 @@ public class WinSerialChannel extends SerialChannel
 
     private native void setEventMask(long handle, int mask) throws IOException;
 
-    private native int waitEvent(long handle) throws IOException;
+    private native int waitEvent(long handle, int mask) throws IOException;
+
+    private static native int doSelect(long[] handles, int[] masks) throws IOException;
 
     @Override
     protected CommError getError(CommStat stat) throws IOException
@@ -137,14 +189,6 @@ public class WinSerialChannel extends SerialChannel
     {
         doFlush(handle);
     }
-
-    @Override
-    public void waitOnline()
-    {
-        doWaitOnline(handle);
-    }
-
-    private native void doWaitOnline(long handle);
 
     public static List<String> getAllPorts()
     {
@@ -178,10 +222,9 @@ public class WinSerialChannel extends SerialChannel
             {
                 begin();
                 count = doRead(handle, dst);
-                while (count == 0)
+                while (block && count == 0)
                 {
-                    setEventMask(0x0001);
-                    waitEvent();
+                    waitEvent(0x0001);
                     count = doRead(handle, dst);
                 }
                 return count;
@@ -227,13 +270,6 @@ public class WinSerialChannel extends SerialChannel
     private native int doWrite(long handle, ByteBuffer src) throws IOException;
 
     @Override
-    protected void finalize() throws Throwable
-    {
-        close();
-        super.finalize();
-    }
-
-    @Override
     public String getPort()
     {
         return getPort();
@@ -252,9 +288,9 @@ public class WinSerialChannel extends SerialChannel
     }
 
     @Override
-    protected int waitEvent() throws IOException
+    protected int waitEvent(int mask) throws IOException
     {
-        return waitEvent(handle);
+        return waitEvent(handle, mask);
     }
 
     @Override
