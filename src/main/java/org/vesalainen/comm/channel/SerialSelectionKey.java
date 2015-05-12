@@ -32,11 +32,12 @@ public class SerialSelectionKey extends AbstractSelectionKey
     private int interestOps;
     private int readyOps;
 
-    public SerialSelectionKey(SelectableChannel channel, Selector selector, int interestOps)
+    public SerialSelectionKey(SelectableChannel channel, Selector selector, int interestOps, Object attachment)
     {
         this.channel = channel;
         this.selector = selector;
         this.interestOps = interestOps;
+        attach(attachment);
     }
     
     @Override

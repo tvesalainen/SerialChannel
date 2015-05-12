@@ -42,14 +42,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_se
  * Signature: ()Z
  */
 JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_connected
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
 	DWORD dwModemStat;
-	HANDLE hComm = (HANDLE)handle;
 	OVERLAPPED osStatus = {0};
+	CTX *c = (CTX*)ctx;
 
 	DEBUG("GetCommModemStatus");
-	if (GetCommModemStatus(hComm, &dwModemStat))
+	if (GetCommModemStatus(c->hComm, &dwModemStat))
 	{
 		if ((dwModemStat & MS_RLSD_ON) == 0)
 		{
@@ -67,11 +67,6 @@ JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChanne
 		ERRORRETURN;
 	}
 }
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    version
- * Signature: ()I
- */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_version
   (JNIEnv *env, jobject obj)
 {
@@ -90,20 +85,17 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	jint parity, 
 	jint databits, 
 	jint stopbits, 
-	jint flow,
-    jint readIntervalTimeout,
-    jint readTotalTimeoutMultiplier,
-    jint readTotalTimeoutConstant,
-    jint writeTotalTimeoutMultiplier,
-    jint writeTotalTimeoutConstant
+	jint flow
 	)
 {
-	HANDLE hComm;
 	char szPort[32];
 	char buf[256];
 	jsize size;
 	jbyte* sPort; 
 	char* err;
+	CTX *c = NULL;
+
+	c = (CTX*)calloc(1, sizeof(CTX));
 
 	DEBUG("initialize");
 	sPort = (*env)->GetByteArrayElements(env, port, NULL);
@@ -125,15 +117,16 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	}
 
 	DEBUG("CreateFile");
-	hComm = CreateFile( buf,  
+	c->hComm = CreateFile( buf,  
 				GENERIC_READ | GENERIC_WRITE, 
 				0, 
 				0, 
 				OPEN_EXISTING,
 				FILE_FLAG_OVERLAPPED,
 				0);
-	if (hComm == INVALID_HANDLE_VALUE)
+	if (c->hComm == INVALID_HANDLE_VALUE)
 	{
+		free(c);
 		exception(env, "java/io/IOException", buf);
 		(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 		ERRORRETURN
@@ -142,67 +135,97 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 
 	err = configure(
 		env, 
-		hComm, 
+		c->hComm, 
 		bauds, 
 		parity, 
 		databits, 
 		stopbits, 
-		flow,
-		(DWORD)readIntervalTimeout,
-		(DWORD)readTotalTimeoutMultiplier,
-		(DWORD)readTotalTimeoutConstant,
-		(DWORD)writeTotalTimeoutMultiplier,
-		(DWORD)writeTotalTimeoutConstant
+		flow
 		);
 	if (err != NULL)
 	  // Error in SetCommState. Possibly a problem with the communications 
 	  // port handle or a problem with the DCB structure itself.
 	{
-		CloseHandle(hComm);
+		CloseHandle(c->hComm);
+		free(c);
 		exception(env, "java/io/IOException", err);
 		ERRORRETURNV
 	}
-	return (jlong)hComm;
+	return (jlong)c;
 }
-
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doClose
- * Signature: ()I
- */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doClose
-  (JNIEnv *env, jobject obj, jlong handle)
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_timeouts(
+	JNIEnv *env,
+	jobject obj,
+	jlong ctx,
+	jint readIntervalTimeout,
+	jint readTotalTimeoutMultiplier,
+	jint readTotalTimeoutConstant,
+	jint writeTotalTimeoutMultiplier,
+	jint writeTotalTimeoutConstant
+)
 {
-	DEBUG("PurgeComm");
-	if (!PurgeComm((HANDLE)handle, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
+	/*
+	If an application sets ReadIntervalTimeout and ReadTotalTimeoutMultiplier to MAXDWORD
+	and sets ReadTotalTimeoutConstant to a value greater than zero and less than MAXDWORD,
+	one of the following occurs when the ReadFile function is called:
+	- If there are any bytes in the input buffer, ReadFile returns immediately with the
+	bytes in the buffer.
+	- If there are no bytes in the input buffer, ReadFile waits until a byte arrives
+	and then returns immediately.
+	- If no bytes arrive within the time specified by ReadTotalTimeoutConstant, ReadFile times out.
+	*/
+	COMMTIMEOUTS timeouts;
+	CTX *c = (CTX*)ctx;
+
+	timeouts.ReadIntervalTimeout = readIntervalTimeout;
+	timeouts.ReadTotalTimeoutMultiplier = readTotalTimeoutMultiplier;
+	timeouts.ReadTotalTimeoutConstant = readTotalTimeoutConstant;
+	timeouts.WriteTotalTimeoutMultiplier = writeTotalTimeoutMultiplier;
+	timeouts.WriteTotalTimeoutConstant = writeTotalTimeoutConstant;
+	if (!SetCommTimeouts(c->hComm, &timeouts))
 	{
-		exception(env, "java/io/IOException", "PurgeComm failed");
+		exception(env, "java/io/IOException", "SetCommTimeouts failed");
 		ERRORRETURNV
 	}
+
+}
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doClose
+  (JNIEnv *env, jobject obj, jlong ctx)
+{
+	CTX *c = (CTX*)ctx;
+
+	DEBUG("PurgeComm");
+	PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
+
 	DEBUG("CloseHandle");
-	if (!CloseHandle((HANDLE)handle))
+	if (!CloseHandle(c->hComm))
 	{
+		free(c);
 		exception(env, "java/io/IOException", "CloseHandle failed");
 		ERRORRETURNV
 	}
+	free(c);
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doFlush
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+	CTX *c = (CTX*)ctx;
+
 	DEBUG("FlushFileBuffers");
-	if (!FlushFileBuffers((HANDLE)handle))
+	if (!FlushFileBuffers(c->hComm))
 	{
 		exception(env, "java/io/IOException", "FlushFileBuffers failed");
 		ERRORRETURNV
 	}
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_commStatus
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
 	DWORD dwModemStat;
+	CTX *c = (CTX*)ctx;
 
 	DEBUG("GetCommModemStatus");
-	if (GetCommModemStatus((HANDLE)handle, &dwModemStat))
+	if (GetCommModemStatus(c->hComm, &dwModemStat))
 	{
 		return dwModemStat;
 	}
@@ -213,10 +236,12 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_co
 	}
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setEventMask
-  (JNIEnv *env, jobject obj, jlong handle, jint mask)
+  (JNIEnv *env, jobject obj, jlong ctx, jint mask)
 {
+	CTX *c = (CTX*)ctx;
+
 	DEBUG("SetCommMask");
-	if (!SetCommMask((HANDLE)handle, mask))
+	if (!SetCommMask(c->hComm, mask))
 	{
 		exception(env, "java/io/IOException", NULL);
 		ERRORRETURNV
@@ -224,17 +249,17 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_se
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_waitEvent
-(JNIEnv *env, jobject obj, jlong handle, jint mask)
+(JNIEnv *env, jobject obj, jlong ctx, jint mask)
 {
 	DWORD dwCommEvent = 0;
 	DWORD dwRes;
-	HANDLE hComm = (HANDLE)handle;
 	OVERLAPPED osStatus = {0};
+	CTX *c = (CTX*)ctx;
 
 	if (mask)
 	{
 		DEBUG("SetCommMask");
-		if (!SetCommMask((HANDLE)handle, mask))
+		if (!SetCommMask(c->hComm, mask))
 		{
 			exception(env, "java/io/IOException", NULL);
 			ERRORRETURNV
@@ -248,7 +273,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 		ERRORRETURN
 	}
 	DEBUG("WaitCommEvent");
-	if (!WaitCommEvent((HANDLE)handle, &dwCommEvent, &osStatus))
+	if (!WaitCommEvent(c->hComm, &dwCommEvent, &osStatus))
 	{
 		if (GetLastError() != ERROR_IO_PENDING)
 		{
@@ -261,7 +286,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 		switch(dwRes)
 		{
 		  case WAIT_OBJECT_0:
-			if (!GetOverlappedResult((HANDLE)handle, &osStatus, &dwCommEvent, FALSE))
+			if (!GetOverlappedResult(c->hComm, &osStatus, &dwCommEvent, FALSE))
 			{
 				CloseHandle(osStatus.hEvent);
 				exception(env, "java/io/IOException", NULL);
@@ -280,79 +305,90 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 	return dwCommEvent;
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-(JNIEnv *env, jobject obj, jlongArray handles, jintArray masks)
+(JNIEnv *env, jobject obj, jlongArray ctxs, jintArray masks, jint timeout)
 {
 	jsize len;
-	jlong *pHandle;
+	jlong *ctxArr;
 	jint *pMask;
-	DWORD dwCommEvent;
+	jint count = 0;
+	DWORD dwCommEvent[MAXIMUM_WAIT_OBJECTS];
 	DWORD dwRes;
 	OVERLAPPED osStatus[MAXIMUM_WAIT_OBJECTS] = { 0 };
 	HANDLE waits[MAXIMUM_WAIT_OBJECTS];
-	DWORD timeout = 0;
+	DWORD to = timeout;
 	int waitCount = 0;
 	int index[MAXIMUM_WAIT_OBJECTS] = { 0 };
 	int ii;
 
-	len = (*env)->GetArrayLength(env, handles);
+	if (timeout < 0)
+	{
+		to = INFINITE;
+	}
+	len = (*env)->GetArrayLength(env, ctxs);
 	if (len > MAXIMUM_WAIT_OBJECTS)
 	{
 		exception(env, "java/io/IOException", "too many channels");
 		ERRORRETURN
 	}
-	pHandle = (*env)->GetLongArrayElements(env, handles, NULL);
+	ctxArr = (*env)->GetLongArrayElements(env, ctxs, NULL);
 	pMask = (*env)->GetIntArrayElements(env, masks, NULL);
 	for (ii = 0; ii < len; ii++)
 	{
-		DEBUG("SetCommMask");
-		if (!SetCommMask((HANDLE)pHandle[ii], pMask[ii]))
-		{
-			(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
-			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-			exception(env, "java/io/IOException", NULL);
-			ERRORRETURNV
-		}
+		int mask = pMask[ii];
 		pMask[ii] = 0;
-		osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-
-		if (osStatus[ii].hEvent == NULL)
+		CTX *ctx = (CTX*)ctxArr[ii];
+		if ((mask & EV_RXCHAR) != 0)
 		{
-			(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
-			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-			exception(env, "java/io/IOException", NULL);
-			ERRORRETURN
-		}
-		DEBUG("WaitCommEvent");
-		if (!WaitCommEvent((HANDLE)pHandle[ii], &dwCommEvent, osStatus + ii))
-		{
-			if (GetLastError() != ERROR_IO_PENDING)
+			DEBUG("SetCommMask");
+			if (!SetCommMask(ctx->hComm, EV_RXCHAR))
 			{
-				(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+				(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
 				(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-				CloseHandle(osStatus[ii].hEvent);
+				exception(env, "java/io/IOException", NULL);
+				ERRORRETURNV
+			}
+			osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+
+			if (osStatus[ii].hEvent == NULL)
+			{
+				(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
+				(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 				exception(env, "java/io/IOException", NULL);
 				ERRORRETURN
 			}
-			index[waitCount] = ii;
-			waits[waitCount++] = osStatus[ii].hEvent;
-		}
-		else
-		{
-			CloseHandle(osStatus[ii].hEvent);
-			pMask[ii] = dwCommEvent;
+			DEBUG("WaitCommEvent");
+			if (!WaitCommEvent(ctx->hComm, dwCommEvent + ii, osStatus + ii))
+			{
+				if (GetLastError() != ERROR_IO_PENDING)
+				{
+					(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
+					(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+					CloseHandle(osStatus[ii].hEvent);
+					exception(env, "java/io/IOException", NULL);
+					ERRORRETURN
+				}
+				index[waitCount] = ii;
+				waits[waitCount++] = osStatus[ii].hEvent;
+			}
+			else
+			{
+				CloseHandle(osStatus[ii].hEvent);
+				pMask[ii] |= EV_RXCHAR;
+				count++;
+			}
 		}
 	}
 	if (waitCount == len)
 	{
 		timeout = INFINITE;
 	}
-	dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, timeout);
+	dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, to);
 	switch (dwRes)
 	{
 	case WAIT_TIMEOUT:
 		break;
 	case WAIT_FAILED:
-		(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+		(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
 		(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 		for (ii = 0; ii < waitCount; ii++)
 		{
@@ -360,17 +396,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		}
 		exception(env, "java/io/IOException", NULL);
 		ERRORRETURN
-			break;
+		break;
 	default:
 
 		for (ii = dwRes - WAIT_OBJECT_0; ii < waitCount; ii++)
 		{
-
-			if (!GetOverlappedResult((HANDLE)pHandle[index[ii]], osStatus + index[ii], &dwCommEvent, FALSE))
+			int jj = index[ii];
+			CTX *ctx = (CTX*)ctxArr[jj];
+			if (!GetOverlappedResult(ctx->hComm, osStatus + jj, dwCommEvent+jj, FALSE))
 			{
 				if (GetLastError() != ERROR_IO_INCOMPLETE)
 				{
-					(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+					(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
 					(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 					for (ii = 0; ii < waitCount; ii++)
 					{
@@ -383,24 +420,26 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			else
 			{
 				CloseHandle(waits[ii]);
-				pMask[index[ii]] = dwCommEvent;
+				pMask[jj] |= EV_RXCHAR;
+				count++;
 			}
 		}
 		break;
 	}
-	(*env)->ReleaseLongArrayElements(env, handles, pHandle, 0);
+	(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
 	(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-	return 1;
+	return count;
 }
 
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doGetError
-  (JNIEnv *env, jobject obj, jlong handle, jobject commStat)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject commStat)
 {
 	DWORD errors;
 	COMSTAT comstat;
+	CTX *c = (CTX*)ctx;
 
-	if (!ClearCommError((HANDLE)handle, &errors, &comstat))
+	if (!ClearCommError(c->hComm, &errors, &comstat))
 	{
 		exception(env, "java/io/IOException", NULL);
 		ERRORRETURN
@@ -414,7 +453,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doRead
-  (JNIEnv *env, jobject obj, jlong handle, jobject bb)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
 	int pos;
 	int lim;
@@ -429,10 +468,12 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	jbyte* arr;
 	jint newPos;
 
+	DWORD timeout = INFINITE;
 	OVERLAPPED osReader = {0};
 	DWORD dwRead;
 	DWORD dwRes;
 	BOOL fRes;
+	CTX *c = (CTX*)ctx;
 
 	DEBUG("read");
 	cls = (*env)->GetObjectClass(env, bb);
@@ -494,7 +535,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	}
 
 	DEBUG("ReadFile");
-	if (!ReadFile((HANDLE)handle, addr, len, &dwRead, &osReader)) 
+	if (!ReadFile(c->hComm, addr, len, &dwRead, &osReader)) 
 	{
 		if (GetLastError() != ERROR_IO_PENDING)     // read not delayed?
 		{
@@ -509,12 +550,12 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		else
 		{
 			DEBUG("WaitForSingleObject");
-			dwRes = WaitForSingleObject(osReader.hEvent, INFINITE);
+			dwRes = WaitForSingleObject(osReader.hEvent, timeout);
 			switch(dwRes)
 			{
 			  // Read completed.
 			  case WAIT_OBJECT_0:
-				if (!GetOverlappedResult((HANDLE)handle, &osReader, &dwRead, FALSE))
+				if (!GetOverlappedResult(c->hComm, &osReader, &dwRead, FALSE))
 				{
 					 // Error in communications; report it.
 					fRes = FALSE;
@@ -525,6 +566,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 					fRes = TRUE;
 				}
 				break;
+			  case WAIT_TIMEOUT:
+				  fRes = TRUE;
+				  dwRead = 0;
+				  break;
 			default:
 				if (barr != NULL)
 				{
@@ -594,7 +639,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doWrite
-  (JNIEnv *env, jobject obj, jlong handle, jobject bb)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
 	static int count = 0;
 	int pos;
@@ -610,10 +655,12 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	jbyte* arr;
 	jint newPos;
 
-	OVERLAPPED osWrite = {0};
+	OVERLAPPED osWrite = { 0 };
 	DWORD dwWritten;
 	DWORD dwRes;
 	BOOL fRes;
+	CTX *c = (CTX*)ctx;
+
 
 	DEBUG("write");
 	cls = (*env)->GetObjectClass(env, bb);
@@ -676,21 +723,27 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	if (osWrite.hEvent == NULL)
 	{
 		// error creating overlapped event handle
-		(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-		(*env)->DeleteLocalRef(env, barr);
+		if (barr != NULL)
+		{
+			(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+			(*env)->DeleteLocalRef(env, barr);
+		}
 		exception(env, "java/io/IOException", NULL);
 		ERRORRETURN
 	}
 
 	// Issue write.
 	DEBUG("WriteFile");
-	if (!WriteFile((HANDLE)handle, addr, len, &dwWritten, &osWrite)) 
+	if (!WriteFile(c->hComm, addr, len, &dwWritten, &osWrite))
 	{
 		if (GetLastError() != ERROR_IO_PENDING) 
 		{ 
 			// WriteFile failed, but isn't delayed. Report error and abort.
-			(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-			(*env)->DeleteLocalRef(env, barr);
+			if (barr != NULL)
+			{
+				(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+				(*env)->DeleteLocalRef(env, barr);
+			}
 			exception(env, "java/io/IOException", NULL);
 			ERRORRETURN
 		}
@@ -702,7 +755,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			{
 				// OVERLAPPED structure's event has been signaled. 
 				case WAIT_OBJECT_0:
-				if (!GetOverlappedResult((HANDLE)handle, &osWrite, &dwWritten, FALSE))
+				if (!GetOverlappedResult(c->hComm, &osWrite, &dwWritten, FALSE))
 				{
 					fRes = FALSE;
 				}
@@ -837,7 +890,7 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 	}
 	else
 	{
-		(*env)->ThrowNew(env, exc, NULL);
+		(*env)->ThrowNew(env, exc, message);
 	}
 	// Free the buffer.
 
@@ -849,24 +902,18 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 
 char* configure(
 	JNIEnv *env, 
-	HANDLE handle, 
+	HANDLE hComm, 
 	int bauds, 
 	int parity, 
 	int databits, 
 	int stopbits, 
-	int flow,
-    DWORD readIntervalTimeout,
-    DWORD readTotalTimeoutMultiplier,
-    DWORD readTotalTimeoutConstant,
-    DWORD writeTotalTimeoutMultiplier,
-    DWORD writeTotalTimeoutConstant
+	int flow
 	)
 {
 	DCB dcb;
-	COMMTIMEOUTS timeouts;
 	int framesize = 1;	// start bit
 
-	if (!GetCommState(handle, &dcb))
+	if (!GetCommState(hComm, &dcb))
 	{
 		return "GetCommState failed";
 	}
@@ -972,30 +1019,10 @@ char* configure(
 		break;
 	}
 
-	if (!SetCommState(handle, &dcb))
+	if (!SetCommState(hComm, &dcb))
 	{
 		return "SetCommState failed";
 	}
-	/*
-	If an application sets ReadIntervalTimeout and ReadTotalTimeoutMultiplier to MAXDWORD 
-	and sets ReadTotalTimeoutConstant to a value greater than zero and less than MAXDWORD, 
-	one of the following occurs when the ReadFile function is called:
-	- If there are any bytes in the input buffer, ReadFile returns immediately with the 
-	  bytes in the buffer.
-	- If there are no bytes in the input buffer, ReadFile waits until a byte arrives 
-	  and then returns immediately.
-	- If no bytes arrive within the time specified by ReadTotalTimeoutConstant, ReadFile times out.
-	*/
-	timeouts.ReadIntervalTimeout = readIntervalTimeout;
-	timeouts.ReadTotalTimeoutMultiplier = readTotalTimeoutMultiplier;
-	timeouts.ReadTotalTimeoutConstant = readTotalTimeoutConstant;
-	timeouts.WriteTotalTimeoutMultiplier = writeTotalTimeoutMultiplier;
-	timeouts.WriteTotalTimeoutConstant = writeTotalTimeoutConstant;
-	if (!SetCommTimeouts(handle, &timeouts))
-	{
-	    return "SetCommTimeouts failed";
-    }
-
 	return NULL;
 }
 

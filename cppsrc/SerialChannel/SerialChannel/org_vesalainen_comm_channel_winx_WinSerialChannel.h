@@ -14,10 +14,18 @@ extern "C" {
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    initialize
- * Signature: ([BIIIIIIIIII)J
+ * Signature: ([BIIIII)J
  */
 JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint, jint, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
+ * Method:    timeouts
+ * Signature: (JIIIII)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_timeouts
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
@@ -46,10 +54,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doSelect
- * Signature: ([J[I)I
+ * Signature: ([J[II)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-  (JNIEnv *, jclass, jlongArray, jintArray);
+  (JNIEnv *, jclass, jlongArray, jintArray, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel

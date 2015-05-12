@@ -25,6 +25,7 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.CommError;
@@ -87,13 +88,38 @@ public class WinSerialChannel extends SerialChannel
                 parity.ordinal(), 
                 dataBits.ordinal(), 
                 stopBits.ordinal(), 
-                flowControl.ordinal(),
-                readIntervalTimeout,
-                readTotalTimeoutMultiplier,
-                readTotalTimeoutConstant,
-                writeTotalTimeoutMultiplier,
-                writeTotalTimeoutConstant
+                flowControl.ordinal()
         );
+        setTimeouts();
+    }
+
+    private void setTimeouts() throws IOException
+    {
+        if (handle != -1)
+        {
+            //if (block)
+            {
+                timeouts(handle,
+                        readIntervalTimeout,
+                        readTotalTimeoutMultiplier,
+                        readTotalTimeoutConstant,
+                        writeTotalTimeoutMultiplier,
+                        writeTotalTimeoutConstant
+                );
+            }
+            /*
+            else
+            {
+                timeouts(handle, 0, 0, 0, 0, 0);
+            }
+                    */
+        }
+    }
+    @Override
+    protected void implConfigureBlocking(boolean block) throws IOException
+    {
+        super.implConfigureBlocking(block);
+        setTimeouts();
     }
     
     @Override
@@ -102,9 +128,9 @@ public class WinSerialChannel extends SerialChannel
         return OP_READ;
     }
     
-    public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected) throws IOException
+    public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
-        selected.clear();
+        int size = selected.size();
         long[] handles = new long[keys.size()];
         int[] masks = new int[handles.length];
         int index = 0;
@@ -121,22 +147,27 @@ public class WinSerialChannel extends SerialChannel
             masks[index] = mask;
             index++;
         }
-        int rc = WinSerialChannel.doSelect(handles, masks);
+        int rc = WinSerialChannel.doSelect(handles, masks, timeout);
         if (rc != 0)
         {
             index = 0;
             for (SelectionKey sk : keys)
             {
-                if (masks[index] != 0)
+                int readyOps = 0;
+                if ((masks[index] & CHAR) != 0)
+                {
+                    readyOps |= OP_READ;
+                }
+                if (readyOps != 0)
                 {
                     SerialSelectionKey ssk = (SerialSelectionKey) sk;
-                    ssk.readyOps(OP_READ);
+                    ssk.readyOps(readyOps);
                     selected.add(sk);
                 }
                 index++;
             }
         }
-        return rc;
+        return selected.size() - size;
     }
     private native long initialize(
             byte[] port, 
@@ -144,21 +175,25 @@ public class WinSerialChannel extends SerialChannel
             int parity, 
             int dataBits, 
             int stopBits, 
-            int flowControl,
+            int flowControl
+    ) throws IOException;
+
+    private native void timeouts(
+            long handle,
             int readIntervalTimeout,
             int readTotalTimeoutMultiplier,
             int readTotalTimeoutConstant,
             int writeTotalTimeoutMultiplier,
             int writeTotalTimeoutConstant
     ) throws IOException;
-
+    
     private native int version();
 
     private native void setEventMask(long handle, int mask) throws IOException;
 
     private native int waitEvent(long handle, int mask) throws IOException;
 
-    private static native int doSelect(long[] handles, int[] masks) throws IOException;
+    private static native int doSelect(long[] handles, int[] masks, int timeout) throws IOException;
 
     @Override
     protected CommError getError(CommStat stat) throws IOException
@@ -278,7 +313,7 @@ public class WinSerialChannel extends SerialChannel
     @Override
     public String toString()
     {
-        return "WinSerialChannel{" + "handle=" + handle + "port=" + port + '}';
+        return "WinSerialChannel{" + port + '}';
     }
 
     @Override

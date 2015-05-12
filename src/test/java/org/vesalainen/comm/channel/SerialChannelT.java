@@ -8,10 +8,19 @@ package org.vesalainen.comm.channel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,6 +49,40 @@ public class SerialChannelT
     {
     }
 
+    //@Test
+    public void test0()
+    {
+        try
+        {
+            DatagramChannel dc = DatagramChannel.open();
+            dc.configureBlocking(false);
+            dc.bind(new InetSocketAddress(10110));
+            SelectorProvider provider = SelectorProvider.provider();
+            AbstractSelector selector = provider.openSelector();
+            SelectionKey sk = dc.register(selector, OP_READ | OP_WRITE);
+            int rc = selector.select();
+            Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+            while(keyIterator.hasNext())
+            {
+                sk = keyIterator.next();
+                if (sk.isReadable())
+                {
+                    System.err.println("readable");
+                }
+                if (sk.isWritable())
+                {
+                    System.err.println("writable");
+                }
+                keyIterator.remove();
+            }
+            
+            
+        }
+        catch (IOException ex)
+        {
+            Logger.getLogger(SerialChannelT.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     //@Test
     public void test1()
     {
@@ -72,6 +115,7 @@ public class SerialChannelT
     @Test
     public void testSelect()
     {
+        final ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getAllPorts();
         assertNotNull(ports);
         if (ports.size() >= 2)
@@ -79,40 +123,76 @@ public class SerialChannelT
             try
             {
                 SerialSelector selector = new SerialSelector();
-                Builder builder1 = new Builder("COM17", Speed.CBR_1200)
+                Builder builder1 = new Builder(ports.get(0), Speed.CBR_1200)
                         .setBlocking(false);
-                //Builder builder2 = new Builder(ports.get(1), Speed.CBR_1200)
-                  //      .setBlocking(false);
+                Builder builder2 = new Builder(ports.get(1), Speed.CBR_1200)
+                        .setBlocking(false);
                 try (SerialChannel c1 = builder1.get();
-                    //SerialChannel c2 = builder2.get()
+                    SerialChannel c2 = builder2.get()
                         )
                 {
-                    ByteBuffer bb = ByteBuffer.allocate(20);
-                    SelectionKey sk1 = selector.register(c1, OP_READ, null);
-                    while (true)
+                    final int count = 1000;
+                    SelectionKey skr1 = selector.register(c1, OP_READ, new Object[] {c1, new RandomChar(), ByteBuffer.allocateDirect(101), count});
+                    SelectionKey skr2 = selector.register(c2, OP_READ, new Object[] {c2, new RandomChar(), ByteBuffer.allocateDirect(102), count});
+                    TimerTask task = new TimerTask() {
+
+                        @Override
+                        public void run()
+                        {
+                            Transmitter tra1 = new Transmitter(c1, count);
+                            Future<Void> ftra1 = exec.submit(tra1);
+                            Transmitter tra2 = new Transmitter(c2, count);
+                            Future<Void> ftra2 = exec.submit(tra2);
+                        }
+                    };
+                    Timer timer = new Timer();
+                    timer.schedule(task, 1000);
+                    while (selector.isOpen())
                     {
                         int cnt = selector.select();
                         if (cnt > 0)
                         {
-                            for (SelectionKey sk : selector.selectedKeys())
+                            Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+                            while(keyIterator.hasNext())
                             {
+                                SelectionKey sk = keyIterator.next();
                                 if (sk.isReadable())
                                 {
-                                    c1.read(bb);
+                                    Object[] arr = (Object[]) sk.attachment();
+                                    SerialChannel sc = (SerialChannel) arr[0];
+                                    RandomChar rc = (RandomChar) arr[1];
+                                    ByteBuffer bb = (ByteBuffer) arr[2];
+                                    int c = (int) arr[3];
+                                    bb.clear();
+                                    sc.read(bb);
                                     bb.flip();
                                     while (bb.hasRemaining())
                                     {
-                                        System.err.print((char)bb.get());
+                                        int next = rc.next(8);
+                                        byte cc = bb.get();
+                                        assertEquals((byte)next, cc);
+                                        c--;
                                     }
-                                    bb.clear();
+                                    assertTrue(c >= 0);
+                                    if (c == 0)
+                                    {
+                                        sk.cancel();
+                                    }
+                                    arr[3] = c;
                                 }
+                                keyIterator.remove();
                             }
+                        }
+                        else
+                        {
+                            selector.close();
                         }
                     }
                 }
             }
             catch (IOException ex)
             {
+                ex.printStackTrace();
                 fail(ex.getMessage());
             }
         }

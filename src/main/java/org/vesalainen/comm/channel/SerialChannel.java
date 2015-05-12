@@ -85,13 +85,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         throw new UnsupportedOperationException(osName+" not supported");
     }
 
-    public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected) throws IOException
+    public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         OS os = getOS();
         switch (os)
         {
             case Windows:
-                return WinSerialChannel.doSelect(keys, selected);
+                return WinSerialChannel.doSelect(keys, selected, timeout);
             default:
                 throw new UnsupportedOperationException(os+" not supported");
         }

@@ -26,8 +26,13 @@
 #define SERIALCHANNEL_API __declspec(dllimport)
 #endif
 
+#include <stdlib.h>
+#include <malloc.h>
 #include "org_vesalainen_comm_channel_winx_WinSerialChannel.h"
-
+typedef struct _CTX
+{
+	HANDLE hComm;
+} CTX;
 void exception(JNIEnv * env, const char* clazz, const char* message);
 char* configure(
 	JNIEnv *env, 
@@ -36,10 +41,5 @@ char* configure(
 	int parity, 
 	int databits, 
 	int stopbits, 
-	int flow,
-    DWORD readIntervalTimeout,
-    DWORD readTotalTimeoutMultiplier,
-    DWORD readTotalTimeoutConstant,
-    DWORD writeTotalTimeoutMultiplier,
-    DWORD writeTotalTimeoutConstant
+	int flow
 	);

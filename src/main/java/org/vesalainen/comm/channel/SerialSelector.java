@@ -21,7 +21,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelector;
-import java.util.AbstractSet;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,6 +33,8 @@ public class SerialSelector extends AbstractSelector
 {
     private final Set<SelectionKey> keys = new HashSet<>();
     private final Set<SelectionKey> selected = new HashSet<>();
+    private final Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
+    
     public SerialSelector()
     {
         super(SerialSelectorProvider.provider());
@@ -41,13 +43,23 @@ public class SerialSelector extends AbstractSelector
     @Override
     protected void implCloseSelector() throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        synchronized(threads)
+        {
+            for (Thread t : threads)
+            {
+                t.interrupt();
+            }
+        }
     }
 
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
     {
-        SelectionKey sk = new SerialSelectionKey(ch, this, ops);
+        if ((ops & ~ch.validOps()) != 0)
+        {
+            throw new IllegalArgumentException("ops is not supported");
+        }
+        SelectionKey sk = new SerialSelectionKey(ch, this, ops, att);
         keys.add(sk);
         return sk;
     }
@@ -67,19 +79,39 @@ public class SerialSelector extends AbstractSelector
     @Override
     public int selectNow() throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return select(0);
     }
 
     @Override
     public int select(long timeout) throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Set<SelectionKey> cancelledKeys = cancelledKeys();
+        synchronized(cancelledKeys)
+        {
+            keys.removeAll(cancelledKeys);
+        }
+        if (!keys.isEmpty())
+        {
+            begin();
+            Thread currentThread = Thread.currentThread();
+            threads.add(currentThread);
+            try
+            {
+                return SerialChannel.select(keys, selected, (int)timeout);
+            }
+            finally
+            {
+                threads.remove(currentThread);
+                end();
+            }
+        }
+        return 0;
     }
 
     @Override
     public int select() throws IOException
     {
-        return SerialChannel.select(keys, selected);
+        return select(-1);
     }
 
     @Override
