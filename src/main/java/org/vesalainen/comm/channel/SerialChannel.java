@@ -24,8 +24,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SelectionKey;
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -33,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
 
@@ -91,6 +90,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             case Windows:
                 return WinSerialChannel.doSelect(keys, selected, timeout);
+            case Linux:
+                return LinuxSerialChannel.doSelect(keys, selected, timeout);
             default:
                 throw new UnsupportedOperationException(os+" not supported");
         }
@@ -185,6 +186,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             case Windows:
                 WinSerialChannel.debug(on);
+            case Linux:
+                LinuxSerialChannel.debug(on);
             default:
                 throw new UnsupportedOperationException("OS not supported");
         }
