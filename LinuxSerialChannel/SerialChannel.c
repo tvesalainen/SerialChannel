@@ -30,18 +30,13 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 static int debug;
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setDebug
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {
     debug = on;
 }
 
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    connected
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_connected
+JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
   (JNIEnv *env, jobject obj, jlong handle)
 {
     exception(env, "java/lang/UnsupportedOperationException", NULL);
@@ -52,17 +47,17 @@ JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChanne
  * Method:    version
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_version
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_version
   (JNIEnv *env, jobject obj)
 {
-    return org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION;
+    return org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION;
 }
 /*
  * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
  * Method:    initialize
  * Signature: ([BIZII)I
  */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize(
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_initialize(
     JNIEnv *env, 
     jobject obj, 
     jbyteArray port, 
@@ -130,7 +125,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
  * Method:    doClose
  * Signature: ()I
  */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doClose
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
   (JNIEnv *env, jobject obj, jlong fd)
 {
     DEBUG("close");
@@ -140,32 +135,32 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
         ERRORRETURNV
     }
 }
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doFlush
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
   (JNIEnv *env, jobject obj, jlong fd)
 {
 }
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_commStatus
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_commStatus
   (JNIEnv *env, jobject obj, jlong fd)
 {
 }
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setEventMask
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setEventMask
   (JNIEnv *env, jobject obj, jlong fd, jint mask)
 {
 }
 
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_waitEvent
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_waitEvent
   (JNIEnv *env, jobject obj, jlong handle)
 {
     return 0;
 }
 
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doGetError
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doGetError
   (JNIEnv *env, jobject obj, jlong handle, jobject commStat)
 {
     return 0;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doWaitOnline
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWaitOnline
   (JNIEnv *env, jobject obj, jlong handle)
 {
 }
@@ -174,7 +169,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
  * Method:    doRead
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doRead
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
   (JNIEnv *env, jobject obj, jlong fd, jobject bb)
 {
     int pos;
@@ -283,7 +278,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
  * Method:    doWrite
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doWrite
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
   (JNIEnv *env, jobject obj, jlong fd, jobject bb)
 {
     static int count = 0;
@@ -389,7 +384,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
     return rc;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doEnumPorts
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
   (JNIEnv *env, jobject obj, jobject list)
 {
     jclass cls;

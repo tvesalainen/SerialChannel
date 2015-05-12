@@ -31,6 +31,7 @@ import org.vesalainen.comm.channel.SerialChannel;
  */
 public class LinuxSerialChannel extends SerialChannel
 {
+    public static final int VERSION = 1;
 
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {
