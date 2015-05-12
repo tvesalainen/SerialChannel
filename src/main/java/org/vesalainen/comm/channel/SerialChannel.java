@@ -49,8 +49,7 @@ import org.vesalainen.comm.channel.winx.WinCommStat;
 public abstract class SerialChannel extends AbstractSelectableChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
 {
 
-    public enum Speed {CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600, CBR_14400, CBR_19200, CBR_38400, CBR_57600, CBR_115200, CBR_128000, CBR_256000};
-    protected static final int[] SPEED = new int[] {110, 300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 57600, 115200, 128000, 256000};
+    public enum Speed {B110, B300, B600, B1200, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B256000};
     public enum Parity {NONE, ODD, EVEN, MARK, SPACE};
     public enum DataBits {DATABITS_4, DATABITS_5, DATABITS_6, DATABITS_7, DATABITS_8};
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
@@ -103,6 +102,10 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         this.block = block;
     }
 
+    protected int getSpeed(Speed speed)
+    {
+        return Integer.parseInt(speed.name().substring(1));
+    }
     /**
      * Returns the port.
      * @return 
@@ -454,7 +457,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         public Builder(String port, int speed)
         {
             this.port = port;
-            this.speed = Speed.valueOf("CBR_"+speed);
+            this.speed = Speed.valueOf("B"+speed);
         }
 
         public SerialChannel get() throws IOException

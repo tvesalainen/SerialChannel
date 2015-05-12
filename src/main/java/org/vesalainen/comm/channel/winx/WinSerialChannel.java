@@ -84,7 +84,7 @@ public class WinSerialChannel extends SerialChannel
     {
         handle = initialize(
                 port.getBytes(), 
-                SPEED[speed.ordinal()], 
+                getSpeed(speed), 
                 parity.ordinal(), 
                 dataBits.ordinal(), 
                 stopBits.ordinal(), 
