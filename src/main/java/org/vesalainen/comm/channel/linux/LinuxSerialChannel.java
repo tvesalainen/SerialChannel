@@ -29,6 +29,9 @@ import org.vesalainen.comm.channel.CommError;
 import org.vesalainen.comm.channel.CommStat;
 import org.vesalainen.comm.channel.CommStatus;
 import org.vesalainen.comm.channel.SerialChannel;
+import org.vesalainen.comm.channel.winx.WinSerialChannel;
+import static org.vesalainen.comm.channel.winx.WinSerialChannel.VERSION;
+import org.vesalainen.loader.LibraryLoader;
 
 /**
  *
@@ -40,6 +43,36 @@ public class LinuxSerialChannel extends SerialChannel
     private long handle = -1;
     private int min;
     private int time;
+    
+    static
+    {
+        try
+        {
+            LibraryLoader.loadLibrary(LinuxSerialChannel.class, "SerialChannel");
+        }
+        catch (IOException | UnsatisfiedLinkError ex)
+        {
+            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex.getMessage());
+        }
+    }
+
+    public LinuxSerialChannel(String port, Speed speed, Parity parity, StopBits stopBits, DataBits dataBits, FlowControl flowControl)
+    {
+        int version = version();
+        if (version != VERSION)
+        {
+            throw new UnsatisfiedLinkError("Loaded DLL version was"+version+" needed version "+VERSION);
+        }
+        this.port = port;
+        this.speed = speed;
+        this.parity = parity;
+        this.stopBits = stopBits;
+        this.dataBits = dataBits;
+        this.flowControl = flowControl;
+    }
+
+    private native int version();
+
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {

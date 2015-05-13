@@ -9,6 +9,78 @@ extern "C" {
 #endif
 #undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION 1L
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    version
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_version
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doEnumPorts
+ * Signature: (Ljava/util/List;)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    initialize
+ * Signature: ([BIIIII)J
+ */
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_initialize
+  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    timeouts
+ * Signature: (JII)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
+  (JNIEnv *, jobject, jlong, jint, jint);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doFlush
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    connected
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doRead
+ * Signature: (JLjava/nio/ByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
+  (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doWrite
+ * Signature: (JLjava/nio/ByteBuffer;)I
+ */
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
+  (JNIEnv *, jobject, jlong, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doClose
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
+  (JNIEnv *, jobject, jlong);
+
 #ifdef __cplusplus
 }
 #endif

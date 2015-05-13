@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Timo Vesalainen
+ * Copyright (C) 2015 Timo Vesalainen
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 }
 
 JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
     exception(env, "java/lang/UnsupportedOperationException", NULL);
     ERRORRETURN;
@@ -65,19 +65,14 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
     jint parity, 
     jint databits, 
     jint stopbits, 
-    jint flow,
-    jint readIntervalTimeout,
-    jint readTotalTimeoutMultiplier,
-    jint readTotalTimeoutConstant,
-    jint writeTotalTimeoutMultiplier,
-    jint writeTotalTimeoutConstant
-	)
+    jint flow
+ 	)
 {
-    int fd;
-    char szPort[32];
     jsize size;
     jbyte* sPort; 
     char* err;
+    
+    CTX *c = (CTX*)calloc(1, sizeof(CTX));
 
     DEBUG("initialize");
     sPort = (*env)->GetByteArrayElements(env, port, NULL);
@@ -86,26 +81,28 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
         ERRORRETURN
     }
     size = (*env)->GetArrayLength(env, port);
-    memset(szPort, 0, sizeof(szPort));
-    if (strncpy(szPort, sPort, size))
-    {
-        exception(env, "java/io/IOException", "copy com port");
-        ERRORRETURN
-    }
+    strncpy(c->szPort, sPort, size);
 
     DEBUG("open");
-    fd = open(sPort, O_RDWR | O_NOCTTY);
-    if (fd < 0)
+    c->fd = open(c->szPort, O_RDWR | O_NOCTTY);
+    if (c->fd < 0)
     {
-        exception(env, "java/io/IOException", sPort);
+        exception(env, "java/io/IOException", c->szPort);
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         ERRORRETURN
     }
     (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
+    if (tcflush(c->fd, TCIOFLUSH) < 0)
+    {
+        exception(env, "java/io/IOException", "tcflush failed");
+        (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+        ERRORRETURN
+    }
+    
     err = configure(
         env, 
-        fd, 
+        c, 
         bauds, 
         parity, 
         databits, 
@@ -117,7 +114,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
         exception(env, "java/io/IOException", err);
         ERRORRETURN;
     }
-    return (jlong)fd;
+    return (jlong)c;
 }
 
 /*
@@ -126,43 +123,61 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
  * Signature: ()I
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
-  (JNIEnv *env, jobject obj, jlong fd)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+    CTX* c = (CTX*)ctx;
     DEBUG("close");
-    if (close(fd) < 0)
+    if (tcsetattr(c->fd, TCSANOW, &c->oldtio) < 0)
+    {
+        exception(env, "java/io/IOException", "tcsetattr failed");
+        ERRORRETURNV;
+    }
+    if (close(c->fd) < 0)
     {
         exception(env, "java/io/IOException", "CloseHandle failed");
         ERRORRETURNV
     }
+    free(c);
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
-  (JNIEnv *env, jobject obj, jlong fd)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+    CTX* c = (CTX*)ctx;
+    if (tcdrain(c->fd) < 0)
+    {
+        exception(env, "java/io/IOException", "tcdrain failed");
+        ERRORRETURNV
+    }
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_commStatus
-  (JNIEnv *env, jobject obj, jlong fd)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+    CTX* c = (CTX*)ctx;
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setEventMask
-  (JNIEnv *env, jobject obj, jlong fd, jint mask)
+  (JNIEnv *env, jobject obj, jlong ctx, jint mask)
 {
+    CTX* c = (CTX*)ctx;
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_waitEvent
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+    CTX* c = (CTX*)ctx;
     return 0;
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doGetError
-  (JNIEnv *env, jobject obj, jlong handle, jobject commStat)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject commStat)
 {
+    CTX* c = (CTX*)ctx;
     return 0;
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWaitOnline
-  (JNIEnv *env, jobject obj, jlong handle)
+  (JNIEnv *env, jobject obj, jlong ctx)
 {
+    CTX* c = (CTX*)ctx;
 }
 /*
  * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
@@ -170,7 +185,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
-  (JNIEnv *env, jobject obj, jlong fd, jobject bb)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
     int pos;
     int lim;
@@ -186,6 +201,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     jint newPos;
 
     ssize_t rc;
+    CTX* c = (CTX*)ctx;
     DEBUG("read");
     cls = (*env)->GetObjectClass(env, bb);
     pmid = (*env)->GetMethodID(env, cls, "position", "()I");
@@ -231,7 +247,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
 
     DEBUG("read");
-    rc = read(fd, addr, len);
+    rc = read(c->fd, addr, len);
     if (rc < 0)
     {
         if (barr != NULL)
@@ -279,7 +295,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
-  (JNIEnv *env, jobject obj, jlong fd, jobject bb)
+  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
     static int count = 0;
     int pos;
@@ -297,6 +313,8 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 
     ssize_t rc;
 
+    CTX* c = (CTX*)ctx;
+    
     DEBUG("write");
     cls = (*env)->GetObjectClass(env, bb);
     pmid = (*env)->GetMethodID(env, cls, "position", "()I");
@@ -353,7 +371,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         addr += pos;
     }
 
-    rc = write(fd, addr, len);
+    rc = write(c->fd, addr, len);
     if (rc < 0)
     {
         (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
@@ -375,7 +393,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         ERRORRETURN
     }
-    newPos = pos + fd;
+    newPos = pos + rc;
     (*env)->CallObjectMethod(env, bb, spmid, newPos);
     if ((*env)->ExceptionCheck(env))
     {
@@ -413,19 +431,34 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         if (de->d_type == DT_CHR)
         {
-            str = (*env)->NewStringUTF(env, de->d_name);
-            if (str == NULL)
+            int l = strlen(de->d_name);
+            if (l >= 4)
             {
-                    ERRORRETURNV;
-            }
-            (*env)->CallObjectMethod(env, list, addid, str);
-            if ((*env)->ExceptionCheck(env))
-            {
-                    ERRORRETURNV;
+                if (
+                        de->d_name[0] == 't' &&
+                        de->d_name[1] == 't' &&
+                        de->d_name[2] == 'y' &&
+                        isupper(de->d_name[3])
+                        )
+                {
+                    char b[PATH_MAX];
+                    sprintf(b, "/dev/%s", de->d_name);
+                    str = (*env)->NewStringUTF(env, b);
+                    if (str == NULL)
+                    {
+                            ERRORRETURNV;
+                    }
+                    (*env)->CallObjectMethod(env, list, addid, str);
+                    if ((*env)->ExceptionCheck(env))
+                    {
+                            ERRORRETURNV;
+                    }
+                }
             }
         }
         de = readdir(dp);
     }
+    closedir(dp);
 }
 
 void exception(JNIEnv * env, const char* clazz, const char* message)
@@ -458,7 +491,7 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 
 char* configure(
     JNIEnv *env, 
-    int fd, 
+    CTX* c, 
     int bauds, 
     int parity, 
     int databits, 
@@ -466,14 +499,16 @@ char* configure(
     int flow
 	)
 {
-    struct termios tio;
     int baudrate = 0;
     int bits = 0;
     int stop = 0;
     int par = 0;
     int fctrl = 0;
     
-    bzero(&tio, sizeof(tio));
+    if (tcgetattr(c->fd, &c->oldtio) < 0)
+    {
+        return "tcgetattr failed";
+    }
     
     switch (bauds)
     {
@@ -626,12 +661,29 @@ char* configure(
         return "illegal flow control value";
         break;
     }
-    tio.c_cflag = baudrate | bits | stop | par;
-    tio.c_lflag = ICANON;
-    tio.c_cc[VMIN] = 1;
+    c->newtio.c_cflag = baudrate | bits | stop | par;
+    c->newtio.c_lflag = ICANON;
+    c->newtio.c_cc[VMIN] = 1;
     
-    tcsetattr(fd, TCSANOW, &tio);
+    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
+    {
+        return "tcsetattr failed";
+    }
     return NULL;
+}
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
+  (JNIEnv *env, jobject obj, jlong ctx, jint min, jint time)
+{
+    CTX* c = (CTX*)ctx;
+    
+    c->newtio.c_cc[VMIN] = min;
+    c->newtio.c_cc[VTIME] = time;
+    
+    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
+    {
+        exception(env, "java/io/IOException", "tcsetattr failed");
+        ERRORRETURNV;
+    }
 }
 
 void hexdump(int count, char* buf, int len, int bufsize)

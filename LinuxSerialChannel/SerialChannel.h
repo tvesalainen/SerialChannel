@@ -24,12 +24,20 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
+#include <malloc.h>
 #include "org_vesalainen_comm_channel_linux_LinuxSerialChannel.h"
 
+typedef struct _CTX
+{
+    int fd;
+    char szPort[PATH_MAX];
+    struct termios oldtio;
+    struct termios newtio;
+} CTX;
 void exception(JNIEnv * env, const char* clazz, const char* message);
 char* configure(
 	JNIEnv *env, 
-	int fd, 
+	CTX *c, 
 	int bauds, 
 	int parity, 
 	int databits, 

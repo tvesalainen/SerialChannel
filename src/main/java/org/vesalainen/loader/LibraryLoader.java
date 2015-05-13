@@ -24,6 +24,8 @@ import java.nio.file.Path;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import org.vesalainen.comm.channel.SerialChannel;
 
 /**
  *
@@ -31,18 +33,65 @@ import java.util.Map;
  */
 public class LibraryLoader
 {
-    private static final Map<String,Path> map = new HashMap<>();
+    public enum OS {Windows, Linux};
     
+    private static final Map<String,Path> map = new HashMap<>();
+    private static OS os;
+    
+    public static OS getOS()
+    {
+        if (os == null)
+        {
+            String osName = System.getProperty("os.name");
+            switch (osName)
+            {
+                case "Windows":
+                    os = OS.Windows;
+                    break;
+                case "Linux":
+                    os = OS.Linux;
+                    break;
+                default:
+                    throw new UnsupportedOperationException(osName+" not supported");
+            }
+        }
+        return os;
+    }
+
     public static void loadLibrary(Class<?> clazz, String lib) throws IOException
     {
         String osArch = System.getProperty("os.arch");
-        if (osArch.contains("64"))
+        switch (getOS())
         {
-            lib = lib+"64";
-        }
-        else
-        {
-            lib = lib+"32";
+            case Linux:
+                switch (osArch)
+                {
+                    case "amd64":
+                        lib = lib+"x86_64";
+                        break;
+                    case "x86":
+                        lib = lib+"i686";
+                        break;
+                    case "arm":
+                        lib = lib+"armv6l";
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(osArch+" not supported");
+                }
+                break;
+            case Windows:
+                switch (osArch)
+                {
+                    case "amd64":
+                        lib = lib+"64";
+                        break;
+                    case "x86":
+                        lib = lib+"32";
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(osArch+" not supported");
+                }
+                break;
         }
         try
         {

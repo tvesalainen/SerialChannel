@@ -83,7 +83,7 @@ public class SerialChannelT
             Logger.getLogger(SerialChannelT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    //@Test
+    @Test
     public void test1()
     {
         try
@@ -111,7 +111,7 @@ public class SerialChannelT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testWakeSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();

@@ -11,14 +11,14 @@ CLASSFILE=$(CLASSPATH)/org/vesalainen/comm/channel/linux/LinuxSerialChannel.clas
 CLASS=org.vesalainen.comm.channel.linux.LinuxSerialChannel
 
 $(HEADER):	$(CLASSFILE)
-	$(JAVAH) -d $(SOURCEDIR) -cp $(CLASSPATH) $(CLASS)
+	$(JAVAH) -v -d $(SOURCEDIR) -cp $(CLASSPATH) $(CLASS)
 
 SerialChannel.o:	SerialChannel.c $(HEADER)
 SerialChannel.so:	SerialChannel.o
 	ld -shared -o SerialChannel.so SerialChannel.o -lc
 
 install:	SerialChannel.so
-	cp SerialChannel.so $(RESOURCES)/SerialChannel$(MACHINE).so
+	cp SerialChannel.so $(RESOURCES)/libSerialChannel$(MACHINE).so
 
 all:	install
 

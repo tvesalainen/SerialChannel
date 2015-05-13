@@ -34,6 +34,9 @@ import java.util.Set;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
+import org.vesalainen.loader.LibraryLoader;
+import org.vesalainen.loader.LibraryLoader.OS;
+import static org.vesalainen.loader.LibraryLoader.getOS;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
@@ -54,8 +57,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
     public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
 
-    private enum OS {Windows, Linux};
-    
     protected String port;
     protected Speed speed;
     protected Parity parity = Parity.NONE;
@@ -73,19 +74,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         super(SerialSelectorProvider.provider());
     }
-    private static OS getOS()
-    {
-        String osName = System.getProperty("os.name");
-        if (osName.contains("indows"))
-        {
-            return OS.Windows;
-        }
-        throw new UnsupportedOperationException(osName+" not supported");
-    }
-
     public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
-        OS os = getOS();
+        OS os = LibraryLoader.getOS();
         switch (os)
         {
             case Windows:
@@ -480,6 +471,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             {
                 case Windows:
                     channel = new WinSerialChannel(port, speed, parity, stopBits, dataBits, flowControl);
+                    break;
+                case Linux:
+                    channel = new LinuxSerialChannel(port, speed, parity, stopBits, dataBits, flowControl);
                     break;
                 default:
                     throw new UnsupportedOperationException("OS not supported");
