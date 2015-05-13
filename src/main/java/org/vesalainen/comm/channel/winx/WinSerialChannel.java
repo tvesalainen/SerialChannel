@@ -20,12 +20,9 @@ import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.CommError;
@@ -33,7 +30,6 @@ import org.vesalainen.comm.channel.CommStat;
 import org.vesalainen.comm.channel.CommStatus;
 import org.vesalainen.comm.channel.SerialSelectionKey;
 import static org.vesalainen.comm.channel.winx.WinCommEvent.CHAR;
-import static org.vesalainen.comm.channel.winx.WinCommEvent.EMPTY;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -388,6 +384,12 @@ public class WinSerialChannel extends SerialChannel
     {
         this.writeTotalTimeoutConstant = writeTotalTimeoutConstant;
         return this;
+    }
+
+    @Override
+    public void wakeupSelect() throws IOException
+    {
+        setEventMask(0);
     }
     
 }

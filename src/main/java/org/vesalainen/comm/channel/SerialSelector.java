@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2015 tkv
  *
@@ -34,6 +35,7 @@ public class SerialSelector extends AbstractSelector
     private final Set<SelectionKey> keys = new HashSet<>();
     private final Set<SelectionKey> selected = new HashSet<>();
     private final Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
+    private boolean wakeupPending;
     
     public SerialSelector()
     {
@@ -90,6 +92,11 @@ public class SerialSelector extends AbstractSelector
         {
             keys.removeAll(cancelledKeys);
         }
+        if (wakeupPending)
+        {
+            wakeupPending = false;
+            return 0;
+        }
         if (!keys.isEmpty())
         {
             begin();
@@ -117,6 +124,25 @@ public class SerialSelector extends AbstractSelector
     @Override
     public Selector wakeup()
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try
+        {
+            if (!threads.isEmpty())
+            {
+                for (SelectionKey sk : keys)
+                {
+                    SerialChannel channel = (SerialChannel) sk.channel();
+                    channel.wakeupSelect();
+                }
+            }
+            else
+            {
+                wakeupPending = true;
+            }
+            return this;
+        }
+        catch (IOException ex)
+        {
+            throw new IllegalArgumentException(ex);
+        }
     }
 }

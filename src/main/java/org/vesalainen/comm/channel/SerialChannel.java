@@ -266,6 +266,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     protected abstract int waitEvent(int mask) throws IOException;
 
+    public abstract void wakeupSelect() throws IOException;
+
     /**
      * Removes event observer.
      * @param observer

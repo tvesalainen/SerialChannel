@@ -95,7 +95,6 @@ public class SerialChannelT
                 Builder builder = new Builder(port, 4800)
                         .setParity(SerialChannel.Parity.SPACE);
                 SerialChannel sc = builder.get();
-                sc.connect();
                 try (InputStream is = sc.getInputStream(80))
                 {
                     int cc = is.read();
@@ -113,6 +112,53 @@ public class SerialChannelT
         }
     }
     @Test
+    public void testWakeSelect()
+    {
+        final ExecutorService exec = Executors.newCachedThreadPool();
+        List<String> ports = SerialChannel.getAllPorts();
+        assertNotNull(ports);
+        if (ports.size() >= 2)
+        {
+            try
+            {
+                final SerialSelector selector = new SerialSelector();
+                Builder builder1 = new Builder(ports.get(0), Speed.B1200)
+                        .setBlocking(false);
+                Builder builder2 = new Builder(ports.get(1), Speed.B1200)
+                        .setBlocking(false);
+                try (SerialChannel c1 = builder1.get();
+                    SerialChannel c2 = builder2.get()
+                        )
+                {
+                    SelectionKey skr1 = selector.register(c1, OP_READ, null);
+                    SelectionKey skr2 = selector.register(c2, OP_READ, null);
+                    TimerTask task = new TimerTask() {
+
+                        @Override
+                        public void run()
+                        {
+                            selector.wakeup();
+                        }
+                    };
+                    Timer timer = new Timer();
+                    timer.schedule(task, 1000);
+                    long start = System.currentTimeMillis();
+                    selector.select();
+                    assertEquals(1000, System.currentTimeMillis()-start, 100);
+                    selector.wakeup();
+                    selector.select();
+                    start = System.currentTimeMillis();
+                    selector.select(1000);
+                    assertEquals(1000, System.currentTimeMillis()-start, 100);
+                }
+            }
+            catch (IOException ex)
+            {
+                fail(ex.getMessage());
+            }
+        }
+    }
+    //@Test
     public void testSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -197,7 +243,7 @@ public class SerialChannelT
             }
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
         ExecutorService exec = Executors.newCachedThreadPool();
