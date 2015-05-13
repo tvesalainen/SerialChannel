@@ -24,7 +24,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <errno.h>
-#include "org_vesalainen_comm_channel_winx_WinSerialChannel.h"
+#include "org_vesalainen_comm_channel_linux_LinuxSerialChannel.h"
 
 void exception(JNIEnv * env, const char* clazz, const char* message);
 char* configure(
