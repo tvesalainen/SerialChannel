@@ -198,7 +198,15 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      */
     public static List<String> getAllPorts()
     {
-        return WinSerialChannel.getAllPorts();
+        switch (getOS())
+        {
+            case Windows:
+                return WinSerialChannel.getAllPorts();
+            case Linux:
+                return LinuxSerialChannel.getAllPorts();
+            default:
+                throw new UnsupportedOperationException("OS not supported");
+        }
     }
 
     public DataBits getDataBits()

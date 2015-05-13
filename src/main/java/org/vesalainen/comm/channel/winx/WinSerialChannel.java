@@ -93,22 +93,13 @@ public class WinSerialChannel extends SerialChannel
     {
         if (handle != -1)
         {
-            //if (block)
-            {
-                timeouts(handle,
-                        readIntervalTimeout,
-                        readTotalTimeoutMultiplier,
-                        readTotalTimeoutConstant,
-                        writeTotalTimeoutMultiplier,
-                        writeTotalTimeoutConstant
-                );
-            }
-            /*
-            else
-            {
-                timeouts(handle, 0, 0, 0, 0, 0);
-            }
-                    */
+            timeouts(handle,
+                    readIntervalTimeout,
+                    readTotalTimeoutMultiplier,
+                    readTotalTimeoutConstant,
+                    writeTotalTimeoutMultiplier,
+                    writeTotalTimeoutConstant
+            );
         }
     }
     @Override

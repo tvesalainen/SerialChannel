@@ -18,7 +18,12 @@ package org.vesalainen.comm.channel.linux;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.CommError;
 import org.vesalainen.comm.channel.CommStat;
@@ -32,41 +37,131 @@ import org.vesalainen.comm.channel.SerialChannel;
 public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
-
+    private long handle = -1;
+    private int min;
+    private int time;
+    
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    public static List<String> getAllPorts()
+    {
+        List<String> list = new ArrayList<>();
+        doEnumPorts(list);
+        return list;
+    }
+
+    private static native void doEnumPorts(List<String> list);
+
     @Override
     protected void connect() throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        handle = initialize(
+                port.getBytes(), 
+                getSpeed(speed), 
+                parity.ordinal(), 
+                dataBits.ordinal(), 
+                stopBits.ordinal(), 
+                flowControl.ordinal()
+        );
+        setTimeouts();
     }
 
+        private void setTimeouts() throws IOException
+    {
+        if (handle != -1)
+        {
+            if (block)
+            {
+                timeouts(handle, min, time);
+            }
+            else
+            {
+                timeouts(handle, 0, 0);
+            }
+        }
+    }
+    private native long initialize(
+            byte[] port, 
+            int baudRate, 
+            int parity, 
+            int dataBits, 
+            int stopBits, 
+            int flowControl
+    ) throws IOException;
+
+    private native void timeouts(
+            long handle,
+            int min,
+            int time
+    ) throws IOException;
+    
     @Override
     public void flush() throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doFlush(handle);
     }
+
+    private native void doFlush(long handle) throws IOException;
 
     @Override
     public boolean isConnected()
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return connected(handle);
     }
 
+    private native boolean connected(long handle);
+    
     @Override
     public int read(ByteBuffer dst) throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (handle != -1)
+        {
+            int count = 0;
+            try
+            {
+                begin();
+                return doRead(handle, dst);
+            }
+            finally
+            {
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
     }
+
+    private native int doRead(long handle, ByteBuffer dst) throws IOException;
 
     @Override
     public int write(ByteBuffer src) throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (handle != -1)
+        {
+            int count = 0;
+            try
+            {
+                begin();
+                count = doWrite(handle, src);
+                return count;
+            }
+            finally
+            {
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
     }
+
+    private native int doWrite(long handle, ByteBuffer src) throws IOException;
 
     @Override
     public CommStatus getCommStatus() throws IOException
@@ -77,8 +172,11 @@ public class LinuxSerialChannel extends SerialChannel
     @Override
     protected void doClose() throws IOException
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        doClose(handle);
+        handle = -1;
     }
+
+    private native void doClose(long handle) throws IOException;
 
     @Override
     protected void setEventMask(int mask) throws IOException
@@ -101,7 +199,7 @@ public class LinuxSerialChannel extends SerialChannel
     @Override
     public int validOps()
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return OP_READ | OP_WRITE;
     }
 
     @Override
