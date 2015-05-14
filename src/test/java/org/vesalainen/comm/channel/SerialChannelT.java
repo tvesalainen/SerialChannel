@@ -157,7 +157,7 @@ public class SerialChannelT
             }
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -242,9 +242,10 @@ public class SerialChannelT
             }
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
+        //SerialChannel.debug(true);
         ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
@@ -258,10 +259,10 @@ public class SerialChannelT
                     {
                         for (DataBits bits : new DataBits[] {DataBits.DATABITS_8})
                         {
-                            for (Speed speed : new Speed[] {Speed.B4800, Speed.B38400, Speed.B256000})
+                            for (Speed speed : new Speed[] {Speed.B4800, Speed.B38400, Speed.B115200})
                             {
                                 System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                int count = Integer.parseInt(speed.name().substring(4))/4;
+                                int count = SerialChannel.getSpeed(speed)/4;
                                 Builder builder1 = new Builder(ports.get(0), speed)
                                         .setFlowControl(flow)
                                         .setParity(parity)

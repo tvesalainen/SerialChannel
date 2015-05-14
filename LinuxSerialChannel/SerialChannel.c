@@ -24,16 +24,148 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 #define MIN(x,y)	(x) < (y) ? (x) : (y);
 #define MAX(x,y)	(x) > (y) ? (x) : (y);
-#define ERRORRETURNV fprintf(stderr, "Error at %d\n", __LINE__);
-#define ERRORRETURN fprintf(stderr, "Error at %d\n", __LINE__);return 0;
+#define ERRORRETURNV fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);
+#define ERRORRETURN fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);return 0;
 #define DEBUG(s) if (debug) fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);
 
 static int debug;
 
+static volatile wake = 0;
+static void sighdl(int sig)
+{
+    wake = 1;
+    fprintf(stderr, "sighdl\n");
+}
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {
     debug = on;
+}
+
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+  (JNIEnv *env, jclass cls)
+{
+    SCTX *s = (SCTX*)calloc(1, sizeof(SCTX));
+    sigset_t mask;
+    struct sigaction act;
+    
+    bzero(&act, sizeof(act));
+    
+    act.sa_handler = sighdl;
+    
+    if (sigaction(SIGUSR1, &act, NULL) < 0)
+    {
+        exception(env, "java/io/IOException", "sigaction");
+        ERRORRETURN;
+    }
+        
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    
+    if (sigprocmask(SIG_BLOCK, &mask, &s->origmask) < 0)
+    {
+        exception(env, "java/io/IOException", "sigprocmask");
+        ERRORRETURN;
+    }
+    
+    return (jlong)s;
+}
+
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
+  (JNIEnv *env, jclass cls, jlong sctx, jint readCount, jint writeCount, jlongArray reads, jlongArray writes, jint timeout)
+{
+    jlong *readArr;
+    jlong *writeArr;
+    SCTX *s = (SCTX*)sctx;
+    
+    int nfds = 0;
+    fd_set readfds;
+    fd_set writefds;
+    struct timespec ts;
+    sigset_t sigmask;
+    int ii, rc;
+    
+    bzero(&ts, sizeof(ts));
+    
+    s->selectThread = pthread_self();
+    
+    readArr = (*env)->GetLongArrayElements(env, reads, NULL);
+    if (readArr == NULL)
+    {
+        exception(env, "java/io/IOException", "GetLongArrayElements");
+        ERRORRETURN;
+    }
+    writeArr = (*env)->GetLongArrayElements(env, writes, NULL);
+    if (writeArr == NULL)
+    {
+        exception(env, "java/io/IOException", "GetLongArrayElements");
+        ERRORRETURN;
+    }
+    FD_ZERO(&readfds);
+    FD_ZERO(&writefds);
+    for (ii=0;ii<readCount;ii++)
+    {
+        CTX *c = (CTX*)readArr[ii];
+        FD_SET(c->fd, &readfds);
+        nfds = MAX(nfds, c->fd);
+    }
+    for (ii=0;ii<writeCount;ii++)
+    {
+        CTX *c = (CTX*)writeArr[ii];
+        FD_SET(c->fd, &writefds);
+        nfds = MAX(nfds, c->fd);
+    }
+
+    if (timeout <0)
+    {
+        timeout = 0xFFFFFF;
+    }
+    ts.tv_sec = timeout / 1000;
+    ts.tv_nsec = (timeout % 1000)*1000000;
+    
+    sigemptyset(&sigmask);
+    sigaddset(&sigmask, SIGUSR1);
+
+    rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &sigmask);
+    if (rc < 0 && errno != EINTR)
+    {
+        (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
+        (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
+        exception(env, "java/io/IOException", "pselect");
+        ERRORRETURN;
+    }
+    if (rc > 0)
+    {
+        for (ii=0;ii<readCount;ii++)
+        {
+            CTX *c = (CTX*)readArr[ii];
+            readArr[ii] = FD_ISSET(c->fd, &readfds);
+        }
+        for (ii=0;ii<writeCount;ii++)
+        {
+            CTX *c = (CTX*)writeArr[ii];
+            writeArr[ii] = FD_ISSET(c->fd, &writefds);
+        }
+    }
+    (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
+    (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
+    s->selectThread = 0;
+    return rc;
+}
+
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
+  (JNIEnv *env, jclass cls, jlong sctx)
+{
+    SCTX *c = (SCTX*)sctx;
+
+    if (c->selectThread)
+    {
+        if (pthread_kill(c->selectThread, SIGUSR1) < 0)
+        {
+            exception(env, "java/io/IOException", "pthread_kill");
+            ERRORRETURNV
+        }
+    }
 }
 
 JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
@@ -96,7 +228,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
     if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
         exception(env, "java/io/IOException", "tcflush failed");
-        (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         ERRORRETURN
     }
     
@@ -202,7 +333,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 
     ssize_t rc;
     CTX* c = (CTX*)ctx;
-    DEBUG("read");
+    DEBUG("init read");
     cls = (*env)->GetObjectClass(env, bb);
     pmid = (*env)->GetMethodID(env, cls, "position", "()I");
     if (pmid == NULL)
@@ -662,7 +793,6 @@ char* configure(
         break;
     }
     c->newtio.c_cflag = baudrate | bits | stop | par;
-    c->newtio.c_lflag = ICANON;
     c->newtio.c_cc[VMIN] = 1;
     
     if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)

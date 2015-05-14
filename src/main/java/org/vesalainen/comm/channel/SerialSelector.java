@@ -33,7 +33,7 @@ import java.util.TreeSet;
  */
 public class SerialSelector extends AbstractSelector
 {
-    private Set<SelectionKey> keys = new TreeSet<>();
+    private Set<SelectionKey> keys = new HashSet<>();
     private Set<SelectionKey> selected = new HashSet<>();
     private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
     

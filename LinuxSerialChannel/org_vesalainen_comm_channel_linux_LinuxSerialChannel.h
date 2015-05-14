@@ -9,6 +9,16 @@ extern "C" {
 #endif
 #undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION 1L
+#undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors
+#define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors 64L
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    staticInit
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+  (JNIEnv *, jclass);
+
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    version
@@ -16,6 +26,22 @@ extern "C" {
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_version
   (JNIEnv *, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    setDebug
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
+  (JNIEnv *, jclass, jboolean);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doSelect
+ * Signature: (JII[J[JI)I
+ */
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
+  (JNIEnv *, jclass, jlong, jint, jint, jlongArray, jlongArray, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
@@ -80,6 +106,14 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
   (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    wakeupSelect
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

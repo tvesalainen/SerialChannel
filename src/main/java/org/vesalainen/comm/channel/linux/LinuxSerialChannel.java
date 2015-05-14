@@ -45,7 +45,7 @@ public class LinuxSerialChannel extends SerialChannel
     private static long[] writes = new long[MaxSelectors];
 
     private long handle = -1;
-    private int min;
+    private int min=1;
     private int time;
     
     static
@@ -79,6 +79,13 @@ public class LinuxSerialChannel extends SerialChannel
     private static native long staticInit();
     
     private native int version();
+
+    public static void debug(boolean on)
+    {
+        setDebug(on);
+    }
+
+    private static native void setDebug(boolean on);
 
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
@@ -293,9 +300,16 @@ public class LinuxSerialChannel extends SerialChannel
 
     public static void wakeupSelect(Set<SelectionKey> keys)
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try
+        {
+            wakeupSelect(sHandle);
+        }
+        catch (IOException ex)
+        {
+            throw new IllegalArgumentException(ex);
+        }
     }
     
-    private native
+    private static native void wakeupSelect(long sHandle) throws IOException;
     
 }
