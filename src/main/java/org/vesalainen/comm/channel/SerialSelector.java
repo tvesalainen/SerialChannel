@@ -25,6 +25,7 @@ import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *
@@ -32,7 +33,7 @@ import java.util.Set;
  */
 public class SerialSelector extends AbstractSelector
 {
-    private Set<SelectionKey> keys = new HashSet<>();
+    private Set<SelectionKey> keys = new TreeSet<>();
     private Set<SelectionKey> selected = new HashSet<>();
     private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
     
@@ -87,26 +88,29 @@ public class SerialSelector extends AbstractSelector
     }
 
     @Override
-    public int select(long timeout) throws IOException
+    public synchronized int select(long timeout) throws IOException
     {
-        Set<SelectionKey> cancelledKeys = cancelledKeys();
-        synchronized(cancelledKeys)
+        synchronized(keys)
         {
-            keys.removeAll(cancelledKeys);
-        }
-        if (!keys.isEmpty())
-        {
-            begin();
-            Thread currentThread = Thread.currentThread();
-            threads.add(currentThread);
-            try
+            Set<SelectionKey> cancelledKeys = cancelledKeys();
+            synchronized(cancelledKeys)
             {
-                return SerialChannel.select(keys, selected, (int)timeout);
+                keys.removeAll(cancelledKeys);
             }
-            finally
+            if (!keys.isEmpty())
             {
-                threads.remove(currentThread);
-                end();
+                begin();
+                Thread currentThread = Thread.currentThread();
+                threads.add(currentThread);
+                try
+                {
+                    return SerialChannel.select(keys, selected, (int)timeout);
+                }
+                finally
+                {
+                    threads.remove(currentThread);
+                    end();
+                }
             }
         }
         return 0;
@@ -121,18 +125,7 @@ public class SerialSelector extends AbstractSelector
     @Override
     public Selector wakeup()
     {
-        try
-        {
-            for (SelectionKey sk : keys)
-            {
-                SerialChannel channel = (SerialChannel) sk.channel();
-                channel.wakeupSelect();
-            }
-            return this;
-        }
-        catch (IOException ex)
-        {
-            throw new IllegalArgumentException(ex);
-        }
+        SerialChannel.wakeupSelect(keys);
+        return this;
     }
 }

@@ -54,6 +54,7 @@ import static org.vesalainen.loader.LibraryLoader.getOS;
  */
 public abstract class SerialChannel extends AbstractSelectableChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
 {
+
     /**
      * Baud rate. Depends on used devices which are supported.
      */
@@ -94,6 +95,19 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         }
     }
     
+    public static void wakeupSelect(Set<SelectionKey> keys)
+    {
+        OS os = LibraryLoader.getOS();
+        switch (os)
+        {
+            case Windows:
+                WinSerialChannel.wakeupSelect(keys);
+            case Linux:
+                LinuxSerialChannel.wakeupSelect(keys);
+            default:
+                throw new UnsupportedOperationException(os+" not supported");
+        }
+    }
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException
     {
@@ -294,8 +308,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected abstract void setEventMask(int mask) throws IOException;
 
     protected abstract int waitEvent(int mask) throws IOException;
-
-    public abstract void wakeupSelect() throws IOException;
 
     /**
      * Removes event observer.

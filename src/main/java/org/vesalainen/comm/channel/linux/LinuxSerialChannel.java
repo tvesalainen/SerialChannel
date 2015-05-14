@@ -235,8 +235,7 @@ public class LinuxSerialChannel extends SerialChannel
         return OP_READ | OP_WRITE;
     }
 
-    @Override
-    public void wakeupSelect() throws IOException
+    public static void wakeupSelect(Set<SelectionKey> keys)
     {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }

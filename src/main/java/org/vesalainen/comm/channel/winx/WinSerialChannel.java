@@ -125,7 +125,6 @@ public class WinSerialChannel extends SerialChannel
             wakeupPending = false;
             return 0;
         }
-        int size = selected.size();
         long[] handles = new long[keys.size()];
         int[] masks = new int[handles.length];
         int index = 0;
@@ -164,7 +163,7 @@ public class WinSerialChannel extends SerialChannel
                 index++;
             }
         }
-        return selected.size() - size;
+        return rc;
     }
     private native long initialize(
             byte[] port, 
@@ -387,12 +386,22 @@ public class WinSerialChannel extends SerialChannel
         return this;
     }
 
-    @Override
-    public void wakeupSelect() throws IOException
-    {   // TODO think about threads!!!
+    public static void wakeupSelect(Set<SelectionKey> keys)
+    {
         if (selectPending)
         {
-            setEventMask(0);
+            try
+            {
+                for (SelectionKey sk : keys)
+                {
+                    WinSerialChannel channel = (WinSerialChannel) sk.channel();
+                    channel.setEventMask(0);
+                }
+            }
+            catch (IOException ex)
+            {
+                throw new IllegalArgumentException(ex);
+            }
         }
         else
         {
