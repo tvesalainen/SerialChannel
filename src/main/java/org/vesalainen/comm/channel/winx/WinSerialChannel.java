@@ -48,6 +48,9 @@ public class WinSerialChannel extends SerialChannel
     private int writeTotalTimeoutMultiplier;
     private int writeTotalTimeoutConstant;
 
+    private static boolean wakeupPending;
+    private static boolean selectPending;
+    
     static
     {
         try
@@ -117,6 +120,11 @@ public class WinSerialChannel extends SerialChannel
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
+        if (wakeupPending)
+        {
+            wakeupPending = false;
+            return 0;
+        }
         int size = selected.size();
         long[] handles = new long[keys.size()];
         int[] masks = new int[handles.length];
@@ -134,7 +142,9 @@ public class WinSerialChannel extends SerialChannel
             masks[index] = mask;
             index++;
         }
+        selectPending = true;
         int rc = WinSerialChannel.doSelect(handles, masks, timeout);
+        selectPending = false;
         if (rc != 0)
         {
             index = 0;
@@ -379,8 +389,15 @@ public class WinSerialChannel extends SerialChannel
 
     @Override
     public void wakeupSelect() throws IOException
-    {
-        setEventMask(0);
+    {   // TODO think about threads!!!
+        if (selectPending)
+        {
+            setEventMask(0);
+        }
+        else
+        {
+            wakeupPending = true;
+        }
     }
     
 }

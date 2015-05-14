@@ -82,12 +82,12 @@ public class SerialChannelT
             Logger.getLogger(SerialChannelT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    @Test
+    //@Test
     public void test1()
     {
         try
         {
-            List<String> allPorts = SerialChannel.getAllPorts();
+            List<String> allPorts = SerialChannel.getFreePorts();
             assertNotNull(allPorts);
             for (String port : allPorts)
             {
@@ -110,11 +110,11 @@ public class SerialChannelT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void testWakeSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
-        List<String> ports = SerialChannel.getAllPorts();
+        List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         if (ports.size() >= 2)
         {
@@ -157,11 +157,11 @@ public class SerialChannelT
             }
         }
     }
-    //@Test
+    @Test
     public void testSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
-        List<String> ports = SerialChannel.getAllPorts();
+        List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         if (ports.size() >= 2)
         {
@@ -242,11 +242,11 @@ public class SerialChannelT
             }
         }
     }
-    //@Test
+    @Test
     public void regressionTest()
     {
         ExecutorService exec = Executors.newCachedThreadPool();
-        List<String> ports = SerialChannel.getAllPorts();
+        List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         if (ports.size() >= 2)
         {

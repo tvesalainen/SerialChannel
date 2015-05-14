@@ -32,10 +32,9 @@ import java.util.Set;
  */
 public class SerialSelector extends AbstractSelector
 {
-    private final Set<SelectionKey> keys = new HashSet<>();
-    private final Set<SelectionKey> selected = new HashSet<>();
-    private final Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
-    private boolean wakeupPending;
+    private Set<SelectionKey> keys = new HashSet<>();
+    private Set<SelectionKey> selected = new HashSet<>();
+    private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
     
     public SerialSelector()
     {
@@ -47,11 +46,14 @@ public class SerialSelector extends AbstractSelector
     {
         synchronized(threads)
         {
-            for (Thread t : threads)
+            if (!threads.isEmpty())
             {
-                t.interrupt();
+                wakeup();
             }
         }
+        keys = null;
+        selected = null;
+        threads = null;
     }
 
     @Override
@@ -92,11 +94,6 @@ public class SerialSelector extends AbstractSelector
         {
             keys.removeAll(cancelledKeys);
         }
-        if (wakeupPending)
-        {
-            wakeupPending = false;
-            return 0;
-        }
         if (!keys.isEmpty())
         {
             begin();
@@ -126,17 +123,10 @@ public class SerialSelector extends AbstractSelector
     {
         try
         {
-            if (!threads.isEmpty())
+            for (SelectionKey sk : keys)
             {
-                for (SelectionKey sk : keys)
-                {
-                    SerialChannel channel = (SerialChannel) sk.channel();
-                    channel.wakeupSelect();
-                }
-            }
-            else
-            {
-                wakeupPending = true;
+                SerialChannel channel = (SerialChannel) sk.channel();
+                channel.wakeupSelect();
             }
             return this;
         }

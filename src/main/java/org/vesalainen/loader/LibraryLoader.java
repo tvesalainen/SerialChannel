@@ -43,16 +43,20 @@ public class LibraryLoader
         if (os == null)
         {
             String osName = System.getProperty("os.name");
-            switch (osName)
+            if (osName.contains("inux"))
             {
-                case "Windows":
+                os = OS.Linux;
+            }
+            else
+            {
+                if (osName.contains("indows"))
+                {
                     os = OS.Windows;
-                    break;
-                case "Linux":
-                    os = OS.Linux;
-                    break;
-                default:
+                }
+                else
+                {
                     throw new UnsupportedOperationException(osName+" not supported");
+                }
             }
         }
         return os;

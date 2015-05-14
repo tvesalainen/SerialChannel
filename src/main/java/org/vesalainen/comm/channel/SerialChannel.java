@@ -29,9 +29,12 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
@@ -185,6 +188,30 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             default:
                 throw new UnsupportedOperationException("OS not supported");
         }
+    }
+    /**
+     * Returns all ports that can be opened.
+     * @return 
+     */
+    public static List<String> getFreePorts()
+    {
+        Builder builder = new Builder("", Speed.B57600);
+        List<String> allPorts = getAllPorts();
+        Iterator<String> iterator = allPorts.iterator();
+        while (iterator.hasNext())
+        {
+            String port = iterator.next();
+            builder.setPort(port);
+            try (SerialChannel sc = builder.get())
+            {
+                
+            }
+            catch (IOException ex)
+            {
+                iterator.remove();
+            }
+        }
+        return allPorts;
     }
     /**
      * Returns all available ports.
