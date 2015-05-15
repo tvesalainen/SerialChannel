@@ -46,6 +46,8 @@ public class Transmitter implements Callable<Void>
                 int next = rand.next(bits);
                 os.write(next);
             }
+            os.flush();
+            System.err.println("transmitted all");
         }
         return null;
     }

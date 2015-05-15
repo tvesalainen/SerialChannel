@@ -51,6 +51,7 @@ public class Receiver implements Callable<Integer>
                     errors++;
                 }
             }
+            System.err.println("received all");
         }
         return errors;
     }

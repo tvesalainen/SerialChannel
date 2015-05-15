@@ -195,8 +195,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 {
 	CTX *c = (CTX*)ctx;
 
-	DEBUG("PurgeComm");
-	PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
+	//DEBUG("PurgeComm");
+	//PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
+	DEBUG("FlushFileBuffers");
+	FlushFileBuffers(c->hComm);
 
 	DEBUG("CloseHandle");
 	if (!CloseHandle(c->hComm))

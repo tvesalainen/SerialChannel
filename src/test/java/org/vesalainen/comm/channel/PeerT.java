@@ -66,6 +66,7 @@ public class PeerT
                                     Future<Integer> frec1 = exec.submit(rec1);
                                     Transmitter tra1 = new Transmitter(c1, count);
                                     Future<Void> ftra1 = exec.submit(tra1);
+                                    ftra1.get();
                                     assertEquals(Integer.valueOf(0), frec1.get(200, TimeUnit.SECONDS));
                                 }
                             }
