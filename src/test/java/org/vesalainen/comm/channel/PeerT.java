@@ -71,6 +71,7 @@ public class PeerT
                                     ftra1.get();
                                     assertEquals(Integer.valueOf(0), frec1.get(200, TimeUnit.SECONDS));
                                 }
+                                Thread.currentThread().wait(1000);
                             }
                         }
                     }

@@ -241,6 +241,11 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 {
     CTX* c = (CTX*)ctx;
     DEBUG("close");
+    if (tcdrain(c->fd) < 0)
+    {
+        exception(env, "java/io/IOException", "tcdrain");
+        ERRORRETURNV
+    }
     if (tcsetattr(c->fd, TCSANOW, &c->oldtio) < 0)
     {
         exception(env, "java/io/IOException", "tcsetattr failed");
