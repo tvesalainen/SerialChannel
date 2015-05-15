@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
@@ -42,17 +43,18 @@ public class PeerT
         ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
+        assertTrue(ports.size() > 0);
         if (ports.size() >= 1)
         {
             try 
             {
                 for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
                 {
-                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.SPACE})
+                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
                     {
                         for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                         {
-                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B38400, SerialChannel.Speed.B115200})
+                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800})
                             {
                                 System.err.println(speed+" "+bits+" "+parity+" "+flow);
                                 int count = SerialChannel.getSpeed(speed)/4;

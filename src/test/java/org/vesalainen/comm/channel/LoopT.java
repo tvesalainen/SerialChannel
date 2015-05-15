@@ -41,7 +41,7 @@ public class LoopT
     {
     }
 
-    //@Test
+    @Test
     public void test1()
     {
         try
@@ -51,7 +51,7 @@ public class LoopT
             for (String port : allPorts)
             {
                 Builder builder = new Builder(port, 4800)
-                        .setParity(SerialChannel.Parity.SPACE);
+                        .setParity(SerialChannel.Parity.NONE);
                 SerialChannel sc = builder.get();
                 try (InputStream is = sc.getInputStream(80))
                 {
@@ -69,7 +69,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -116,7 +116,7 @@ public class LoopT
             }
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -201,7 +201,7 @@ public class LoopT
             }
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);

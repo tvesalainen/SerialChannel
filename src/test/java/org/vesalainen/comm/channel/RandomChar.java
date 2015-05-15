@@ -33,11 +33,11 @@ public class RandomChar
     {
         if (bits >= 7)
         {
-            return random.nextInt((int)Math.pow(2, bits)-32)+32;
+            return (random.nextInt((int)Math.pow(2, bits)-32)+32)&~31;
         }
         else
         {
-            return random.nextInt((int)Math.pow(2, bits));
+            return (random.nextInt((int)Math.pow(2, bits)))&~31;
         }
     }
     public void reset()

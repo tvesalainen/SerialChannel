@@ -134,6 +134,13 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	}
 	(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
+	DEBUG("PurgeComm");
+	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
+	{
+		exception(env, "java/io/IOException", "PurgeComm");
+		ERRORRETURNV
+	}
+
 	err = configure(
 		env, 
 		c->hComm, 
