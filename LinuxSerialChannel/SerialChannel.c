@@ -55,7 +55,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     if (sigaction(SIGUSR1, &act, NULL) < 0)
     {
         exception(env, "java/io/IOException", "sigaction");
-        ERRORRETURN;
+        ERRORRETURNV;
     }
         
     sigemptyset(&mask);
@@ -64,7 +64,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     if (pthread_sigmask(SIG_BLOCK, &mask, &origmask) < 0)
     {
         exception(env, "java/io/IOException", "sigprocmask");
-        ERRORRETURN;
+        ERRORRETURNV;
     }
     
 }
@@ -119,7 +119,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
     ts.tv_sec = timeout / 1000;
     ts.tv_nsec = (timeout % 1000)*1000000;
-    rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &s->origmask);
+    rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &origmask);
     if (rc < 0 && errno != EINTR)
     {
         (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
@@ -214,12 +214,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
     }
     (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
-    if (tcflush(c->fd, TCIOFLUSH) < 0)
-    {
-        exception(env, "java/io/IOException", "tcflush failed");
-        ERRORRETURN
-    }
-    
     err = configure(
         env, 
         c, 
@@ -735,10 +729,10 @@ char* configure(
         par = PARENB;
         break;
     case 3:	// MARK
-        par = CMSPAR | PARODD;
+        par = PARENB | CMSPAR | PARODD;
         break;
     case 4:	// SPACE
-        par = CMSPAR;
+        par = PARENB | CMSPAR;
         break;
     default:
         return "illegal parity value";
@@ -776,14 +770,27 @@ char* configure(
     switch (flow)
     {
     case 0:	// NONE
+        c->newtio.c_iflag |= IGNPAR;
         break;
+    case 1:	// XONXOFF
+        c->newtio.c_iflag |= IXON | IXOFF;
+        break;
+    case 2:	// RTSCTS
+        fctrl = CRTSCTS;
+        break;
+    case 3:	// DSRDTR
     default:
         return "illegal flow control value";
         break;
     }
-    c->newtio.c_cflag = baudrate | bits | stop | par;
+    c->newtio.c_iflag |= PARMRK;    // mark parity
+    c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
     c->newtio.c_cc[VMIN] = 1;
     
+    if (tcflush(c->fd, TCIFLUSH) < 0)
+    {
+        return "tcflush failed";
+    }
     if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
     {
         return "tcsetattr failed";

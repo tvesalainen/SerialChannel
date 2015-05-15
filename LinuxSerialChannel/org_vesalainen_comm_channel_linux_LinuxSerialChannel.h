@@ -14,9 +14,9 @@ extern "C" {
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    staticInit
- * Signature: ()J
+ * Signature: ()V
  */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
   (JNIEnv *, jclass);
 
 /*
@@ -38,10 +38,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doSelect
- * Signature: (JII[J[JI)I
+ * Signature: (II[J[JI)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
-  (JNIEnv *, jclass, jlong, jint, jint, jlongArray, jlongArray, jint);
+  (JNIEnv *, jclass, jint, jint, jlongArray, jlongArray, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
@@ -110,10 +110,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    wakeupSelect
- * Signature: (J)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass);
 
 #ifdef __cplusplus
 }

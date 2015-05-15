@@ -45,9 +45,10 @@ public class Receiver implements Callable<Integer>
             for (int ii = 0; ii < count; ii++)
             {
                 int rc = is.read();
-                int next = rand.next(bits);
+                int next = rand.next(bits) & 0xff;
                 if (rc != next)
                 {
+            System.err.println(rc+" != "+next);
                     errors++;
                 }
             }

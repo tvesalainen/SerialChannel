@@ -40,7 +40,6 @@ public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
     public static final int MaxSelectors = 64;
-    private static long sHandle = -1;
     private static long[] reads = new long[MaxSelectors];
     private static long[] writes = new long[MaxSelectors];
 
@@ -58,7 +57,7 @@ public class LinuxSerialChannel extends SerialChannel
         {
             throw new UnsatisfiedLinkError("Can't load either x86_64 or arm6vl .so \n"+ex.getMessage());
         }
-        sHandle = staticInit();
+        staticInit();
     }
 
     public LinuxSerialChannel(String port, Speed speed, Parity parity, StopBits stopBits, DataBits dataBits, FlowControl flowControl)
@@ -76,7 +75,7 @@ public class LinuxSerialChannel extends SerialChannel
         this.flowControl = flowControl;
     }
 
-    private static native long staticInit();
+    private static native void staticInit();
     
     private native int version();
 
@@ -106,7 +105,7 @@ public class LinuxSerialChannel extends SerialChannel
                 writes[writeIndex++] = channel.handle;
             }
         }
-        int rc = LinuxSerialChannel.doSelect(sHandle, readIndex, writeIndex, reads, writes, timeout);
+        int rc = LinuxSerialChannel.doSelect(readIndex, writeIndex, reads, writes, timeout);
         if (rc != 0)
         {
             readIndex = 0;
@@ -140,7 +139,7 @@ public class LinuxSerialChannel extends SerialChannel
         return rc;
     }
 
-    private static native int doSelect(long sHandle, int readCount, int writeCount, long[] reads, long[] writes, int timeout);
+    private static native int doSelect(int readCount, int writeCount, long[] reads, long[] writes, int timeout);
 
     public static List<String> getAllPorts()
     {
@@ -219,7 +218,8 @@ public class LinuxSerialChannel extends SerialChannel
             try
             {
                 begin();
-                return doRead(handle, dst);
+                count = doRead(handle, dst);
+                return count;
             }
             finally
             {
@@ -302,7 +302,7 @@ public class LinuxSerialChannel extends SerialChannel
     {
         try
         {
-            wakeupSelect(sHandle);
+            wakeupSelect();
         }
         catch (IOException ex)
         {
@@ -310,6 +310,6 @@ public class LinuxSerialChannel extends SerialChannel
         }
     }
     
-    private static native void wakeupSelect(long sHandle) throws IOException;
+    private static native void wakeupSelect() throws IOException;
     
 }
