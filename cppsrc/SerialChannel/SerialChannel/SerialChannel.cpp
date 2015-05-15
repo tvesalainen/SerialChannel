@@ -24,8 +24,8 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 #define MIN(x,y)	(x) < (y) ? (x) : (y);
 #define MAX(x,y)	(x) > (y) ? (x) : (y);
-#define ERRORRETURNV fprintf(stderr, "Error at %d\n", __LINE__);
-#define ERRORRETURN fprintf(stderr, "Error at %d\n", __LINE__);return 0;
+#define ERRORRETURNV if (debug) fprintf(stderr, "Error at %d\n", __LINE__);
+#define ERRORRETURN if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return 0;
 #define DEBUG(s) if (debug) fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);
 
 static int debug;
@@ -101,6 +101,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	sPort = (*env)->GetByteArrayElements(env, port, NULL);
 	if (sPort == NULL)
 	{
+		exception(env, "java/io/IOException", "GetByteArrayElements");
 		ERRORRETURN
 	}
 	size = (*env)->GetArrayLength(env, port);
@@ -331,7 +332,17 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		ERRORRETURN
 	}
 	ctxArr = (*env)->GetLongArrayElements(env, ctxs, NULL);
+	if (ctxArr == NULL)
+	{
+		exception(env, "java/io/IOException", "GetLongArrayElements");
+		ERRORRETURN
+	}
 	pMask = (*env)->GetIntArrayElements(env, masks, NULL);
+	if (pMask == NULL)
+	{
+		exception(env, "java/io/IOException", "GetIntArrayElements");
+		ERRORRETURN
+	}
 	for (ii = 0; ii < len; ii++)
 	{
 		int mask = pMask[ii];

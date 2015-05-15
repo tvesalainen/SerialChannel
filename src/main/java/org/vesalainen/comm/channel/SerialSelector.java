@@ -25,7 +25,6 @@ import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  *
@@ -36,6 +35,7 @@ public class SerialSelector extends AbstractSelector
     private Set<SelectionKey> keys = new HashSet<>();
     private Set<SelectionKey> selected = new HashSet<>();
     private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
+    private boolean wakeupPending;
     
     public SerialSelector()
     {
@@ -90,6 +90,11 @@ public class SerialSelector extends AbstractSelector
     @Override
     public synchronized int select(long timeout) throws IOException
     {
+        if (wakeupPending)
+        {
+            wakeupPending = false;
+            return 0;
+        }
         synchronized(keys)
         {
             Set<SelectionKey> cancelledKeys = cancelledKeys();
@@ -125,7 +130,14 @@ public class SerialSelector extends AbstractSelector
     @Override
     public Selector wakeup()
     {
-        SerialChannel.wakeupSelect(keys);
+        if (!threads.isEmpty())
+        {
+            SerialChannel.wakeupSelect(keys);
+        }
+        else
+        {
+            wakeupPending = true;
+        }
         return this;
     }
 }
