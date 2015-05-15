@@ -29,12 +29,12 @@ void hexdump(int count, char* buf, int len, int bufsize);
 #define DEBUG(s) if (debug) fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);
 
 static int debug;
+static pthread_t selectThread;
+static sigset_t origmask;
 
-static volatile wake = 0;
 static void sighdl(int sig)
 {
-    wake = 1;
-    fprintf(stderr, "sighdl\n");
+    DEBUG("signal");
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
@@ -42,10 +42,9 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     debug = on;
 }
 
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
   (JNIEnv *env, jclass cls)
 {
-    SCTX *s = (SCTX*)calloc(1, sizeof(SCTX));
     sigset_t mask;
     struct sigaction act;
     
@@ -62,21 +61,19 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
     sigemptyset(&mask);
     sigaddset(&mask, SIGUSR1);
     
-    if (sigprocmask(SIG_BLOCK, &mask, &s->origmask) < 0)
+    if (pthread_sigmask(SIG_BLOCK, &mask, &origmask) < 0)
     {
         exception(env, "java/io/IOException", "sigprocmask");
         ERRORRETURN;
     }
     
-    return (jlong)s;
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
-  (JNIEnv *env, jclass cls, jlong sctx, jint readCount, jint writeCount, jlongArray reads, jlongArray writes, jint timeout)
+  (JNIEnv *env, jclass cls, jint readCount, jint writeCount, jlongArray reads, jlongArray writes, jint timeout)
 {
     jlong *readArr;
     jlong *writeArr;
-    SCTX *s = (SCTX*)sctx;
     
     int nfds = 0;
     fd_set readfds;
@@ -87,7 +84,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     
     bzero(&ts, sizeof(ts));
     
-    s->selectThread = pthread_self();
+    selectThread = pthread_self();
     
     readArr = (*env)->GetLongArrayElements(env, reads, NULL);
     if (readArr == NULL)
@@ -122,11 +119,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
     ts.tv_sec = timeout / 1000;
     ts.tv_nsec = (timeout % 1000)*1000000;
-    
-    sigemptyset(&sigmask);
-    sigaddset(&sigmask, SIGUSR1);
-
-    rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &sigmask);
+    rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &s->origmask);
     if (rc < 0 && errno != EINTR)
     {
         (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
@@ -134,33 +127,29 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         exception(env, "java/io/IOException", "pselect");
         ERRORRETURN;
     }
-    if (rc > 0)
+    for (ii=0;ii<readCount;ii++)
     {
-        for (ii=0;ii<readCount;ii++)
-        {
-            CTX *c = (CTX*)readArr[ii];
-            readArr[ii] = FD_ISSET(c->fd, &readfds);
-        }
-        for (ii=0;ii<writeCount;ii++)
-        {
-            CTX *c = (CTX*)writeArr[ii];
-            writeArr[ii] = FD_ISSET(c->fd, &writefds);
-        }
+        CTX *c = (CTX*)readArr[ii];
+        readArr[ii] = FD_ISSET(c->fd, &readfds);
+    }
+    for (ii=0;ii<writeCount;ii++)
+    {
+        CTX *c = (CTX*)writeArr[ii];
+        writeArr[ii] = FD_ISSET(c->fd, &writefds);
     }
     (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
     (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
-    s->selectThread = 0;
+    selectThread = 0;
     return rc;
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
-  (JNIEnv *env, jclass cls, jlong sctx)
+  (JNIEnv *env, jclass cls)
 {
-    SCTX *c = (SCTX*)sctx;
 
-    if (c->selectThread)
+    if (selectThread)
     {
-        if (pthread_kill(c->selectThread, SIGUSR1) < 0)
+        if (pthread_kill(selectThread, SIGUSR1) < 0)
         {
             exception(env, "java/io/IOException", "pthread_kill");
             ERRORRETURNV
