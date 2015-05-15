@@ -29,8 +29,7 @@ import org.vesalainen.comm.channel.CommError;
 import org.vesalainen.comm.channel.CommStat;
 import org.vesalainen.comm.channel.CommStatus;
 import org.vesalainen.comm.channel.SerialChannel;
-import org.vesalainen.comm.channel.winx.WinSerialChannel;
-import static org.vesalainen.comm.channel.winx.WinSerialChannel.VERSION;
+import org.vesalainen.comm.channel.SerialSelectionKey;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -40,8 +39,13 @@ import org.vesalainen.loader.LibraryLoader;
 public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
+    public static final int MaxSelectors = 64;
+    private static long sHandle = -1;
+    private static long[] reads = new long[MaxSelectors];
+    private static long[] writes = new long[MaxSelectors];
+
     private long handle = -1;
-    private int min;
+    private int min=1;
     private int time;
     
     static
@@ -52,8 +56,9 @@ public class LinuxSerialChannel extends SerialChannel
         }
         catch (IOException | UnsatisfiedLinkError ex)
         {
-            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex.getMessage());
+            throw new UnsatisfiedLinkError("Can't load either x86_64 or arm6vl .so \n"+ex.getMessage());
         }
+        sHandle = staticInit();
     }
 
     public LinuxSerialChannel(String port, Speed speed, Parity parity, StopBits stopBits, DataBits dataBits, FlowControl flowControl)
@@ -71,13 +76,71 @@ public class LinuxSerialChannel extends SerialChannel
         this.flowControl = flowControl;
     }
 
+    private static native long staticInit();
+    
     private native int version();
+
+    public static void debug(boolean on)
+    {
+        setDebug(on);
+    }
+
+    private static native void setDebug(boolean on);
 
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        int readIndex = 0;
+        int writeIndex = 0;
+        for (SelectionKey sk : keys)
+        {
+            LinuxSerialChannel channel = (LinuxSerialChannel) sk.channel();
+            int interestOps = sk.interestOps();
+            int mask = 0;
+            if ((interestOps & OP_READ) != 0)
+            {
+                reads[readIndex++] = channel.handle;
+            }
+            if ((interestOps & OP_WRITE) != 0)
+            {
+                writes[writeIndex++] = channel.handle;
+            }
+        }
+        int rc = LinuxSerialChannel.doSelect(sHandle, readIndex, writeIndex, reads, writes, timeout);
+        if (rc != 0)
+        {
+            readIndex = 0;
+            writeIndex = 0;
+            for (SelectionKey sk : keys)
+            {
+                int interestOps = sk.interestOps();
+                int readyOps = 0;
+                if ((interestOps & OP_READ) != 0)
+                {
+                    if (reads[readIndex++] != 0)
+                    {
+                        readyOps |= OP_READ;
+                    }
+                }
+                if ((interestOps & OP_WRITE) != 0)
+                {
+                    if (writes[writeIndex++] != 0)
+                    {
+                        readyOps |= OP_WRITE;
+                    }
+                }
+                if (readyOps != 0)
+                {
+                    SerialSelectionKey ssk = (SerialSelectionKey) sk;
+                    ssk.readyOps(readyOps);
+                    selected.add(ssk);
+                }
+            }
+        }
+        return rc;
     }
+
+    private static native int doSelect(long sHandle, int readCount, int writeCount, long[] reads, long[] writes, int timeout);
 
     public static List<String> getAllPorts()
     {
@@ -237,7 +300,16 @@ public class LinuxSerialChannel extends SerialChannel
 
     public static void wakeupSelect(Set<SelectionKey> keys)
     {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        try
+        {
+            wakeupSelect(sHandle);
+        }
+        catch (IOException ex)
+        {
+            throw new IllegalArgumentException(ex);
+        }
     }
+    
+    private static native void wakeupSelect(long sHandle) throws IOException;
     
 }

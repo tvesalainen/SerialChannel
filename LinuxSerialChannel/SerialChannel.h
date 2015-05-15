@@ -25,8 +25,16 @@
 #include <dirent.h>
 #include <errno.h>
 #include <malloc.h>
+#include <pthread.h>
+#include <signal.h>
+#include <sys/select.h>
 #include "org_vesalainen_comm_channel_linux_LinuxSerialChannel.h"
 
+typedef struct _SCTX
+{
+    pthread_t selectThread;
+    sigset_t origmask;
+} SCTX;
 typedef struct _CTX
 {
     int fd;
