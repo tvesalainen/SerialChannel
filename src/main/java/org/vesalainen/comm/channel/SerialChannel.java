@@ -33,8 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.comm.channel.winx.WinCommEvent;
 import org.vesalainen.comm.channel.winx.WinCommStat;
@@ -58,7 +56,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     /**
      * Baud rate. Depends on used devices which are supported.
      */
-    public enum Speed {B50, B75, B110, B134, B150, B200, B300, B600, B1200, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B230400, B256000, B460800, B500000, B576000, B921600, B1000000, B1152000, B1500000, B2000000, B2500000, B3000000, B3500000, B4000000};
+    public enum Speed {B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B230400, B256000};
     public enum Parity {NONE, ODD, EVEN, MARK, SPACE};
     public enum DataBits {DATABITS_4, DATABITS_5, DATABITS_6, DATABITS_7, DATABITS_8};
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
@@ -102,8 +100,10 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             case Windows:
                 WinSerialChannel.wakeupSelect(keys);
+                break;
             case Linux:
                 LinuxSerialChannel.wakeupSelect(keys);
+                break;
             default:
                 throw new UnsupportedOperationException(os+" not supported");
         }
@@ -114,7 +114,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         this.block = block;
     }
 
-    protected int getSpeed(Speed speed)
+    public static int getSpeed(Speed speed)
     {
         return Integer.parseInt(speed.name().substring(1));
     }
@@ -197,8 +197,10 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             case Windows:
                 WinSerialChannel.debug(on);
+                break;
             case Linux:
                 LinuxSerialChannel.debug(on);
+                break;
             default:
                 throw new UnsupportedOperationException("OS not supported");
         }

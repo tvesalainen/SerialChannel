@@ -48,8 +48,6 @@ public class WinSerialChannel extends SerialChannel
     private int writeTotalTimeoutMultiplier;
     private int writeTotalTimeoutConstant;
 
-    private static boolean wakeupPending;
-    private static boolean selectPending;
     
     static
     {
@@ -120,11 +118,6 @@ public class WinSerialChannel extends SerialChannel
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
-        if (wakeupPending)
-        {
-            wakeupPending = false;
-            return 0;
-        }
         long[] handles = new long[keys.size()];
         int[] masks = new int[handles.length];
         int index = 0;
@@ -141,9 +134,7 @@ public class WinSerialChannel extends SerialChannel
             masks[index] = mask;
             index++;
         }
-        selectPending = true;
         int rc = WinSerialChannel.doSelect(handles, masks, timeout);
-        selectPending = false;
         if (rc != 0)
         {
             index = 0;
@@ -388,24 +379,17 @@ public class WinSerialChannel extends SerialChannel
 
     public static void wakeupSelect(Set<SelectionKey> keys)
     {
-        if (selectPending)
+        try
         {
-            try
+            for (SelectionKey sk : keys)
             {
-                for (SelectionKey sk : keys)
-                {
-                    WinSerialChannel channel = (WinSerialChannel) sk.channel();
-                    channel.setEventMask(0);
-                }
-            }
-            catch (IOException ex)
-            {
-                throw new IllegalArgumentException(ex);
+                WinSerialChannel channel = (WinSerialChannel) sk.channel();
+                channel.setEventMask(0);
             }
         }
-        else
+        catch (IOException ex)
         {
-            wakeupPending = true;
+            throw new IllegalArgumentException(ex);
         }
     }
     

@@ -111,7 +111,7 @@ public class SerialChannelT
         }
     }
     @Test
-    public void testWakeSelect()
+    public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
