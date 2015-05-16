@@ -108,7 +108,7 @@ public class PeerT
                     }
                 }
             }
-            catch (IOException ex)
+            catch (InterruptedException | ExecutionException | TimeoutException | IOException ex)
             {
                 ex.printStackTrace();
                 fail(ex.getMessage());
