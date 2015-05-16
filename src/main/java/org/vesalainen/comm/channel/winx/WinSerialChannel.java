@@ -246,7 +246,7 @@ public class WinSerialChannel extends SerialChannel
                 count = doRead(handle, dst);
                 while (block && count == 0)
                 {
-                    waitEvent(0x0001);
+                    waitEvent(0x0001|0x0080|0x0040);
                     count = doRead(handle, dst);
                 }
                 return count;

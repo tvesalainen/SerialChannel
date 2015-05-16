@@ -50,8 +50,8 @@ public class LoopT
             assertNotNull(allPorts);
             for (String port : allPorts)
             {
-                Builder builder = new Builder(port, 4800)
-                        .setParity(SerialChannel.Parity.NONE);
+                Builder builder = new Builder(port, Speed.B57600)
+                        .setParity(SerialChannel.Parity.SPACE);
                 SerialChannel sc = builder.get();
                 try (InputStream is = sc.getInputStream(80))
                 {

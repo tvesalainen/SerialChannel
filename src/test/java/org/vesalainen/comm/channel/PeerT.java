@@ -17,6 +17,9 @@
 package org.vesalainen.comm.channel;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -40,7 +43,6 @@ public class PeerT
     public void regressionTest()
     {
         //SerialChannel.debug(true);
-        ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() > 0);
@@ -48,6 +50,7 @@ public class PeerT
         {
             try 
             {
+                ByteBuffer bb = ByteBuffer.allocateDirect(10);
                 for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
                 {
                     for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
@@ -62,14 +65,43 @@ public class PeerT
                                         .setFlowControl(flow)
                                         .setParity(parity)
                                         .setDataBits(bits);
-                                try (SerialChannel c1 = builder1.get())
+                                try (SerialChannel sc = builder1.get())
                                 {
-                                    Receiver rec1 = new Receiver(c1, count);
-                                    Future<Integer> frec1 = exec.submit(rec1);
-                                    Transmitter tra1 = new Transmitter(c1, count);
-                                    Future<Void> ftra1 = exec.submit(tra1);
-                                    ftra1.get();
-                                    assertEquals(Integer.valueOf(0), frec1.get(200, TimeUnit.SECONDS));
+                                    SerialSelector selector = new SerialSelector();
+                                    sc.configureBlocking(false);
+                                    sc.register(selector, OP_READ);
+                                    RandomChar rcr = new RandomChar();
+                                    RandomChar rcw = new RandomChar();
+                                    send(sc, bb, rcw, count);
+                                    int c = selector.select();
+                                    if (c > 0)
+                                    {
+                                        for (SelectionKey sk : selector.selectedKeys())
+                                        {
+                                            if (sk.isReadable())
+                                            {
+                                                bb.clear();
+                                                sc.read(bb);
+                                                bb.flip();
+                                                while (bb.hasRemaining())
+                                                {
+                                                    byte cc = bb.get();
+                                                    int next = rcr.next(8);
+                                                    assertEquals(next, cc);
+                                                    assertTrue(rcr.count() <= count);
+                                                }
+                                                if (rcr.count() == count)
+                                                {
+                                                    sk.cancel();
+                                                }
+                                            }
+                                        }
+                                        send(sc, bb, rcw, count);
+                                    }
+                                    else
+                                    {
+                                        continue;
+                                    }
                                 }
                             }
                         }
@@ -82,6 +114,17 @@ public class PeerT
                 fail(ex.getMessage());
             }
         }
+    }
+
+    private void send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
+    {
+        bb.clear();
+        while (rcw.count() < count && bb.hasRemaining())
+        {
+            bb.put((byte) rcw.next(8));
+        }
+        bb.flip();
+        sc.write(bb);
     }
 
     

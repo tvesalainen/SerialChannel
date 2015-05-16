@@ -26,19 +26,25 @@ import java.util.Random;
 public class RandomChar
 {
     private static final int SEED = 123456;
+    private int count;
 
     private Random random = new Random(SEED);
 
     public int next(int bits)
     {
+        count++;
         if (bits >= 7)
         {
-            return (random.nextInt((int)Math.pow(2, bits)-32)+32)&~31;
+            return random.nextInt((int)Math.pow(2, bits)-32)+32;
         }
         else
         {
-            return (random.nextInt((int)Math.pow(2, bits)))&~31;
+            return random.nextInt((int)Math.pow(2, bits));
         }
+    }
+    public int count()
+    {
+        return count;
     }
     public void reset()
     {

@@ -956,18 +956,23 @@ char* configure(
 	switch (parity)
 	{
 	case 0:	// NONE
+		dcb.fParity = FALSE;
 		dcb.Parity = NOPARITY;
 			break;
 	case 1:	// ODD
+		dcb.fParity = TRUE;
 		dcb.Parity = ODDPARITY;
 			break;
 	case 2:	// EVEN
+		dcb.fParity = TRUE;
 		dcb.Parity = EVENPARITY;
 			break;
 	case 3:	// MARK
+		dcb.fParity = TRUE;
 		dcb.Parity = MARKPARITY;
 			break;
 	case 4:	// SPACE
+		dcb.fParity = TRUE;
 		dcb.Parity = SPACEPARITY;
 			break;
 	default:
