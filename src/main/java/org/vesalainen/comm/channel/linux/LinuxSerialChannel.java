@@ -38,7 +38,6 @@ public class LinuxSerialChannel extends SerialChannel
     private static long[] reads = new long[MaxSelectors];
     private static long[] writes = new long[MaxSelectors];
 
-    private long handle = -1;
     private int min=1;
     private int time;
     

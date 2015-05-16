@@ -117,6 +117,7 @@ public class LoopT
     @Test
     public void testSelect()
     {
+        //SerialChannel.debug(true);
         final ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);

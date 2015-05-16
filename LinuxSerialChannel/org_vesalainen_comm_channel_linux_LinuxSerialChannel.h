@@ -13,11 +13,11 @@ extern "C" {
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors 64L
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    staticInit
- * Signature: ()V
+ * Method:    doConfigure
+ * Signature: (JIIIII)V
  */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
-  (JNIEnv *, jclass);
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doConfigure
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
@@ -29,43 +29,11 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    setDebug
- * Signature: (Z)V
+ * Method:    doOpen
+ * Signature: ([B)J
  */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
-  (JNIEnv *, jclass, jboolean);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    doSelect
- * Signature: (II[J[JI)I
- */
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
-  (JNIEnv *, jclass, jint, jint, jlongArray, jlongArray, jint);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    doEnumPorts
- * Signature: (Ljava/util/List;)V
- */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    initialize
- * Signature: ([BIIIII)J
- */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_initialize
-  (JNIEnv *, jobject, jbyteArray, jint, jint, jint, jint, jint);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    timeouts
- * Signature: (JII)V
- */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
-  (JNIEnv *, jobject, jlong, jint, jint);
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doOpen
+  (JNIEnv *, jobject, jbyteArray);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
@@ -73,14 +41,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    connected
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
   (JNIEnv *, jobject, jlong);
 
 /*
@@ -101,11 +61,51 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    setDebug
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
+  (JNIEnv *, jclass, jboolean);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doEnumPorts
+ * Signature: (Ljava/util/List;)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doClose
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
   (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    staticInit
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doSelect
+ * Signature: (II[J[JI)I
+ */
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
+  (JNIEnv *, jclass, jint, jint, jlongArray, jlongArray, jint);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    timeouts
+ * Signature: (JII)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
+  (JNIEnv *, jobject, jlong, jint, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel

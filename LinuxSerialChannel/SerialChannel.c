@@ -24,8 +24,8 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 #define MIN(x,y)	(x) < (y) ? (x) : (y);
 #define MAX(x,y)	(x) > (y) ? (x) : (y);
-#define ERRORRETURNV fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);
-#define ERRORRETURN fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);return 0;
+#define ERRORRETURNV if (debug) fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);
+#define ERRORRETURN if (debug) fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);return 0;
 #define DEBUG(s) if (debug) fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);
 
 static int debug;
@@ -81,7 +81,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     struct timespec ts;
     sigset_t sigmask;
     int ii, rc;
-    
+
     bzero(&ts, sizeof(ts));
     
     selectThread = pthread_self();
@@ -157,12 +157,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
 }
 
-JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_connected
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-    exception(env, "java/lang/UnsupportedOperationException", NULL);
-    ERRORRETURN;
-}
 /*
  * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
  * Method:    version
@@ -173,25 +167,14 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 {
     return org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION;
 }
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    initialize
- * Signature: ([BIZII)I
- */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_initialize(
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doOpen(
     JNIEnv *env, 
     jobject obj, 
-    jbyteArray port, 
-    jint bauds, 
-    jint parity, 
-    jint databits, 
-    jint stopbits, 
-    jint flow
+    jbyteArray port
  	)
 {
     jsize size;
     jbyte* sPort; 
-    char* err;
     
     CTX *c = (CTX*)calloc(1, sizeof(CTX));
 
@@ -212,30 +195,214 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         ERRORRETURN
     }
-    (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
-
-    err = configure(
-        env, 
-        c, 
-        bauds, 
-        parity, 
-        databits, 
-        stopbits, 
-        flow
-        );
-    if (err != NULL)
+    if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
-        exception(env, "java/io/IOException", err);
+        exception(env, "java/io/IOException", "tcgetattr failed");
+        (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+        ERRORRETURN
+    }
+    if (tcflush(c->fd, TCIFLUSH) < 0)
+    {
+        exception(env, "java/io/IOException", "tcflush failed");
         ERRORRETURN;
     }
+    (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+
     return (jlong)c;
 }
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doConfigure(
+    JNIEnv *env, 
+    jobject obj,
+    jlong ctx, 
+    jint bauds, 
+    jint parity, 
+    jint databits, 
+    jint stopbits, 
+    jint flow
+	)
+{
+    CTX *c = (CTX*)ctx;
+    int baudrate = 0;
+    int bits = 0;
+    int stop = 0;
+    int par = 0;
+    int fctrl = 0;
+    
+    switch (bauds)
+    {
+        case 50:
+            baudrate = B50;
+            break;
+        case 75:
+            baudrate = B75;
+            break;
+        case 110:
+            baudrate = B110;
+            break;
+        case 134:
+            baudrate = B134;
+            break;
+        case 150:
+            baudrate = B150;
+            break;
+        case 200:
+            baudrate = B200;
+            break;
+        case 300:
+            baudrate = B300;
+            break;
+        case 600:
+            baudrate = B600;
+            break;
+        case 1200:
+            baudrate = B1200;
+            break;
+        case 2400:
+            baudrate = B2400;
+            break;
+        case 4800:
+            baudrate = B4800;
+            break;
+        case 9600:
+            baudrate = B9600;
+            break;
+        case 19200:
+            baudrate = B19200;
+            break;
+        case 38400:
+            baudrate = B38400;
+            break;
+        case 57600:
+            baudrate = B57600;
+            break;
+        case 115200:
+            baudrate = B115200;
+            break;
+        case 230400:
+            baudrate = B230400;
+            break;
+        case 460800:
+            baudrate = B460800;
+            break;
+        case 500000:
+            baudrate = B500000;
+            break;
+        case 576000:
+            baudrate = B576000;
+            break;
+        case 921600:
+            baudrate = B921600;
+            break;
+        case 1000000:
+            baudrate = B1000000;
+            break;
+        case 1152000:
+            baudrate = B1152000;
+            break;
+        case 1500000:
+            baudrate = B1500000;
+            break;
+        case 2000000:
+            baudrate = B2000000;
+            break;
+        case 2500000:
+            baudrate = B2500000;
+            break;
+        case 3000000:
+            baudrate = B3000000;
+            break;
+        case 3500000:
+            baudrate = B3500000;
+            break;
+        case 4000000:
+            baudrate = B4000000;
+            break;
+        default:
+            exception(env, "java/io/IOException", "unknown baudrate");
+            ERRORRETURNV;
+            break;
+    }
+    
+    switch (parity)
+    {
+    case 0:	// NONE
+        break;
+    case 1:	// ODD
+        par = PARENB | PARODD;
+        break;
+    case 2:	// EVEN
+        par = PARENB;
+        break;
+    case 3:	// MARK
+        par = PARENB | CMSPAR | PARODD;
+        break;
+    case 4:	// SPACE
+        par = PARENB | CMSPAR;
+        break;
+    default:
+        exception(env, "java/io/IOException", "illegal parity value");
+        ERRORRETURNV;
+        break;
+    }
+    switch (databits)
+    {
+    case 1:	// 5
+        bits = CS5;
+        break;
+    case 2:	// 6
+        bits = CS6;
+        break;
+    case 3:	// 7
+        bits = CS7;
+        break;
+    case 4:	// 8
+        bits = CS8;
+        break;
+    default:
+        exception(env, "java/io/IOException", "illegal databits value");
+        ERRORRETURNV;
+        break;
+    }
+    switch (stopbits)
+    {
+    case 0:	// 1
+        break;
+    case 2:	// 2
+        stop = CSTOPB;
+        break;
+    default:
+        exception(env, "java/io/IOException", "illegal stopbits value");
+        ERRORRETURNV;
+        break;
+    }
+    switch (flow)
+    {
+    case 0:	// NONE
+        c->newtio.c_iflag |= IGNPAR;
+        break;
+    case 1:	// XONXOFF
+        c->newtio.c_iflag |= IXON | IXOFF;
+        break;
+    case 2:	// RTSCTS
+        fctrl = CRTSCTS;
+        break;
+    case 3:	// DSRDTR
+    default:
+        exception(env, "java/io/IOException", "illegal flow control value");
+        ERRORRETURNV;
+        break;
+    }
+//    c->newtio.c_iflag |= PARMRK;    // mark parity
+    c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
+    c->newtio.c_cc[VMIN] = 1;
+    
+    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
+    {
+        exception(env, "java/io/IOException", "tcsetattr failed");
+        ERRORRETURNV;
+    }
+}
 
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doClose
- * Signature: ()I
- */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
   (JNIEnv *env, jobject obj, jlong ctx)
 {
@@ -268,41 +435,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURNV
     }
 }
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_commStatus
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-    CTX* c = (CTX*)ctx;
-}
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setEventMask
-  (JNIEnv *env, jobject obj, jlong ctx, jint mask)
-{
-    CTX* c = (CTX*)ctx;
-}
-
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_waitEvent
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-    CTX* c = (CTX*)ctx;
-    return 0;
-}
-
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doGetError
-  (JNIEnv *env, jobject obj, jlong ctx, jobject commStat)
-{
-    CTX* c = (CTX*)ctx;
-    return 0;
-}
-
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWaitOnline
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-    CTX* c = (CTX*)ctx;
-}
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doRead
- * Signature: (Ljava/nio/ByteBuffer;)I
- */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
   (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
@@ -408,11 +540,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     return rc;
 }
 
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doWrite
- * Signature: (Ljava/nio/ByteBuffer;)I
- */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
   (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
@@ -608,200 +735,6 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
     }
 }
 
-char* configure(
-    JNIEnv *env, 
-    CTX* c, 
-    int bauds, 
-    int parity, 
-    int databits, 
-    int stopbits, 
-    int flow
-	)
-{
-    int baudrate = 0;
-    int bits = 0;
-    int stop = 0;
-    int par = 0;
-    int fctrl = 0;
-    
-    if (tcgetattr(c->fd, &c->oldtio) < 0)
-    {
-        return "tcgetattr failed";
-    }
-    
-    switch (bauds)
-    {
-        case 50:
-            baudrate = B50;
-            break;
-        case 75:
-            baudrate = B75;
-            break;
-        case 110:
-            baudrate = B110;
-            break;
-        case 134:
-            baudrate = B134;
-            break;
-        case 150:
-            baudrate = B150;
-            break;
-        case 200:
-            baudrate = B200;
-            break;
-        case 300:
-            baudrate = B300;
-            break;
-        case 600:
-            baudrate = B600;
-            break;
-        case 1200:
-            baudrate = B1200;
-            break;
-        case 2400:
-            baudrate = B2400;
-            break;
-        case 4800:
-            baudrate = B4800;
-            break;
-        case 9600:
-            baudrate = B9600;
-            break;
-        case 19200:
-            baudrate = B19200;
-            break;
-        case 38400:
-            baudrate = B38400;
-            break;
-        case 57600:
-            baudrate = B57600;
-            break;
-        case 115200:
-            baudrate = B115200;
-            break;
-        case 230400:
-            baudrate = B230400;
-            break;
-        case 460800:
-            baudrate = B460800;
-            break;
-        case 500000:
-            baudrate = B500000;
-            break;
-        case 576000:
-            baudrate = B576000;
-            break;
-        case 921600:
-            baudrate = B921600;
-            break;
-        case 1000000:
-            baudrate = B1000000;
-            break;
-        case 1152000:
-            baudrate = B1152000;
-            break;
-        case 1500000:
-            baudrate = B1500000;
-            break;
-        case 2000000:
-            baudrate = B2000000;
-            break;
-        case 2500000:
-            baudrate = B2500000;
-            break;
-        case 3000000:
-            baudrate = B3000000;
-            break;
-        case 3500000:
-            baudrate = B3500000;
-            break;
-        case 4000000:
-            baudrate = B4000000;
-            break;
-        default:
-            return "unknown baudrate";
-            break;
-    }
-    
-    switch (parity)
-    {
-    case 0:	// NONE
-        break;
-    case 1:	// ODD
-        par = PARENB | PARODD;
-        break;
-    case 2:	// EVEN
-        par = PARENB;
-        break;
-    case 3:	// MARK
-        par = PARENB | CMSPAR | PARODD;
-        break;
-    case 4:	// SPACE
-        par = PARENB | CMSPAR;
-        break;
-    default:
-        return "illegal parity value";
-        break;
-    }
-    switch (databits)
-    {
-    case 1:	// 5
-        bits = CS5;
-        break;
-    case 2:	// 6
-        bits = CS6;
-        break;
-    case 3:	// 7
-        bits = CS7;
-        break;
-    case 4:	// 8
-        bits = CS8;
-        break;
-    default:
-        return "illegal databits value";
-        break;
-    }
-    switch (stopbits)
-    {
-    case 0:	// 1
-        break;
-    case 2:	// 2
-        stop = CSTOPB;
-        break;
-    default:
-        return "illegal stopbits value";
-        break;
-    }
-    switch (flow)
-    {
-    case 0:	// NONE
-        c->newtio.c_iflag |= IGNPAR;
-        break;
-    case 1:	// XONXOFF
-        c->newtio.c_iflag |= IXON | IXOFF;
-        break;
-    case 2:	// RTSCTS
-        fctrl = CRTSCTS;
-        break;
-    case 3:	// DSRDTR
-    default:
-        return "illegal flow control value";
-        break;
-    }
-    c->newtio.c_iflag |= PARMRK;    // mark parity
-    c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
-    c->newtio.c_cc[VMIN] = 1;
-    
-    if (tcflush(c->fd, TCIFLUSH) < 0)
-    {
-        return "tcflush failed";
-    }
-    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
-    {
-        return "tcsetattr failed";
-    }
-    return NULL;
-}
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
   (JNIEnv *env, jobject obj, jlong ctx, jint min, jint time)
 {
