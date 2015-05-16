@@ -36,37 +36,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_se
 	debug = on;
 }
 
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    connected
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_connected
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-	DWORD dwModemStat;
-	OVERLAPPED osStatus = {0};
-	CTX *c = (CTX*)ctx;
-
-	DEBUG("GetCommModemStatus");
-	if (GetCommModemStatus(c->hComm, &dwModemStat))
-	{
-		if ((dwModemStat & MS_RLSD_ON) == 0)
-		{
-			return JNI_FALSE;
-		}
-		else
-		{
-			return JNI_TRUE;
-		}
-	}
-	else
-	{
-		CloseHandle(osStatus.hEvent);
-		exception(env, "java/io/IOException", NULL);
-		ERRORRETURN;
-	}
-}
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_version
   (JNIEnv *env, jobject obj)
 {
@@ -77,22 +46,16 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_ve
  * Method:    initialize
  * Signature: ([BIZII)I
  */
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_initialize(
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doOpen(
 	JNIEnv *env, 
 	jobject obj, 
-	jbyteArray port, 
-	jint bauds, 
-	jint parity, 
-	jint databits, 
-	jint stopbits, 
-	jint flow
+	jbyteArray port
 	)
 {
 	char szPort[32];
 	char buf[256];
 	jsize size;
 	jbyte* sPort; 
-	char* err;
 	CTX *c = NULL;
 
 	c = (CTX*)calloc(1, sizeof(CTX));
@@ -138,29 +101,149 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_i
 	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
 	{
 		exception(env, "java/io/IOException", "PurgeComm");
-		ERRORRETURNV
-	}
-
-	err = configure(
-		env, 
-		c->hComm, 
-		bauds, 
-		parity, 
-		databits, 
-		stopbits, 
-		flow
-		);
-	if (err != NULL)
-	  // Error in SetCommState. Possibly a problem with the communications 
-	  // port handle or a problem with the DCB structure itself.
-	{
-		CloseHandle(c->hComm);
-		free(c);
-		exception(env, "java/io/IOException", err);
-		ERRORRETURNV
+		ERRORRETURN
 	}
 	return (jlong)c;
 }
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doConfigure
+(
+JNIEnv *env,
+jobject obj,
+jlong ctx,
+jint bauds,
+jint parity,
+jint databits,
+jint stopbits,
+jint flow
+)
+{
+	CTX *c = (CTX*)ctx;
+	DCB dcb;
+	int framesize = 1;	// start bit
+
+	if (!GetCommState(c->hComm, &dcb))
+	{
+		exception(env, "java/io/IOException", "GetCommState failed");
+		ERRORRETURNV
+	}
+
+	dcb.fBinary = TRUE;
+	dcb.fDtrControl = DTR_CONTROL_ENABLE;
+	dcb.fDsrSensitivity = FALSE;
+	dcb.fTXContinueOnXoff = FALSE;
+	dcb.fOutX = FALSE;
+	dcb.fInX = FALSE;
+	dcb.fErrorChar = FALSE;
+	dcb.fNull = FALSE;
+	dcb.fRtsControl = RTS_CONTROL_ENABLE;
+	dcb.fAbortOnError = FALSE;
+	dcb.fOutxCtsFlow = FALSE;
+	dcb.fOutxDsrFlow = FALSE;
+
+	dcb.BaudRate = bauds;
+
+	switch (parity)
+	{
+	case 0:	// NONE
+		dcb.fParity = FALSE;
+		dcb.Parity = NOPARITY;
+		break;
+	case 1:	// ODD
+		dcb.fParity = TRUE;
+		dcb.Parity = ODDPARITY;
+		break;
+	case 2:	// EVEN
+		dcb.fParity = TRUE;
+		dcb.Parity = EVENPARITY;
+		break;
+	case 3:	// MARK
+		dcb.fParity = TRUE;
+		dcb.Parity = MARKPARITY;
+		break;
+	case 4:	// SPACE
+		dcb.fParity = TRUE;
+		dcb.Parity = SPACEPARITY;
+		break;
+	default:
+		exception(env, "java/io/IOException", "illegal parity value");
+		ERRORRETURNV
+		break;
+}
+	if (dcb.Parity != NOPARITY)
+	{
+		framesize++;
+	}
+	switch (databits)
+	{
+	case 0:	// 4
+		dcb.ByteSize = 4;
+		break;
+	case 1:	// 5
+		dcb.ByteSize = 5;
+		break;
+	case 2:	// 6
+		dcb.ByteSize = 6;
+		break;
+	case 3:	// 7
+		dcb.ByteSize = 7;
+		break;
+	case 4:	// 8
+		dcb.ByteSize = 8;
+		break;
+	default:
+		exception(env, "java/io/IOException", "illegal databits value");
+		ERRORRETURNV
+		break;
+	}
+	framesize += dcb.ByteSize;
+	switch (stopbits)
+	{
+	case 0:	// 1
+		dcb.StopBits = ONESTOPBIT;
+		framesize += 1;
+		break;
+	case 1:	// 1.5
+		dcb.StopBits = ONE5STOPBITS;
+		framesize += 2;
+		break;
+	case 2:	// 2
+		dcb.StopBits = TWOSTOPBITS;
+		framesize += 2;
+		break;
+	default:
+		exception(env, "java/io/IOException", "illegal stopbits value");
+		ERRORRETURNV
+		break;
+	}
+	switch (flow)
+	{
+	case 0:	// NONE
+		break;
+	case 1:	// XONXOFF
+		dcb.fInX = TRUE;
+		dcb.fOutX = TRUE;
+		break;
+	case 2:	// RTSCTS
+		dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
+		dcb.fOutxCtsFlow = TRUE;
+		break;
+	case 3:	// DSRDTR
+		dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
+		dcb.fOutxDsrFlow = TRUE;
+		break;
+	default:
+		exception(env, "java/io/IOException", "illegal flow control value");
+		ERRORRETURNV
+		break;
+	}
+
+	if (!SetCommState(c->hComm, &dcb))
+	{
+		exception(env, "java/io/IOException", "SetCommState failed");
+		ERRORRETURNV
+	}
+}
+
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_timeouts(
 	JNIEnv *env,
 	jobject obj,
@@ -226,23 +309,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	{
 		exception(env, "java/io/IOException", "FlushFileBuffers failed");
 		ERRORRETURNV
-	}
-}
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_commStatus
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-	DWORD dwModemStat;
-	CTX *c = (CTX*)ctx;
-
-	DEBUG("GetCommModemStatus");
-	if (GetCommModemStatus(c->hComm, &dwModemStat))
-	{
-		return dwModemStat;
-	}
-	else
-	{
-		exception(env, "java/io/IOException", NULL);
-		ERRORRETURN
 	}
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setEventMask
@@ -451,27 +517,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	return count;
 }
 
-
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doGetError
-  (JNIEnv *env, jobject obj, jlong ctx, jobject commStat)
-{
-	DWORD errors;
-	COMSTAT comstat;
-	CTX *c = (CTX*)ctx;
-
-	if (!ClearCommError(c->hComm, &errors, &comstat))
-	{
-		exception(env, "java/io/IOException", NULL);
-		ERRORRETURN
-	}
-	return errors;
-}
-
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doRead
- * Signature: (Ljava/nio/ByteBuffer;)I
- */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doRead
   (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
@@ -653,11 +698,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	}
 }
 
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    doWrite
- * Signature: (Ljava/nio/ByteBuffer;)I
- */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doWrite
   (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
 {
@@ -918,137 +958,6 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 	{
 		LocalFree( lpMsgBuf );
 	}
-}
-
-char* configure(
-	JNIEnv *env, 
-	HANDLE hComm, 
-	int bauds, 
-	int parity, 
-	int databits, 
-	int stopbits, 
-	int flow
-	)
-{
-	DCB dcb;
-	int framesize = 1;	// start bit
-
-	if (!GetCommState(hComm, &dcb))
-	{
-		return "GetCommState failed";
-	}
-
-	dcb.fBinary = TRUE;
-	dcb.fDtrControl = DTR_CONTROL_ENABLE;
-	dcb.fDsrSensitivity = FALSE;
-	dcb.fTXContinueOnXoff = FALSE;
-	dcb.fOutX = FALSE;
-	dcb.fInX = FALSE;
-	dcb.fErrorChar = FALSE;
-	dcb.fNull = FALSE;
-	dcb.fRtsControl = RTS_CONTROL_ENABLE;
-	dcb.fAbortOnError = FALSE;
-	dcb.fOutxCtsFlow = FALSE;
-	dcb.fOutxDsrFlow = FALSE;
-
-	dcb.BaudRate = bauds;
-
-	switch (parity)
-	{
-	case 0:	// NONE
-		dcb.fParity = FALSE;
-		dcb.Parity = NOPARITY;
-			break;
-	case 1:	// ODD
-		dcb.fParity = TRUE;
-		dcb.Parity = ODDPARITY;
-			break;
-	case 2:	// EVEN
-		dcb.fParity = TRUE;
-		dcb.Parity = EVENPARITY;
-			break;
-	case 3:	// MARK
-		dcb.fParity = TRUE;
-		dcb.Parity = MARKPARITY;
-			break;
-	case 4:	// SPACE
-		dcb.fParity = TRUE;
-		dcb.Parity = SPACEPARITY;
-			break;
-	default:
-		return "illegal parity value";
-		break;
-	}
-	if (dcb.Parity != NOPARITY)
-	{
-		framesize++;
-	}
-	switch (databits)
-	{
-	case 0:	// 4
-		dcb.ByteSize = 4;
-		break;
-	case 1:	// 5
-		dcb.ByteSize = 5;
-		break;
-	case 2:	// 6
-		dcb.ByteSize = 6;
-		break;
-	case 3:	// 7
-		dcb.ByteSize = 7;
-		break;
-	case 4:	// 8
-		dcb.ByteSize = 8;
-		break;
-	default:
-		return "illegal databits value";
-		break;
-	}
-	framesize += dcb.ByteSize;
-	switch (stopbits)
-	{
-	case 0:	// 1
-		dcb.StopBits = ONESTOPBIT;
-		framesize += 1;
-		break;
-	case 1:	// 1.5
-		dcb.StopBits = ONE5STOPBITS;
-		framesize += 2;
-		break;
-	case 2:	// 2
-		dcb.StopBits = TWOSTOPBITS;
-		framesize += 2;
-		break;
-	default:
-		return "illegal stopbits value";
-		break;
-	}
-	switch (flow)
-	{
-	case 0:	// NONE
-			break;
-	case 1:	// XONXOFF
-		dcb.fInX = TRUE;
-		dcb.fOutX = TRUE;
-			break;
-	case 2:	// RTSCTS
-	    dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-	    dcb.fOutxCtsFlow = TRUE;
-			break;
-	case 3:	// DSRDTR
-	    dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-	    dcb.fOutxDsrFlow = TRUE;
-		break;
-	default:
-		return "illegal flow control value";
-		break;
-	}
-
-	if (!SetCommState(hComm, &dcb))
-	{
-		return "SetCommState failed";
-	}
-	return NULL;
 }
 
 void hexdump(int count, char* buf, int len, int bufsize)

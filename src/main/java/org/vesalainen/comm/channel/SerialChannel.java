@@ -22,20 +22,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
-import org.vesalainen.comm.channel.winx.WinCommEvent;
-import org.vesalainen.comm.channel.winx.WinCommStat;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.getOS;
@@ -50,7 +46,7 @@ import static org.vesalainen.loader.LibraryLoader.getOS;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author tkv
  */
-public abstract class SerialChannel extends AbstractSelectableChannel implements Runnable, GatheringByteChannel, ScatteringByteChannel
+public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
 {
 
     /**
@@ -62,6 +58,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
     public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
 
+    protected long handle = -1;
     protected String port;
     protected Speed speed;
     protected Parity parity = Parity.NONE;
@@ -69,8 +66,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected DataBits dataBits = DataBits.DATABITS_8;
     protected FlowControl flowControl = FlowControl.NONE;
 
-    protected Map<CommEventObserver,Set<CommEvent.Type>> eventObserverMap;
-    protected Set<CommEvent.Type> observedEvents;
     protected Thread eventObserverThread;
     
     protected boolean block = true;
@@ -79,6 +74,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         super(SerialSelectorProvider.provider());
     }
+    
+    protected abstract int version();
+
     public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         OS os = LibraryLoader.getOS();
@@ -112,8 +110,10 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected void implConfigureBlocking(boolean block) throws IOException
     {
         this.block = block;
+        setTimeouts();
     }
-
+    protected abstract void setTimeouts() throws IOException;
+        
     public static int getSpeed(Speed speed)
     {
         return Integer.parseInt(speed.name().substring(1));
@@ -130,12 +130,54 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      * Creates actual connection.
      * @throws IOException 
      */
-    protected abstract void connect() throws IOException;
+    protected void open() throws IOException
+    {
+        handle = doOpen(port.getBytes());
+    }
+    protected abstract long doOpen(byte[] port);
+
+    /**
+     * Change channel configuration
+     * @param builder
+     * @throws IOException 
+     */
+    public void configure(Builder builder) throws IOException
+    {
+        this.speed = builder.getSpeed();
+        this.parity = builder.getParity();
+        this.stopBits = builder.getStopBits();
+        this.dataBits = builder.getDataBits();
+        this.flowControl = builder.getFlowControl();
+        doConfigure(
+                handle,
+                getSpeed(speed), 
+                parity.ordinal(), 
+                dataBits.ordinal(), 
+                stopBits.ordinal(), 
+                flowControl.ordinal()
+        );
+    }
+
+    protected abstract void doConfigure(
+            long handle,
+            int baudRate, 
+            int parity, 
+            int dataBits, 
+            int stopBits, 
+            int flowControl
+    ) throws IOException;
+
     /**
      * Flushes the buffers.
      * @throws IOException 
      */
-    public abstract void flush() throws IOException;
+    public void flush() throws IOException
+    {
+        doFlush(handle);
+    }
+    protected abstract void doFlush(long handle) throws IOException;
+
+
     /**
      * Returns InputStream. Allocates direct ByteBuffer bufferSize length. Note! closing the stream doesn't close the 
      * channel.
@@ -161,18 +203,36 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     }
 
     /**
-     * Returns true if channel is connected.
-     * @return 
-     */
-    public abstract boolean isConnected();
-    /**
      * Reads data at buffers position and then increments the position.
      * @param dst
      * @return Number of bytes read.
      * @throws IOException 
      */
     @Override
-    public abstract int read(ByteBuffer dst) throws IOException;
+    public int read(ByteBuffer dst) throws IOException
+    {
+        if (handle != -1)
+        {
+            int count = 0;
+            try
+            {
+                begin();
+                count = doRead(handle, dst);
+                return count;
+            }
+            finally
+            {
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
+    }
+
+    protected abstract int doRead(long handle, ByteBuffer dst) throws IOException;
+
     /**
      * Writes data at buffers position and then increments the position.
      * @param src
@@ -180,31 +240,50 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      * @throws IOException 
      */
     @Override
-    public abstract int write(ByteBuffer src) throws IOException;
-    /**
-     * Returns the status.
-     * @return
-     * @throws IOException 
-     */
-    public abstract CommStatus getCommStatus() throws IOException;
+    public int write(ByteBuffer src) throws IOException
+    {
+        if (handle != -1)
+        {
+            int count = 0;
+            try
+            {
+                begin();
+                count = doWrite(handle, src);
+                return count;
+            }
+            finally
+            {
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
+    }
+
+    protected abstract int doWrite(long handle, ByteBuffer src) throws IOException;
+
     /**
      * Sets the debug state. When set to true, writes trace text to System.err
      * @param on 
      */
     public static void debug(boolean on)
     {
-        switch (getOS())
+        OS os = LibraryLoader.getOS();
+        switch (os)
         {
             case Windows:
-                WinSerialChannel.debug(on);
+                WinSerialChannel.setDebug(on);
                 break;
             case Linux:
-                LinuxSerialChannel.debug(on);
+                LinuxSerialChannel.setDebug(on);
                 break;
             default:
-                throw new UnsupportedOperationException("OS not supported");
+                throw new UnsupportedOperationException(os+" not supported");
         }
     }
+
     /**
      * Returns all ports that can be opened.
      * @return 
@@ -235,15 +314,20 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      */
     public static List<String> getAllPorts()
     {
-        switch (getOS())
+        List<String> list = new ArrayList<>();
+        OS os = LibraryLoader.getOS();
+        switch (os)
         {
             case Windows:
-                return WinSerialChannel.getAllPorts();
+                WinSerialChannel.doEnumPorts(list);;
+                break;
             case Linux:
-                return LinuxSerialChannel.getAllPorts();
+                LinuxSerialChannel.doEnumPorts(list);;
+                break;
             default:
-                throw new UnsupportedOperationException("OS not supported");
+                throw new UnsupportedOperationException(os+" not supported");
         }
+        return list;
     }
 
     public DataBits getDataBits()
@@ -281,49 +365,15 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         doClose();
     }
 
-    protected abstract void doClose() throws IOException;
+    protected void doClose() throws IOException
+    {
+        doClose(handle);
+        handle = -1;
+    }
+
+    protected abstract void doClose(long handle) throws IOException;
+
     
-    /**
-     * Adds an event observer for given events.
-     * @param observer
-     * @param types
-     * @throws IOException 
-     */
-    public void addEventObserver(CommEventObserver observer, CommEvent.Type... types) throws IOException
-    {
-        if (eventObserverMap == null)
-        {
-            eventObserverMap = new HashMap<>();
-            observedEvents = EnumSet.noneOf(CommEvent.Type.class);
-        }
-        Set<CommEvent.Type> set = EnumSet.copyOf(Arrays.asList(types));
-        eventObserverMap.put(observer, set);
-        observedEvents.addAll(set);
-        setEventMask(WinCommEvent.createEventMask(observedEvents));
-        if (eventObserverThread == null && !observedEvents.isEmpty())
-        {
-            eventObserverThread = new Thread(this);
-            eventObserverThread.start();
-        }
-    }
-
-    protected abstract void setEventMask(int mask) throws IOException;
-
-    protected abstract int waitEvent(int mask) throws IOException;
-
-    /**
-     * Removes event observer.
-     * @param observer
-     * @return
-     * @throws IOException 
-     */
-    public boolean removeEventObserver(CommEventObserver observer) throws IOException
-    {
-        return eventObserverMap.remove(observer) != null;
-    }
-
-    protected abstract CommError getError(CommStat stat) throws IOException;
-
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
     {
@@ -386,106 +436,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         return read(dsts, 0, dsts.length);
     }
     
-    @Override
-    public void run()
-    {
-        while (true)
-        {
-            try
-            {
-                int ev = waitEvent(0);
-                WinCommEvent event = new WinCommEvent(ev);
-                CommStatus commStatus = null;
-                CommError commError = null;
-                WinCommStat commStat = null;
-                for (CommEventObserver observer : eventObserverMap.keySet())
-                {
-                    for (CommEvent.Type type : eventObserverMap.get(observer))
-                    {
-                        switch (type)
-                        {
-                            case BREAK:
-                                if (event.isBreakEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case CTS:
-                                if (event.isCtsEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isCts());
-                                }
-                                break;
-                            case DSR:
-                                if (event.isDsrEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isDsr());
-                                }
-                                break;
-                            case ERROR:
-                                if (event.isErrorEvent())
-                                {
-                                    if (commError == null)
-                                    {
-                                        commStat = new WinCommStat();
-                                        commError = getError(commStat);
-                                    }
-                                    observer.commError(commError, commStat);
-                                }
-                                break;
-                            case RING:
-                                if (event.isRingEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case RLSD:
-                                if (event.isRlsdEvent())
-                                {
-                                    if (commStatus == null)
-                                    {
-                                        commStatus = getCommStatus();
-                                    }
-                                    observer.commSignalChange(type, commStatus.isRlsd());
-                                }
-                                break;
-                            case CHAR:
-                                if (event.isCharEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case FLAG:
-                                if (event.isFlagEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                            case EMPTY:
-                                if (event.isEmptyEvent())
-                                {
-                                    observer.commEvent(type);
-                                }
-                                break;
-                        }
-                    }
-                }
-            }
-            catch (IOException ex)
-            {
-                ex.printStackTrace();
-            }
-        }
-    }
-
     public static class Builder
     {
         private String port;
@@ -514,16 +464,17 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             switch (getOS())
             {
                 case Windows:
-                    channel = new WinSerialChannel(port, speed, parity, stopBits, dataBits, flowControl);
+                    channel = new WinSerialChannel(port);
                     break;
                 case Linux:
-                    channel = new LinuxSerialChannel(port, speed, parity, stopBits, dataBits, flowControl);
+                    channel = new LinuxSerialChannel(port);
                     break;
                 default:
                     throw new UnsupportedOperationException("OS not supported");
             }
+            channel.open();
+            channel.configure(this);
             channel.configureBlocking(block);
-            channel.connect();
             return channel;
         }
         /**
@@ -571,5 +522,41 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             this.block = block;
             return this;
         }
+
+        public String getPort()
+        {
+            return port;
+        }
+
+        public Speed getSpeed()
+        {
+            return speed;
+        }
+
+        public Parity getParity()
+        {
+            return parity;
+        }
+
+        public StopBits getStopBits()
+        {
+            return stopBits;
+        }
+
+        public DataBits getDataBits()
+        {
+            return dataBits;
+        }
+
+        public FlowControl getFlowControl()
+        {
+            return flowControl;
+        }
+
+        public boolean isBlock()
+        {
+            return block;
+        }
+        
     }
 }

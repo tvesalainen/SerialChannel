@@ -22,14 +22,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import org.vesalainen.comm.channel.CommError;
-import org.vesalainen.comm.channel.CommStat;
-import org.vesalainen.comm.channel.CommStatus;
 import org.vesalainen.comm.channel.SerialSelectionKey;
-import static org.vesalainen.comm.channel.winx.WinCommEvent.CHAR;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -40,8 +35,8 @@ public class WinSerialChannel extends SerialChannel
 {
     public static final int VERSION = 7;
     public static final int MAXDWORD = 0xffffffff;
+    public static final int EV_RXCHAR = 0x0001;
 
-    private long handle = -1;
     private int readIntervalTimeout = MAXDWORD;
     private int readTotalTimeoutMultiplier = MAXDWORD;
     private int readTotalTimeoutConstant = 100;
@@ -61,54 +56,70 @@ public class WinSerialChannel extends SerialChannel
         }
     }
 
-    public WinSerialChannel(String port, Speed speed, Parity parity, StopBits stopBits, DataBits dataBits, FlowControl flowControl)
+    public WinSerialChannel(String port)
+    {
+        this.port = port;
+    }
+
+    @Override
+    protected native void doConfigure(
+            long handle,
+            int baudRate, 
+            int parity, 
+            int dataBits, 
+            int stopBits, 
+            int flowControl
+    ) throws IOException;
+
+    @Override
+    protected native int version();
+
+    @Override
+    protected native long doOpen(byte[] port);
+
+    @Override
+    protected native void doFlush(long handle) throws IOException;
+
+    @Override
+    protected native int doRead(long handle, ByteBuffer dst) throws IOException;
+
+    @Override
+    protected native int doWrite(long handle, ByteBuffer src) throws IOException;
+
+    public static native void setDebug(boolean on);
+
+    public static native void doEnumPorts(List<String> list);
+
+    protected native void doClose(long handle) throws IOException;
+
+    protected void checkVersion()
     {
         int version = version();
         if (version != VERSION)
         {
-            throw new UnsatisfiedLinkError("Loaded DLL version was"+version+" needed version "+VERSION);
+            throw new UnsatisfiedLinkError("Loaded DLL version was "+version+" needed version "+VERSION);
         }
-        this.port = port;
-        this.speed = speed;
-        this.parity = parity;
-        this.stopBits = stopBits;
-        this.dataBits = dataBits;
-        this.flowControl = flowControl;
     }
-
+    
     @Override
-    protected void connect() throws IOException
+    protected void setTimeouts() throws IOException
     {
-        handle = initialize(
-                port.getBytes(), 
-                getSpeed(speed), 
-                parity.ordinal(), 
-                dataBits.ordinal(), 
-                stopBits.ordinal(), 
-                flowControl.ordinal()
+        timeouts(handle,
+                readIntervalTimeout,
+                readTotalTimeoutMultiplier,
+                readTotalTimeoutConstant,
+                writeTotalTimeoutMultiplier,
+                writeTotalTimeoutConstant
         );
-        setTimeouts();
     }
-
-    private void setTimeouts() throws IOException
-    {
-        if (handle != -1)
-        {
-            timeouts(handle,
-                    readIntervalTimeout,
-                    readTotalTimeoutMultiplier,
-                    readTotalTimeoutConstant,
-                    writeTotalTimeoutMultiplier,
-                    writeTotalTimeoutConstant
-            );
-        }
-    }
-    @Override
-    protected void implConfigureBlocking(boolean block) throws IOException
-    {
-        super.implConfigureBlocking(block);
-        setTimeouts();
-    }
+    private native void timeouts(
+            long handle,
+            int readIntervalTimeout,
+            int readTotalTimeoutMultiplier,
+            int readTotalTimeoutConstant,
+            int writeTotalTimeoutMultiplier,
+            int writeTotalTimeoutConstant
+    ) throws IOException;
     
     @Override
     public int validOps()
@@ -129,7 +140,7 @@ public class WinSerialChannel extends SerialChannel
             int mask = 0;
             if ((interestOps & OP_READ) != 0)
             {
-                mask |= CHAR;
+                mask |= EV_RXCHAR;
             }
             masks[index] = mask;
             index++;
@@ -141,7 +152,7 @@ public class WinSerialChannel extends SerialChannel
             for (SelectionKey sk : keys)
             {
                 int readyOps = 0;
-                if ((masks[index] & CHAR) != 0)
+                if ((masks[index] & EV_RXCHAR) != 0)
                 {
                     readyOps |= OP_READ;
                 }
@@ -156,83 +167,11 @@ public class WinSerialChannel extends SerialChannel
         }
         return rc;
     }
-    private native long initialize(
-            byte[] port, 
-            int baudRate, 
-            int parity, 
-            int dataBits, 
-            int stopBits, 
-            int flowControl
-    ) throws IOException;
-
-    private native void timeouts(
-            long handle,
-            int readIntervalTimeout,
-            int readTotalTimeoutMultiplier,
-            int readTotalTimeoutConstant,
-            int writeTotalTimeoutMultiplier,
-            int writeTotalTimeoutConstant
-    ) throws IOException;
-    
-    private native int version();
-
     private native void setEventMask(long handle, int mask) throws IOException;
 
     private native int waitEvent(long handle, int mask) throws IOException;
 
     private static native int doSelect(long[] handles, int[] masks, int timeout) throws IOException;
-
-    @Override
-    protected CommError getError(CommStat stat) throws IOException
-    {
-        int err = doGetError(handle, (WinCommStat)stat);
-        return new WinCommError(err);
-    }
-
-    private native int doGetError(long handle, WinCommStat stat) throws IOException;
-
-    public static void debug(boolean on)
-    {
-        setDebug(on);
-    }
-
-    private static native void setDebug(boolean on);
-
-    @Override
-    public boolean isConnected()
-    {
-        return connected(handle);
-    }
-
-    private native boolean connected(long handle);
-    
-    @Override
-    public void flush() throws IOException
-    {
-        doFlush(handle);
-    }
-
-    public static List<String> getAllPorts()
-    {
-        List<String> list = new ArrayList<>();
-        doEnumPorts(list);
-        return list;
-    }
-
-    private static native void doEnumPorts(List<String> list);
-
-    protected int commStatus() throws IOException
-    {
-        return commStatus(handle);
-    }
-
-    @Override
-    public CommStatus getCommStatus() throws IOException
-    {
-        return new WinCommStatus(this);
-    }
-
-    protected native int commStatus(long handle) throws IOException;
 
     @Override
     public int read(ByteBuffer dst) throws IOException
@@ -261,41 +200,6 @@ public class WinSerialChannel extends SerialChannel
             throw new ClosedChannelException();
         }
     }
-    private native int doRead(long handle, ByteBuffer dst) throws IOException;
-
-    private native void doClose(long handle) throws IOException;
-
-    private native void doFlush(long handle) throws IOException;
-
-    @Override
-    public int write(ByteBuffer src) throws IOException
-    {
-        if (handle != -1)
-        {
-            int count = 0;
-            try
-            {
-                begin();
-                count = doWrite(handle, src);
-                return count;
-            }
-            finally
-            {
-                end(count > 0);
-            }
-        }
-        else
-        {
-            throw new ClosedChannelException();
-        }
-    }
-    private native int doWrite(long handle, ByteBuffer src) throws IOException;
-
-    @Override
-    public String getPort()
-    {
-        return getPort();
-    }
 
     @Override
     public String toString()
@@ -303,23 +207,14 @@ public class WinSerialChannel extends SerialChannel
         return "WinSerialChannel{" + port + '}';
     }
 
-    @Override
     protected void setEventMask(int mask) throws IOException
     {
         setEventMask(handle, mask);
     }
 
-    @Override
     protected int waitEvent(int mask) throws IOException
     {
         return waitEvent(handle, mask);
-    }
-
-    @Override
-    protected void doClose() throws IOException
-    {
-        doClose(handle);
-        handle = -1;
     }
 
     public int getReadIntervalTimeout()

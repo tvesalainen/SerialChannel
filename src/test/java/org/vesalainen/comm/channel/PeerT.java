@@ -57,7 +57,7 @@ public class PeerT
                     {
                         for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                         {
-                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800})
+                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
                             {
                                 System.err.println(speed+" "+bits+" "+parity+" "+flow);
                                 int count = SerialChannel.getSpeed(speed)/4;
@@ -87,7 +87,7 @@ public class PeerT
                                                 {
                                                     byte cc = bb.get();
                                                     int next = rcr.next(8);
-                                                    assertEquals(next, cc);
+                                                    assertEquals((byte)next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
                                                 if (rcr.count() == count)
