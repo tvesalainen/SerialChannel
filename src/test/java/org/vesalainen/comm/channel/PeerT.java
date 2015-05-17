@@ -81,6 +81,7 @@ public class PeerT
                                                 bb.clear();
                                                 sc.read(bb);
                                                 bb.flip();
+                                                System.err.println(bb);
                                                 while (bb.hasRemaining())
                                                 {
                                                     int cc = bb.get() & 0xff;
