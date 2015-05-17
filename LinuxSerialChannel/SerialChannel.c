@@ -218,7 +218,8 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     jint parity, 
     jint databits, 
     jint stopbits, 
-    jint flow
+    jint flow,
+    jboolean replaceError
 	)
 {
     CTX *c = (CTX*)ctx;
@@ -392,7 +393,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURNV;
         break;
     }
-//    c->newtio.c_iflag |= PARMRK;    // mark parity
+    if (replaceError)
+    {
+        c->newtio.c_iflag |= PARMRK;    // mark parity
+    }
+    else
+    {
+        c->newtio.c_iflag &= ~PARMRK;
+    }
     c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
     c->newtio.c_cc[VMIN] = 1;
     

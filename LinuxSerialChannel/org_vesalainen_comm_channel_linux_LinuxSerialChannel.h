@@ -14,10 +14,10 @@ extern "C" {
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doConfigure
- * Signature: (JIIIII)V
+ * Signature: (JIIIIIZ)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doConfigure
-  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint, jboolean);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
