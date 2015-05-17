@@ -32,6 +32,7 @@
 typedef struct _CTX
 {
 	HANDLE hComm;
+	DCB dcb;
 } CTX;
 void exception(JNIEnv * env, const char* clazz, const char* message);
 char* configure(

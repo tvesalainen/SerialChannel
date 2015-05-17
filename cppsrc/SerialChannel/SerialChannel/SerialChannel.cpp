@@ -92,6 +92,12 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_d
 	}
 	(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
+	if (!GetCommState(c->hComm, &c->dcb))
+	{
+		exception(env, "java/io/IOException", "GetCommState failed");
+		ERRORRETURNV
+	}
+
 	DEBUG("PurgeComm");
 	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
 	{
@@ -109,100 +115,94 @@ jint bauds,
 jint parity,
 jint databits,
 jint stopbits,
-jint flow
+jint flow,
+jboolean replaceError
 )
 {
 	CTX *c = (CTX*)ctx;
-	DCB dcb;
 	int framesize = 1;	// start bit
 
-	if (!GetCommState(c->hComm, &dcb))
-	{
-		exception(env, "java/io/IOException", "GetCommState failed");
-		ERRORRETURNV
-	}
+	c->dcb.fBinary = TRUE;
+	c->dcb.fDtrControl = DTR_CONTROL_ENABLE;
+	c->dcb.fDsrSensitivity = FALSE;
+	c->dcb.fTXContinueOnXoff = FALSE;
+	c->dcb.fOutX = FALSE;
+	c->dcb.fInX = FALSE;
+	c->dcb.fErrorChar = FALSE;
+	c->dcb.fNull = FALSE;
+	c->dcb.fRtsControl = RTS_CONTROL_ENABLE;
+	c->dcb.fAbortOnError = FALSE;
+	c->dcb.fOutxCtsFlow = FALSE;
+	c->dcb.fOutxDsrFlow = FALSE;
 
-	dcb.fBinary = TRUE;
-	dcb.fDtrControl = DTR_CONTROL_ENABLE;
-	dcb.fDsrSensitivity = FALSE;
-	dcb.fTXContinueOnXoff = FALSE;
-	dcb.fOutX = FALSE;
-	dcb.fInX = FALSE;
-	dcb.fErrorChar = FALSE;
-	dcb.fNull = FALSE;
-	dcb.fRtsControl = RTS_CONTROL_ENABLE;
-	dcb.fAbortOnError = FALSE;
-	dcb.fOutxCtsFlow = FALSE;
-	dcb.fOutxDsrFlow = FALSE;
-
-	dcb.BaudRate = bauds;
+	c->dcb.BaudRate = bauds;
 
 	switch (parity)
 	{
 	case 0:	// NONE
-		dcb.fParity = FALSE;
-		dcb.Parity = NOPARITY;
+		c->dcb.fParity = FALSE;
+		c->dcb.Parity = NOPARITY;
 		break;
 	case 1:	// ODD
-		dcb.fParity = TRUE;
-		dcb.Parity = ODDPARITY;
+		c->dcb.fParity = TRUE;
+		c->dcb.Parity = ODDPARITY;
 		break;
 	case 2:	// EVEN
-		dcb.fParity = TRUE;
-		dcb.Parity = EVENPARITY;
+		c->dcb.fParity = TRUE;
+		c->dcb.Parity = EVENPARITY;
 		break;
 	case 3:	// MARK
-		dcb.fParity = TRUE;
-		dcb.Parity = MARKPARITY;
+		c->dcb.fParity = TRUE;
+		c->dcb.Parity = MARKPARITY;
 		break;
 	case 4:	// SPACE
-		dcb.fParity = TRUE;
-		dcb.Parity = SPACEPARITY;
+		c->dcb.fParity = TRUE;
+		c->dcb.Parity = SPACEPARITY;
 		break;
 	default:
 		exception(env, "java/io/IOException", "illegal parity value");
 		ERRORRETURNV
 		break;
 }
-	if (dcb.Parity != NOPARITY)
+	if (c->dcb.Parity != NOPARITY)
 	{
 		framesize++;
 	}
 	switch (databits)
 	{
 	case 0:	// 4
-		dcb.ByteSize = 4;
+		c->dcb.ByteSize = 4;
 		break;
 	case 1:	// 5
-		dcb.ByteSize = 5;
+		c->dcb.ByteSize = 5;
 		break;
 	case 2:	// 6
-		dcb.ByteSize = 6;
+		c->dcb.ByteSize = 6;
 		break;
 	case 3:	// 7
-		dcb.ByteSize = 7;
+		c->dcb.ByteSize = 7;
 		break;
 	case 4:	// 8
-		dcb.ByteSize = 8;
+		c->dcb.ByteSize = 8;
 		break;
 	default:
 		exception(env, "java/io/IOException", "illegal databits value");
 		ERRORRETURNV
 		break;
 	}
-	framesize += dcb.ByteSize;
+	framesize += c->dcb.ByteSize;
 	switch (stopbits)
 	{
 	case 0:	// 1
-		dcb.StopBits = ONESTOPBIT;
+		c->dcb.StopBits = ONESTOPBIT;
 		framesize += 1;
 		break;
 	case 1:	// 1.5
-		dcb.StopBits = ONE5STOPBITS;
+		c->dcb.StopBits = ONE5STOPBITS;
 		framesize += 2;
 		break;
 	case 2:	// 2
-		dcb.StopBits = TWOSTOPBITS;
+		c->dcb.StopBits = TWOSTOPBITS;
 		framesize += 2;
 		break;
 	default:
@@ -215,24 +215,28 @@ jint flow
 	case 0:	// NONE
 		break;
 	case 1:	// XONXOFF
-		dcb.fInX = TRUE;
-		dcb.fOutX = TRUE;
+		c->dcb.fInX = TRUE;
+		c->dcb.fOutX = TRUE;
 		break;
 	case 2:	// RTSCTS
-		dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
-		dcb.fOutxCtsFlow = TRUE;
+		c->dcb.fRtsControl = RTS_CONTROL_HANDSHAKE;
+		c->dcb.fOutxCtsFlow = TRUE;
 		break;
 	case 3:	// DSRDTR
-		dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
-		dcb.fOutxDsrFlow = TRUE;
+		c->dcb.fDtrControl = DTR_CONTROL_HANDSHAKE;
+		c->dcb.fOutxDsrFlow = TRUE;
 		break;
 	default:
 		exception(env, "java/io/IOException", "illegal flow control value");
 		ERRORRETURNV
 		break;
 	}
-
-	if (!SetCommState(c->hComm, &dcb))
+	if (replaceError)
+	{
+		c->dcb.fErrorChar = TRUE;
+		c->dcb.ErrorChar = 0xff;
+	}
+	if (!SetCommState(c->hComm, &c->dcb))
 	{
 		exception(env, "java/io/IOException", "SetCommState failed");
 		ERRORRETURNV

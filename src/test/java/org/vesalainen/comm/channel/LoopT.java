@@ -6,8 +6,6 @@
 package org.vesalainen.comm.channel;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -15,7 +13,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -41,34 +38,6 @@ public class LoopT
     {
     }
 
-    //@Test
-    public void test1()
-    {
-        try
-        {
-            List<String> allPorts = SerialChannel.getFreePorts();
-            assertNotNull(allPorts);
-            for (String port : allPorts)
-            {
-                Builder builder = new Builder(port, Speed.B57600)
-                        .setParity(SerialChannel.Parity.SPACE);
-                SerialChannel sc = builder.get();
-                try (InputStream is = sc.getInputStream(80))
-                {
-                    int cc = is.read();
-                    while (cc != -1)
-                    {
-                        System.err.println(String.format("%02X ", cc));
-                        cc = is.read();
-                    }
-                }
-            }
-        }
-        catch (IOException ex)
-        {
-            fail(ex.getMessage());
-        }
-    }
     @Test
     public void testWakeupSelect()
     {

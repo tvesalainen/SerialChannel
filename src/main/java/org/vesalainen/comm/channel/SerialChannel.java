@@ -48,6 +48,7 @@ import static org.vesalainen.loader.LibraryLoader.getOS;
  */
 public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
 {
+    private boolean replaceError;
 
     /**
      * Baud rate. Depends on used devices which are supported.
@@ -135,6 +136,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         handle = doOpen(port.getBytes());
     }
     protected abstract long doOpen(byte[] port);
+    
+    public abstract byte[] getErrorReplacement();
 
     /**
      * Change channel configuration
@@ -143,18 +146,20 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      */
     public void configure(Builder builder) throws IOException
     {
-        this.speed = builder.getSpeed();
-        this.parity = builder.getParity();
-        this.stopBits = builder.getStopBits();
-        this.dataBits = builder.getDataBits();
-        this.flowControl = builder.getFlowControl();
+        this.speed = builder.speed;
+        this.parity = builder.parity;
+        this.stopBits = builder.stopBits;
+        this.dataBits = builder.dataBits;
+        this.flowControl = builder.flowControl;
+        this.replaceError = builder.replaceError;
         doConfigure(
                 handle,
                 getSpeed(speed), 
                 parity.ordinal(), 
                 dataBits.ordinal(), 
                 stopBits.ordinal(), 
-                flowControl.ordinal()
+                flowControl.ordinal(),
+                replaceError
         );
     }
 
@@ -164,7 +169,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             int parity, 
             int dataBits, 
             int stopBits, 
-            int flowControl
+            int flowControl,
+            boolean replaceError
     ) throws IOException;
 
     /**
@@ -355,6 +361,11 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         return stopBits;
     }
 
+    public boolean isReplaceError()
+    {
+        return replaceError;
+    }
+
     @Override
     protected void implCloseSelectableChannel() throws IOException
     {
@@ -445,6 +456,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         private DataBits dataBits = DataBits.DATABITS_8;
         private FlowControl flowControl = FlowControl.NONE;
         private boolean block = true;
+        private boolean replaceError;
 
         public Builder(String port, Speed speed)
         {
@@ -523,6 +535,12 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return this;
         }
 
+        public Builder setReplaceError(boolean replace)
+        {
+            this.replaceError = replace;
+            return this;
+        }
+
         public String getPort()
         {
             return port;
@@ -556,6 +574,11 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         public boolean isBlock()
         {
             return block;
+        }
+
+        public boolean isReplaceError()
+        {
+            return replaceError;
         }
         
     }

@@ -71,7 +71,8 @@ public class WinSerialChannel extends SerialChannel
             int parity, 
             int dataBits, 
             int stopBits, 
-            int flowControl
+            int flowControl,
+            boolean replaceError
     ) throws IOException;
 
     @Override
@@ -173,6 +174,13 @@ public class WinSerialChannel extends SerialChannel
     private native int waitEvent(long handle, int mask) throws IOException;
 
     private static native int doSelect(int len, long[] handles, int[] masks, int timeout) throws IOException;
+
+    private static final byte[] errorReplacement = new byte[] {(byte)0xff};
+    @Override
+    public byte[] getErrorReplacement()
+    {
+        return errorReplacement;
+    }
 
     @Override
     public int read(ByteBuffer dst) throws IOException

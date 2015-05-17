@@ -71,7 +71,8 @@ public class LinuxSerialChannel extends SerialChannel
             int parity, 
             int dataBits, 
             int stopBits, 
-            int flowControl
+            int flowControl,
+            boolean replaceError
     ) throws IOException;
 
     @Override
@@ -93,7 +94,15 @@ public class LinuxSerialChannel extends SerialChannel
 
     public static native void doEnumPorts(List<String> list);
 
+    @Override
     protected native void doClose(long handle) throws IOException;
+
+    private static final byte[] errorReplacement = new byte[] {(byte)0xff, 0x00};
+    @Override
+    public byte[] getErrorReplacement()
+    {
+        return errorReplacement;
+    }
 
     protected void checkVersion()
     {

@@ -21,17 +21,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
+import org.vesalainen.comm.channel.SerialChannel.Speed;
 
 /**
  * These test needs two host connected together with null modem cable.
@@ -51,22 +46,24 @@ public class PeerT
             try 
             {
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
-                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
+                SerialChannel.Builder builder1 = new SerialChannel.Builder(ports.get(0), Speed.B1200)
+                        .setBlocking(false);
+                try (SerialChannel sc = builder1.get())
                 {
-                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
+                    for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
                     {
-                        for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
+                        for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
                         {
-                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
+                            for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                             {
-                                System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                int count = SerialChannel.getSpeed(speed)/4;
-                                SerialChannel.Builder builder1 = new SerialChannel.Builder(ports.get(0), speed)
-                                        .setFlowControl(flow)
-                                        .setParity(parity)
-                                        .setDataBits(bits);
-                                try (SerialChannel sc = builder1.get())
+                                for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
                                 {
+                                    System.err.println(speed+" "+bits+" "+parity+" "+flow);
+                                    int count = SerialChannel.getSpeed(speed)/4;
+                                    builder1.setSpeed(speed)
+                                            .setFlowControl(flow)
+                                            .setParity(parity)
+                                            .setDataBits(bits);
                                     SerialSelector selector = new SerialSelector();
                                     sc.configureBlocking(false);
                                     sc.register(selector, OP_READ);

@@ -18,10 +18,10 @@ extern "C" {
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doConfigure
- * Signature: (JIIIII)V
+ * Signature: (JIIIIIZ)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doConfigure
-  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint);
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint, jboolean);
 
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
