@@ -13,6 +13,8 @@ extern "C" {
 #define org_vesalainen_comm_channel_winx_WinSerialChannel_MAXDWORD -1L
 #undef org_vesalainen_comm_channel_winx_WinSerialChannel_EV_RXCHAR
 #define org_vesalainen_comm_channel_winx_WinSerialChannel_EV_RXCHAR 1L
+#undef org_vesalainen_comm_channel_winx_WinSerialChannel_MaxSelect
+#define org_vesalainen_comm_channel_winx_WinSerialChannel_MaxSelect 64L
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doConfigure
@@ -112,10 +114,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doSelect
- * Signature: ([J[II)I
+ * Signature: (I[J[II)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-  (JNIEnv *, jclass, jlongArray, jintArray, jint);
+  (JNIEnv *, jclass, jint, jlongArray, jintArray, jint);
 
 #ifdef __cplusplus
 }

@@ -36,6 +36,9 @@ public class WinSerialChannel extends SerialChannel
     public static final int VERSION = 7;
     public static final int MAXDWORD = 0xffffffff;
     public static final int EV_RXCHAR = 0x0001;
+    public static final int MaxSelect = 64;
+    private static long[] handles = new long[MaxSelect];
+    private static int[] masks = new int[MaxSelect];
 
     private int readIntervalTimeout = MAXDWORD;
     private int readTotalTimeoutMultiplier = MAXDWORD;
@@ -129,8 +132,6 @@ public class WinSerialChannel extends SerialChannel
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
-        long[] handles = new long[keys.size()];
-        int[] masks = new int[handles.length];
         int index = 0;
         for (SelectionKey sk : keys)
         {
@@ -145,7 +146,7 @@ public class WinSerialChannel extends SerialChannel
             masks[index] = mask;
             index++;
         }
-        int rc = WinSerialChannel.doSelect(handles, masks, timeout);
+        int rc = WinSerialChannel.doSelect(index, handles, masks, timeout);
         if (rc != 0)
         {
             index = 0;
@@ -171,7 +172,7 @@ public class WinSerialChannel extends SerialChannel
 
     private native int waitEvent(long handle, int mask) throws IOException;
 
-    private static native int doSelect(long[] handles, int[] masks, int timeout) throws IOException;
+    private static native int doSelect(int len, long[] handles, int[] masks, int timeout) throws IOException;
 
     @Override
     public int read(ByteBuffer dst) throws IOException

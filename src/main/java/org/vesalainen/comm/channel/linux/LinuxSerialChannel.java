@@ -42,7 +42,7 @@ public class LinuxSerialChannel extends SerialChannel
     private int time;
     
     static
-    {
+    {                                       
         try
         {
             LibraryLoader.loadLibrary(LinuxSerialChannel.class, "SerialChannel");

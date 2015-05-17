@@ -41,11 +41,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_ve
 {
 	return org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION;
 }
-/*
- * Class:     fi_sw_0005fnets_comm_channel_SerialChannel
- * Method:    initialize
- * Signature: ([BIZII)I
- */
 JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doOpen(
 	JNIEnv *env, 
 	jobject obj, 
@@ -381,9 +376,8 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 	return dwCommEvent;
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-(JNIEnv *env, jobject obj, jlongArray ctxs, jintArray masks, jint timeout)
+(JNIEnv *env, jobject obj, jint len, jlongArray ctxs, jintArray masks, jint timeout)
 {
-	jsize len;
 	jlong *ctxArr;
 	jint *pMask;
 	jint count = 0;
@@ -400,7 +394,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	{
 		to = INFINITE;
 	}
-	len = (*env)->GetArrayLength(env, ctxs);
 	if (len > MAXIMUM_WAIT_OBJECTS)
 	{
 		exception(env, "java/io/IOException", "too many channels");
