@@ -101,6 +101,7 @@ public class PeerT
                                         if (rcr.count() == count)
                                         {
                                             rcr.resetCount();
+                                            rcw.resetCount();
                                             break;
                                         }
                                         send(sc, wb, rcw, count);
