@@ -46,7 +46,8 @@ public class PeerT
         {
             try 
             {
-                ByteBuffer bb = ByteBuffer.allocateDirect(10);
+                ByteBuffer wb = ByteBuffer.allocateDirect(10);
+                ByteBuffer rb = ByteBuffer.allocateDirect(20);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
                 RandomChar rcr = new RandomChar();
@@ -71,7 +72,7 @@ public class PeerT
                                             .setParity(parity)
                                             .setDataBits(bits);
                                     sc.configure(builder);
-                                    send(sc, bb, rcw, count);
+                                    send(sc, wb, rcw, count);
                                     while (rcr.count() < count)
                                     {
                                         int c = selector.select();
@@ -82,13 +83,13 @@ public class PeerT
                                             SelectionKey sk = keyIterator.next();
                                             if (sk.isReadable())
                                             {
-                                                bb.clear();
-                                                sc.read(bb);
-                                                bb.flip();
-                                                System.err.println(bb);
-                                                while (bb.hasRemaining())
+                                                rb.clear();
+                                                sc.read(rb);
+                                                rb.flip();
+                                                System.err.println(rb);
+                                                while (rb.hasRemaining())
                                                 {
-                                                    int cc = bb.get() & 0xff;
+                                                    int cc = rb.get() & 0xff;
                                                     int next = rcr.next(8);
                                                     System.err.println(cc+" "+next);
                                                     assertEquals("count="+rcr.count(), (byte)next, cc);
@@ -102,7 +103,7 @@ public class PeerT
                                                 keyIterator.remove();
                                             }
                                         }
-                                        send(sc, bb, rcw, count);
+                                        send(sc, wb, rcw, count);
                                     }
                                 }
                             }
