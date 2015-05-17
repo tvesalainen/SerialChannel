@@ -47,6 +47,7 @@ public class SyncTransmitter implements Callable<Void>
             {
                 if (ii == count-1)
                 {
+                    os.flush();
                     semaphore.acquire();
                 }
                 int next = rand.next(bits);
