@@ -65,7 +65,7 @@ public class PeerT
                     sc.register(selector, OP_READ);
                     for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
                     {
-                        for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
+                        for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE})
                         {
                             for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                             {
