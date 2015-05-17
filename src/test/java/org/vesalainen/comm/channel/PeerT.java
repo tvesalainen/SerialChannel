@@ -27,6 +27,9 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -45,6 +48,7 @@ public class PeerT
     {
         //SerialChannel.debug(true);
         final ExecutorService exec = Executors.newCachedThreadPool();
+        final Semaphore semaphore = new Semaphore(0);
         Timer timer = new Timer();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
@@ -78,16 +82,26 @@ public class PeerT
                                             .setParity(parity)
                                             .setDataBits(bits);
                                     sc.configure(builder);
-                                    final SyncTransmitter tra = new SyncTransmitter(sc, count);;
-                                    TimerTask task = new TimerTask() {
+                                    TimerTask writer = new TimerTask() {
 
                                         @Override
                                         public void run()
                                         {
+                                            Transmitter tra = new Transmitter(sc, count);
                                             Future<Void> ftra1 = exec.submit(tra);
                                         }
                                     };
-                                    timer.schedule(task, 5000);
+                                    TimerTask reader = new TimerTask() {
+
+                                        @Override
+                                        public void run()
+                                        {
+                                            semaphore.release();
+                                        }
+                                    };
+                                    timer.schedule(reader, 3000);
+                                    timer.schedule(writer, 5000);
+                                    semaphore.acquire();
                                     while (true)
                                     {
                                         int c = selector.select();
@@ -113,10 +127,6 @@ public class PeerT
                                                 keyIterator.remove();
                                             }
                                         }
-                                        if (rcr.count() == count-1)
-                                        {
-                                            tra.ack();
-                                        }
                                         if (rcr.count() == count)
                                         {
                                             rcr.resetCount();
@@ -127,6 +137,10 @@ public class PeerT
                             }
                         }
                     }
+                }
+                catch (InterruptedException ex)
+                {
+                    Logger.getLogger(PeerT.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
             catch (IOException ex)
