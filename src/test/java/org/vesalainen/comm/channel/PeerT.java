@@ -85,6 +85,7 @@ public class PeerT
                                                 {
                                                     byte cc = bb.get();
                                                     int next = rcr.next(8);
+                                                    System.err.println(cc+" "+(byte)next);
                                                     assertEquals("count="+count, (byte)next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
