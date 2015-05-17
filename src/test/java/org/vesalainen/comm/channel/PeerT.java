@@ -115,7 +115,7 @@ public class PeerT
                                                 rb.clear();
                                                 sc.read(rb);
                                                 rb.flip();
-                                                System.err.println(rb);
+                                                //System.err.println(rb);
                                                 while (rb.hasRemaining())
                                                 {
                                                     int cc = rb.get() & 0xff;
