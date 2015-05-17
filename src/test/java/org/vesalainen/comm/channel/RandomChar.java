@@ -31,7 +31,7 @@ public class RandomChar
     private Random random = new Random(SEED);
     public int next(int bits)
     {
-        return count++ % 256;
+        return (count++ % 200)+32;
         /*
         if (bits >= 7)
         {
