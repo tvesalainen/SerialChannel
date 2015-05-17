@@ -48,8 +48,6 @@ import static org.vesalainen.loader.LibraryLoader.getOS;
  */
 public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
 {
-    private boolean replaceError;
-
     /**
      * Baud rate. Depends on used devices which are supported.
      */
@@ -70,7 +68,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected Thread eventObserverThread;
     
     protected boolean block = true;
-    
+    private boolean replaceError;
+
     protected SerialChannel()
     {
         super(SerialSelectorProvider.provider());

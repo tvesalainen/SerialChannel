@@ -284,10 +284,12 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 {
 	CTX *c = (CTX*)ctx;
 
-	//DEBUG("PurgeComm");
-	//PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
-	DEBUG("FlushFileBuffers");
-	FlushFileBuffers(c->hComm);
+	DEBUG("PurgeComm");
+	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
+	{
+		exception(env, "java/io/IOException", "PurgeComm");
+		ERRORRETURNV
+	}
 
 	DEBUG("CloseHandle");
 	if (!CloseHandle(c->hComm))
@@ -461,53 +463,56 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			}
 		}
 	}
-	if (waitCount == len)
+	if (waitCount)
 	{
-		timeout = INFINITE;
-	}
-	dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, to);
-	switch (dwRes)
-	{
-	case WAIT_TIMEOUT:
-		break;
-	case WAIT_FAILED:
-		(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-		(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-		for (ii = 0; ii < waitCount; ii++)
+		if (waitCount == len)
 		{
-			CloseHandle(waits[ii]);
+			timeout = INFINITE;
 		}
-		exception(env, "java/io/IOException", NULL);
-		ERRORRETURN
-		break;
-	default:
-
-		for (ii = dwRes - WAIT_OBJECT_0; ii < waitCount; ii++)
+		dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, to);
+		switch (dwRes)
 		{
-			int jj = index[ii];
-			CTX *ctx = (CTX*)ctxArr[jj];
-			if (!GetOverlappedResult(ctx->hComm, osStatus + jj, dwCommEvent+jj, FALSE))
-			{
-				if (GetLastError() != ERROR_IO_INCOMPLETE)
-				{
-					(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-					(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-					for (ii = 0; ii < waitCount; ii++)
-					{
-						CloseHandle(waits[ii]);
-					}
-					exception(env, "java/io/IOException", NULL);
-					ERRORRETURN
-				}
-			}
-			else
+		case WAIT_TIMEOUT:
+			break;
+		case WAIT_FAILED:
+			(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
+			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+			for (ii = 0; ii < waitCount; ii++)
 			{
 				CloseHandle(waits[ii]);
-				pMask[jj] |= EV_RXCHAR;
-				count++;
 			}
+			exception(env, "java/io/IOException", NULL);
+			ERRORRETURN
+				break;
+		default:
+
+			for (ii = dwRes - WAIT_OBJECT_0; ii < waitCount; ii++)
+			{
+				int jj = index[ii];
+				CTX *ctx = (CTX*)ctxArr[jj];
+				if (!GetOverlappedResult(ctx->hComm, osStatus + jj, dwCommEvent + jj, FALSE))
+				{
+					if (GetLastError() != ERROR_IO_INCOMPLETE)
+					{
+						(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
+						(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
+						for (ii = 0; ii < waitCount; ii++)
+						{
+							CloseHandle(waits[ii]);
+						}
+						exception(env, "java/io/IOException", NULL);
+						ERRORRETURN
+					}
+				}
+				else
+				{
+					CloseHandle(waits[ii]);
+					pMask[jj] |= EV_RXCHAR;
+					count++;
+				}
+			}
+			break;
 		}
-		break;
 	}
 	(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
 	(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);

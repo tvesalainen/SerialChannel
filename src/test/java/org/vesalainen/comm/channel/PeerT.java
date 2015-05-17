@@ -96,13 +96,12 @@ public class PeerT
                                                     assertTrue(rcr.count() <= count);
                                                 }
                                                 keyIterator.remove();
-                                                if (rcr.count() == count)
-                                                {
-                                                    rcr.resetCount();
-                                                    sk.cancel();
-                                                    break;
-                                                }
                                             }
+                                        }
+                                        if (rcr.count() == count)
+                                        {
+                                            rcr.resetCount();
+                                            break;
                                         }
                                         send(sc, wb, rcw, count);
                                     }
