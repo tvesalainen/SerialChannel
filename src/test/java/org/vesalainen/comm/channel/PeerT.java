@@ -49,8 +49,13 @@ public class PeerT
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
+                RandomChar rcr = new RandomChar();
+                RandomChar rcw = new RandomChar();
                 try (SerialChannel sc = builder.get())
                 {
+                    SerialSelector selector = new SerialSelector();
+                    sc.configureBlocking(false);
+                    sc.register(selector, OP_READ);
                     for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
                     {
                         for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
@@ -66,15 +71,11 @@ public class PeerT
                                             .setParity(parity)
                                             .setDataBits(bits);
                                     sc.configure(builder);
-                                    SerialSelector selector = new SerialSelector();
-                                    sc.configureBlocking(false);
-                                    sc.register(selector, OP_READ);
-                                    RandomChar rcr = new RandomChar();
-                                    RandomChar rcw = new RandomChar();
                                     send(sc, bb, rcw, count);
-                                    int c = selector.select();
-                                    if (c > 0)
+                                    while (rcr.count() < count)
                                     {
+                                        int c = selector.select();
+                                        assertTrue(c > 0);
                                         Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
                                         while(keyIterator.hasNext())
                                         {
@@ -102,10 +103,6 @@ public class PeerT
                                             }
                                         }
                                         send(sc, bb, rcw, count);
-                                    }
-                                    else
-                                    {
-                                        continue;
                                     }
                                 }
                             }
