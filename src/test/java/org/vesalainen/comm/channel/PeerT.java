@@ -53,8 +53,7 @@ public class PeerT
         {
             try 
             {
-                ByteBuffer wb = ByteBuffer.allocateDirect(10);
-                ByteBuffer rb = ByteBuffer.allocateDirect(20);
+                ByteBuffer rb = ByteBuffer.allocateDirect(2000);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
                 RandomChar rcr = new RandomChar();
@@ -79,12 +78,12 @@ public class PeerT
                                             .setParity(parity)
                                             .setDataBits(bits);
                                     sc.configure(builder);
+                                    final SyncTransmitter tra = new SyncTransmitter(sc, count);;
                                     TimerTask task = new TimerTask() {
 
                                         @Override
                                         public void run()
                                         {
-                                            Transmitter tra = new Transmitter(sc, count);
                                             Future<Void> ftra1 = exec.submit(tra);
                                         }
                                     };
@@ -107,17 +106,20 @@ public class PeerT
                                                 {
                                                     int cc = rb.get() & 0xff;
                                                     int next = rcr.next(8);
-                                                    System.err.println("wc="+rcw.count()+" "+"rc="+rcr.count()+" "+cc+" "+next);
+                                                    System.err.println("rc="+rcr.count()+" "+cc+" "+next);
                                                     assertEquals("count="+rcr.count(), next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
                                                 keyIterator.remove();
                                             }
                                         }
+                                        if (rcr.count() == count-1)
+                                        {
+                                            tra.ack();
+                                        }
                                         if (rcr.count() == count)
                                         {
                                             rcr.resetCount();
-                                            rcw.resetCount();
                                             break;
                                         }
                                     }
