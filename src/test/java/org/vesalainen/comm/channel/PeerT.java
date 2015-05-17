@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
+import java.util.Iterator;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -74,8 +75,10 @@ public class PeerT
                                     int c = selector.select();
                                     if (c > 0)
                                     {
-                                        for (SelectionKey sk : selector.selectedKeys())
+                                        Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+                                        while(keyIterator.hasNext())
                                         {
+                                            SelectionKey sk = keyIterator.next();
                                             if (sk.isReadable())
                                             {
                                                 bb.clear();
@@ -95,6 +98,7 @@ public class PeerT
                                                     rcr.resetCount();
                                                     sk.cancel();
                                                 }
+                                                keyIterator.remove();
                                             }
                                         }
                                         send(sc, bb, rcw, count);
