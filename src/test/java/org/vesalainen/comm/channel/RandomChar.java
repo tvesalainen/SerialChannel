@@ -46,6 +46,10 @@ public class RandomChar
     {
         return count;
     }
+    public void resetCount()
+    {
+        count = 0;
+    }
     public void reset()
     {
         random.setSeed(SEED);
