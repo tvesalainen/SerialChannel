@@ -94,6 +94,7 @@ public class WinSerialChannel extends SerialChannel
 
     public static native void doEnumPorts(List<String> list);
 
+    @Override
     protected native void doClose(long handle) throws IOException;
 
     protected void checkVersion()
@@ -194,7 +195,7 @@ public class WinSerialChannel extends SerialChannel
                 count = doRead(handle, dst);
                 while (block && count == 0)
                 {
-                    waitEvent(0x0001|0x0080|0x0040);
+                    waitEvent(EV_RXCHAR);
                     count = doRead(handle, dst);
                 }
                 return count;
