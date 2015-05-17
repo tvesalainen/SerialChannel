@@ -50,7 +50,7 @@ public class PeerT
                         .setBlocking(false);
                 try (SerialChannel sc = builder.get())
                 {
-                    for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
+                    for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
                     {
                         for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE})
                         {
