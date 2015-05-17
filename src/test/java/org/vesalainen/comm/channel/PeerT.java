@@ -22,6 +22,11 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -39,6 +44,8 @@ public class PeerT
     public void regressionTest()
     {
         //SerialChannel.debug(true);
+        final ExecutorService exec = Executors.newCachedThreadPool();
+        Timer timer = new Timer();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() > 0);
@@ -66,13 +73,22 @@ public class PeerT
                                 for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
                                 {
                                     System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                    int count = SerialChannel.getSpeed(speed)/4;
+                                    final int count = SerialChannel.getSpeed(speed)/4;
                                     builder.setSpeed(speed)
                                             .setFlowControl(flow)
                                             .setParity(parity)
                                             .setDataBits(bits);
                                     sc.configure(builder);
-                                    send(sc, wb, rcw, count);
+                                    TimerTask task = new TimerTask() {
+
+                                        @Override
+                                        public void run()
+                                        {
+                                            Transmitter tra = new Transmitter(sc, count);
+                                            Future<Void> ftra1 = exec.submit(tra);
+                                        }
+                                    };
+                                    timer.schedule(task, 5000);
                                     while (true)
                                     {
                                         int c = selector.select();
@@ -104,7 +120,6 @@ public class PeerT
                                             rcw.resetCount();
                                             break;
                                         }
-                                        send(sc, wb, rcw, count);
                                     }
                                 }
                             }
@@ -119,18 +134,4 @@ public class PeerT
             }
         }
     }
-
-    private void send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
-    {
-        System.err.println("send");
-        bb.clear();
-        while (rcw.count() < count && bb.hasRemaining())
-        {
-            bb.put((byte) rcw.next(8));
-        }
-        bb.flip();
-        sc.write(bb);
-    }
-
-    
 }
