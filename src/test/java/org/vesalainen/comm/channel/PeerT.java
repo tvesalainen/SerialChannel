@@ -46,9 +46,9 @@ public class PeerT
             try 
             {
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
-                SerialChannel.Builder builder1 = new SerialChannel.Builder(ports.get(0), Speed.B1200)
+                SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
-                try (SerialChannel sc = builder1.get())
+                try (SerialChannel sc = builder.get())
                 {
                     for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
                     {
@@ -60,10 +60,11 @@ public class PeerT
                                 {
                                     System.err.println(speed+" "+bits+" "+parity+" "+flow);
                                     int count = SerialChannel.getSpeed(speed)/4;
-                                    builder1.setSpeed(speed)
+                                    builder.setSpeed(speed)
                                             .setFlowControl(flow)
                                             .setParity(parity)
                                             .setDataBits(bits);
+                                    sc.configure(builder);
                                     SerialSelector selector = new SerialSelector();
                                     sc.configureBlocking(false);
                                     sc.register(selector, OP_READ);
