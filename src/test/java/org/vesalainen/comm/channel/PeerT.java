@@ -99,8 +99,9 @@ public class PeerT
                                             semaphore.release();
                                         }
                                     };
-                                    timer.schedule(reader, 3000);
-                                    timer.schedule(writer, 5000);
+                                    timer.schedule(reader, 5000);
+                                    timer.schedule(writer, 10000);
+                                    System.err.println("wait");
                                     semaphore.acquire();
                                     while (true)
                                     {
