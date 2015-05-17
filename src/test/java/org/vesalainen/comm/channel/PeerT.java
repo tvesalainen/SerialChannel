@@ -83,9 +83,9 @@ public class PeerT
                                                 bb.flip();
                                                 while (bb.hasRemaining())
                                                 {
-                                                    byte cc = bb.get();
+                                                    int cc = bb.get() & 0xff;
                                                     int next = rcr.next(8);
-                                                    System.err.println(cc+" "+(byte)next);
+                                                    System.err.println(cc+" "+next);
                                                     assertEquals("count="+rcr.count(), (byte)next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
@@ -118,6 +118,7 @@ public class PeerT
 
     private void send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
     {
+        System.err.println("send");
         bb.clear();
         while (rcw.count() < count && bb.hasRemaining())
         {
