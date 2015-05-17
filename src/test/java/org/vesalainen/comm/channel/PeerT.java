@@ -73,7 +73,7 @@ public class PeerT
                                             .setDataBits(bits);
                                     sc.configure(builder);
                                     send(sc, wb, rcw, count);
-                                    while (rcr.count() < count)
+                                    while (true)
                                     {
                                         int c = selector.select();
                                         assertTrue(c > 0);
@@ -95,12 +95,13 @@ public class PeerT
                                                     assertEquals("count="+rcr.count(), next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
+                                                keyIterator.remove();
                                                 if (rcr.count() == count)
                                                 {
                                                     rcr.resetCount();
                                                     sk.cancel();
+                                                    break;
                                                 }
-                                                keyIterator.remove();
                                             }
                                         }
                                         send(sc, wb, rcw, count);
