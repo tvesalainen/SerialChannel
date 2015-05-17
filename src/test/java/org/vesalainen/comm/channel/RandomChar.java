@@ -29,10 +29,10 @@ public class RandomChar
     private int count;
 
     private Random random = new Random(SEED);
-
     public int next(int bits)
     {
-        count++;
+        return count++ % 256;
+        /*
         if (bits >= 7)
         {
             return random.nextInt((int)Math.pow(2, bits)-32)+32;
@@ -41,6 +41,7 @@ public class RandomChar
         {
             return random.nextInt((int)Math.pow(2, bits));
         }
+                */
     }
     public int count()
     {
