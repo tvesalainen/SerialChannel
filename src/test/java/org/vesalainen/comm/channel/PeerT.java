@@ -91,7 +91,7 @@ public class PeerT
                                                 {
                                                     int cc = rb.get() & 0xff;
                                                     int next = rcr.next(8);
-                                                    System.err.println(cc+" "+next);
+                                                    System.err.println("wc="+rcw.count()+" "+"rc="+rcr.count()+" "+cc+" "+next);
                                                     assertEquals("count="+rcr.count(), next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
