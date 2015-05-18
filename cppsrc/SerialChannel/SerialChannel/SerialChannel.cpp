@@ -99,7 +99,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_d
 	}
 
 	DEBUG("PurgeComm");
-	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
+	if (!PurgeComm(c->hComm, PURGE_RXCLEAR | PURGE_TXCLEAR))
 	{
 		exception(env, "java/io/IOException", "PurgeComm");
 		ERRORRETURN
@@ -285,7 +285,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	CTX *c = (CTX*)ctx;
 
 	DEBUG("PurgeComm");
-	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR))
+	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT ))
 	{
 		exception(env, "java/io/IOException", "PurgeComm");
 		ERRORRETURNV
@@ -299,18 +299,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		ERRORRETURNV
 	}
 	free(c);
-}
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doFlush
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-	CTX *c = (CTX*)ctx;
-
-	DEBUG("FlushFileBuffers");
-	if (!FlushFileBuffers(c->hComm))
-	{
-		exception(env, "java/io/IOException", "FlushFileBuffers failed");
-		ERRORRETURNV
-	}
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setEventMask
   (JNIEnv *env, jobject obj, jlong ctx, jint mask)

@@ -82,9 +82,6 @@ public class LinuxSerialChannel extends SerialChannel
     protected native long doOpen(byte[] port);
 
     @Override
-    protected native void doFlush(long handle) throws IOException;
-
-    @Override
     protected native int doRead(long handle, ByteBuffer dst) throws IOException;
 
     @Override

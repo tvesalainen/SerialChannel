@@ -40,7 +40,6 @@ class SerialOutputStream extends OutputStream
     public void flush() throws IOException
     {
         flushBuffer();
-        channel.flush();
     }
 
     @Override

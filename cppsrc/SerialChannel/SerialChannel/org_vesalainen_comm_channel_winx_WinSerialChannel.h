@@ -41,14 +41,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_d
 
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
- * Method:    doFlush
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doFlush
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doRead
  * Signature: (JLjava/nio/ByteBuffer;)I
  */
