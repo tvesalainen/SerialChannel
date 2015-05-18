@@ -399,10 +399,9 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
     else
     {
-        c->newtio.c_iflag &= ~PARMRK;
+//        c->newtio.c_iflag &= ~PARMRK;
     }
     c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
-    c->newtio.c_cc[VMIN] = 1;
     
     if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
     {
@@ -416,10 +415,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 {
     CTX* c = (CTX*)ctx;
     DEBUG("close");
-    if (tcdrain(c->fd) < 0)
+    if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
-        exception(env, "java/io/IOException", "tcdrain");
-        ERRORRETURNV
+        exception(env, "java/io/IOException", "tcflush failed");
+        ERRORRETURNV;
     }
     if (tcsetattr(c->fd, TCSANOW, &c->oldtio) < 0)
     {
