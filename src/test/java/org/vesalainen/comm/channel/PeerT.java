@@ -22,12 +22,6 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
@@ -47,64 +41,43 @@ public class PeerT
     public void regressionTest()
     {
         //SerialChannel.debug(true);
-        final ExecutorService exec = Executors.newCachedThreadPool();
-        final Semaphore semaphore = new Semaphore(0);
-        Timer timer = new Timer();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() > 0);
         if (ports.size() >= 1)
         {
-            try 
+            try (SimpleSync ss = SimpleSync.open(1234))
             {
-                ByteBuffer rb = ByteBuffer.allocateDirect(2000);
+                ByteBuffer wb = ByteBuffer.allocateDirect(10);
+                ByteBuffer rb = ByteBuffer.allocateDirect(20);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
                 RandomChar rcr = new RandomChar();
                 RandomChar rcw = new RandomChar();
-                try (SerialChannel sc = builder.get())
+                SerialSelector selector = new SerialSelector();
+                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
                 {
-                    SerialSelector selector = new SerialSelector();
-                    sc.configureBlocking(false);
-                    sc.register(selector, OP_READ);
-                    for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
+                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE})
                     {
-                        for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE})
+                        for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                         {
-                            for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
+                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
                             {
-                                for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
+                                System.err.println(speed+" "+bits+" "+parity+" "+flow);
+                                final int count = SerialChannel.getSpeed(speed)/4;
+                                builder.setSpeed(speed)
+                                        .setFlowControl(flow)
+                                        .setParity(parity)
+                                        .setDataBits(bits);
+                                try (SerialChannel sc = builder.get())
                                 {
-                                    System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                    final int count = SerialChannel.getSpeed(speed)/4;
-                                    builder.setSpeed(speed)
-                                            .setFlowControl(flow)
-                                            .setParity(parity)
-                                            .setDataBits(bits);
-                                    sc.configure(builder);
-                                    TimerTask writer = new TimerTask() {
-
-                                        @Override
-                                        public void run()
-                                        {
-                                            Transmitter tra = new Transmitter(sc, count);
-                                            Future<Void> ftra1 = exec.submit(tra);
-                                        }
-                                    };
-                                    TimerTask reader = new TimerTask() {
-
-                                        @Override
-                                        public void run()
-                                        {
-                                            semaphore.release();
-                                        }
-                                    };
-                                    timer.schedule(reader, 5000);
-                                    timer.schedule(writer, 10000);
+                                    sc.configureBlocking(false);
+                                    sc.register(selector, OP_READ);
                                     System.err.println("wait");
-                                    semaphore.acquire();
+                                    ss.sync();
                                     while (true)
                                     {
+                                        send(sc, wb, rcw, count);
                                         int c = selector.select();
                                         assertTrue(c > 0);
                                         Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
@@ -135,13 +108,13 @@ public class PeerT
                                         }
                                     }
                                 }
+                                catch (InterruptedException ex)
+                                {
+                                    Logger.getLogger(PeerT.class.getName()).log(Level.SEVERE, null, ex);
+                                }
                             }
                         }
                     }
-                }
-                catch (InterruptedException ex)
-                {
-                    Logger.getLogger(PeerT.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
             catch (IOException ex)
@@ -151,4 +124,17 @@ public class PeerT
             }
         }
     }
+
+    private void send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
+    {
+        bb.clear();
+        while (rcw.count() < count && bb.hasRemaining())
+        {
+            bb.put((byte) rcw.next(8));
+}
+        bb.flip();
+        sc.write(bb);
+    }
+
+    
 }
