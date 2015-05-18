@@ -108,10 +108,6 @@ public class PeerT
                                         }
                                     }
                                 }
-                                catch (InterruptedException ex)
-                                {
-                                    Logger.getLogger(PeerT.class.getName()).log(Level.SEVERE, null, ex);
-                                }
                             }
                         }
                     }

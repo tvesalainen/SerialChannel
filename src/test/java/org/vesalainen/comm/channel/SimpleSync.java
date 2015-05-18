@@ -45,8 +45,8 @@ public class SimpleSync implements AutoCloseable
         DatagramChannel c = DatagramChannel.open();
         InetSocketAddress sa = new InetSocketAddress("255.255.255.255", port);
         c.connect(sa);
-        c.bind(sa);
         c.setOption(IP_MULTICAST_LOOP, false);
+        c.configureBlocking(false);
         return new SimpleSync(c);
     }
 
