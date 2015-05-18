@@ -18,6 +18,7 @@ package org.vesalainen.comm.channel;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
 import static java.net.StandardSocketOptions.SO_BROADCAST;
 import java.nio.ByteBuffer;
@@ -32,12 +33,14 @@ import java.nio.channels.spi.SelectorProvider;
  */
 public class SimpleSync implements AutoCloseable
 {
+    private int port;
     private final DatagramChannel dc;
     private byte phase;
     private final ByteBuffer bb = ByteBuffer.allocateDirect(10);
     private final Selector selector;
-    private SimpleSync(DatagramChannel dc) throws IOException
+    private SimpleSync(int port, DatagramChannel dc) throws IOException
     {
+        this.port = port;
         this.dc = dc;
         this.selector = SelectorProvider.provider().openSelector();
         dc.register(selector, OP_READ);
@@ -48,26 +51,25 @@ public class SimpleSync implements AutoCloseable
         c.setOption(IP_MULTICAST_LOOP, false);
         c.setOption(SO_BROADCAST, true);
         InetSocketAddress ba = new InetSocketAddress(port);
-        InetSocketAddress ca = new InetSocketAddress("255.255.255.255", port);
         c.bind(ba);
-        c.connect(ca);
         c.configureBlocking(false);
-        return new SimpleSync(c);
+        return new SimpleSync(port, c);
     }
 
     public void sync() throws IOException
     {
+        InetSocketAddress ca = new InetSocketAddress("255.255.255.255", port);
         while (true)
         {
             bb.clear();
             bb.put(phase);
             bb.flip();
-            dc.write(bb);
+            dc.send(bb, ca);
             int count = selector.select(1000);
             if (count > 0)
             {
                 bb.clear();
-                dc.read(bb);
+                SocketAddress sa = dc.receive(bb);
                 bb.flip();
                 byte b = bb.get();
                 if (b == phase)
