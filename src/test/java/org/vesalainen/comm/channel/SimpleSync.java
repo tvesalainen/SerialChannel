@@ -43,8 +43,10 @@ public class SimpleSync implements AutoCloseable
     public static SimpleSync open(int port) throws IOException
     {
         DatagramChannel c = DatagramChannel.open();
-        InetSocketAddress sa = new InetSocketAddress("255.255.255.255", port);
-        c.connect(sa);
+        InetSocketAddress ba = new InetSocketAddress(port);
+        InetSocketAddress ca = new InetSocketAddress("255.255.255.255", port);
+        c.bind(ba);
+        c.connect(ca);
         c.setOption(IP_MULTICAST_LOOP, false);
         c.configureBlocking(false);
         return new SimpleSync(c);
