@@ -37,14 +37,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
- * Method:    doFlush
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doRead
  * Signature: (JLjava/nio/ByteBuffer;)I
  */

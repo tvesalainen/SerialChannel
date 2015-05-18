@@ -229,6 +229,8 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     int par = 0;
     int fctrl = 0;
     
+    bzero(&c->newtio, sizeof(c->newtio));
+    
     switch (bauds)
     {
         case 50:
@@ -281,42 +283,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
             break;
         case 230400:
             baudrate = B230400;
-            break;
-        case 460800:
-            baudrate = B460800;
-            break;
-        case 500000:
-            baudrate = B500000;
-            break;
-        case 576000:
-            baudrate = B576000;
-            break;
-        case 921600:
-            baudrate = B921600;
-            break;
-        case 1000000:
-            baudrate = B1000000;
-            break;
-        case 1152000:
-            baudrate = B1152000;
-            break;
-        case 1500000:
-            baudrate = B1500000;
-            break;
-        case 2000000:
-            baudrate = B2000000;
-            break;
-        case 2500000:
-            baudrate = B2500000;
-            break;
-        case 3000000:
-            baudrate = B3000000;
-            break;
-        case 3500000:
-            baudrate = B3500000;
-            break;
-        case 4000000:
-            baudrate = B4000000;
             break;
         default:
             exception(env, "java/io/IOException", "unknown baudrate");
@@ -397,11 +363,8 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         c->newtio.c_iflag |= PARMRK;    // mark parity
     }
-    else
-    {
-//        c->newtio.c_iflag &= ~PARMRK;
-    }
     c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
+    c->newtio.c_cc[VMIN] = 1;   // block is default
     
     if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
     {
@@ -431,16 +394,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURNV
     }
     free(c);
-}
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doFlush
-  (JNIEnv *env, jobject obj, jlong ctx)
-{
-    CTX* c = (CTX*)ctx;
-    if (tcdrain(c->fd) < 0)
-    {
-        exception(env, "java/io/IOException", "tcdrain failed");
-        ERRORRETURNV
-    }
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
   (JNIEnv *env, jobject obj, jlong ctx, jobject bb)

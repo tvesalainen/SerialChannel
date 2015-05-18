@@ -19,6 +19,7 @@ package org.vesalainen.comm.channel;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
+import static java.net.StandardSocketOptions.SO_BROADCAST;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import static java.nio.channels.SelectionKey.OP_READ;
@@ -43,11 +44,12 @@ public class SimpleSync implements AutoCloseable
     public static SimpleSync open(int port) throws IOException
     {
         DatagramChannel c = DatagramChannel.open();
+        c.setOption(IP_MULTICAST_LOOP, false);
+        c.setOption(SO_BROADCAST, true);
         InetSocketAddress ba = new InetSocketAddress(port);
         InetSocketAddress ca = new InetSocketAddress("255.255.255.255", port);
         c.bind(ba);
         c.connect(ca);
-        c.setOption(IP_MULTICAST_LOOP, false);
         c.configureBlocking(false);
         return new SimpleSync(c);
     }

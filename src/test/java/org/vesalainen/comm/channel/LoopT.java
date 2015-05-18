@@ -179,7 +179,7 @@ public class LoopT
         {
             for (FlowControl flow : new FlowControl[] {FlowControl.NONE})
             {
-                for (Parity parity : new Parity[] {Parity.NONE, Parity.SPACE})
+                for (Parity parity : new Parity[] {Parity.NONE, Parity.EVEN, Parity.SPACE})
                 {
                     for (DataBits bits : new DataBits[] {DataBits.DATABITS_8})
                     {
