@@ -32,7 +32,7 @@ import org.junit.Test;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
 
 /**
- * These test needs two host connected together with null modem cable.
+ * These test needs two host connected together with a null modem cable.
  * @author tkv
  */
 public class PeerT

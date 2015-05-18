@@ -40,6 +40,7 @@ public class SimpleSync implements AutoCloseable
     {
         this.dc = dc;
         this.selector = SelectorProvider.provider().openSelector();
+        dc.register(selector, OP_READ);
     }
     public static SimpleSync open(int port) throws IOException
     {
@@ -62,7 +63,6 @@ public class SimpleSync implements AutoCloseable
             bb.put(phase);
             bb.flip();
             dc.write(bb);
-            dc.register(selector, OP_READ);
             int count = selector.select(1000);
             if (count > 0)
             {
