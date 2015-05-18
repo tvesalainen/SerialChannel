@@ -46,7 +46,7 @@ public class PeerT
         assertTrue(ports.size() > 0);
         if (ports.size() >= 1)
         {
-            try (SimpleSync ss = SimpleSync.open(1234))
+            try (SimpleSync ss = SimpleSync.open(12345))
             {
                 ByteBuffer wb = ByteBuffer.allocateDirect(10);
                 ByteBuffer rb = ByteBuffer.allocateDirect(20);
