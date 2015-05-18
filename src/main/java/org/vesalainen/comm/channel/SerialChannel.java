@@ -173,17 +173,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     ) throws IOException;
 
     /**
-     * Flushes the buffers.
-     * @throws IOException 
-     */
-    public void flush() throws IOException
-    {
-        doFlush(handle);
-    }
-    protected abstract void doFlush(long handle) throws IOException;
-
-
-    /**
      * Returns InputStream. Allocates direct ByteBuffer bufferSize length. Note! closing the stream doesn't close the 
      * channel.
      * @param bufferSize
