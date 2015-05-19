@@ -114,6 +114,7 @@ public class LinuxSerialChannel extends SerialChannel
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {
+        int updated = 0;
         int readIndex = 0;
         int writeIndex = 0;
         for (SelectionKey sk : keys)
@@ -156,12 +157,24 @@ public class LinuxSerialChannel extends SerialChannel
                 if (readyOps != 0)
                 {
                     SerialSelectionKey ssk = (SerialSelectionKey) sk;
-                    ssk.readyOps(readyOps);
-                    selected.add(ssk);
+                    if (selected.contains(sk))
+                    {
+                        if (ssk.readyOps() != readyOps)
+                        {
+                            updated++;
+                            ssk.readyOps(readyOps);
+                        }
+                    }
+                    else
+                    {
+                        updated++;
+                        ssk.readyOps(readyOps);
+                        selected.add(sk);
+                    }
                 }
             }
         }
-        return rc;
+        return updated;
     }
 
     private static native int doSelect(int readCount, int writeCount, long[] reads, long[] writes, int timeout);
