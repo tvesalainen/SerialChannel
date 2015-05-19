@@ -173,13 +173,19 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     ) throws IOException;
 
     /**
-     * Returns InputStream. Allocates direct ByteBuffer bufferSize length. Note! closing the stream doesn't close the 
-     * channel.
+     * Returns InputStream. Allocates direct ByteBuffer bufferSize length. 
+     * Note! closing the stream doesn't close the channel.
+     * <p>Using streams is not allowed in non-blocking mode.
      * @param bufferSize
      * @return 
+     * @throws IllegalStateException if in non-blocking mode.
      */
     public InputStream getInputStream(int bufferSize)
     {
+        if (!block)
+        {
+            throw new IllegalStateException("not allowed in non-blocking mode");
+        }
         return new SerialInputStream(this, bufferSize);
     }
 
@@ -188,11 +194,17 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      * that write doesn't actually write anything before the buffer comes full.
      * Use flush to flush the buffer. Note! closing the stream doesn't close the 
      * channel.
+     * <p>Using streams is not allowed in non-blocking mode.
      * @param bufferSize
      * @return 
+     * @throws IllegalStateException if in non-blocking mode.
      */
     public OutputStream getOutputStream(int bufferSize)
     {
+        if (!block)
+        {
+            throw new IllegalStateException("not allowed in non-blocking mode");
+        }
         return new SerialOutputStream(this, bufferSize);
     }
 
