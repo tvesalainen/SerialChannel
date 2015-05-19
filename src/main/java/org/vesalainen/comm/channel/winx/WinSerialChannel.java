@@ -131,6 +131,7 @@ public class WinSerialChannel extends SerialChannel
     
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
+        int updated = 0;
         int index = 0;
         for (SelectionKey sk : keys)
         {
@@ -159,13 +160,25 @@ public class WinSerialChannel extends SerialChannel
                 if (readyOps != 0)
                 {
                     SerialSelectionKey ssk = (SerialSelectionKey) sk;
-                    ssk.readyOps(readyOps);
-                    selected.add(sk);
+                    if (selected.contains(sk))
+                    {
+                        if (ssk.readyOps() != readyOps)
+                        {
+                            updated++;
+                            ssk.readyOps(readyOps);
+                        }
+                    }
+                    else
+                    {
+                        updated++;
+                        ssk.readyOps(readyOps);
+                        selected.add(sk);
+                    }
                 }
                 index++;
             }
         }
-        return rc;
+        return updated;
     }
     private native void setEventMask(long handle, int mask) throws IOException;
 
