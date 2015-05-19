@@ -16,7 +16,9 @@
  */
 package org.vesalainen.comm.channel;
 
+import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 
 /**
@@ -26,6 +28,7 @@ import java.util.concurrent.Callable;
 public class Transmitter implements Callable<Void>
 {
     private final SerialChannel channel;
+    private final ByteBuffer bb = ByteBuffer.allocate(70);
     private final int count;
 
     public Transmitter(SerialChannel channel, int count)
@@ -39,17 +42,24 @@ public class Transmitter implements Callable<Void>
     {
         int bits = channel.getDataBits().ordinal() + 4;
         RandomChar rand = new RandomChar();
-        try (final OutputStream os = channel.getOutputStream(70))
+        for (int ii = 0; ii < count; ii++)
         {
-            for (int ii = 0; ii < count; ii++)
+            int next = rand.next(bits);
+            if (!bb.hasRemaining())
             {
-                int next = rand.next(bits);
-                os.write(next);
+                flush();
             }
-            os.flush();
-            System.err.println("transmitted all");
+            bb.put((byte) next);
         }
+        flush();
+        System.err.println("transmitted all");
         return null;
+    }
+    private void flush() throws IOException
+    {
+        bb.flip();
+        channel.write(bb);
+        bb.clear();
     }
     
 }

@@ -283,11 +283,17 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
   (JNIEnv *env, jobject obj, jlong ctx)
 {
 	CTX *c = (CTX*)ctx;
-
+	/*
 	DEBUG("PurgeComm");
 	if (!PurgeComm(c->hComm, PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT ))
 	{
 		exception(env, "java/io/IOException", "PurgeComm");
+		ERRORRETURNV
+	}
+	*/
+	if (!FlushFileBuffers(c->hComm))
+	{
+		exception(env, "java/io/IOException", "FlushFileBuffers");
 		ERRORRETURNV
 	}
 

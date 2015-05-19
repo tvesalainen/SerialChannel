@@ -17,6 +17,7 @@
 package org.vesalainen.comm.channel;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 
 /**
@@ -26,6 +27,7 @@ import java.util.concurrent.Callable;
 public class Receiver implements Callable<Integer>
 {
     private final SerialChannel channel;
+    private final ByteBuffer bb = ByteBuffer.allocateDirect(100);
     private final int count;
 
     public Receiver(SerialChannel channel, int count)
@@ -40,20 +42,25 @@ public class Receiver implements Callable<Integer>
         int errors = 0;
         int bits = channel.getDataBits().ordinal() + 4;
         RandomChar rand = new RandomChar();
-        try (final InputStream is = channel.getInputStream(100))
+        channel.read(bb);
+        bb.flip();
+        for (int ii = 0; ii < count; ii++)
         {
-            for (int ii = 0; ii < count; ii++)
+            if (!bb.hasRemaining())
             {
-                int rc = is.read();
-                int next = rand.next(bits) & 0xff;
-                if (rc != next)
-                {
-            System.err.println(rc+" != "+next);
-                    errors++;
-                }
+                bb.clear();
+                channel.read(bb);
+                bb.flip();
             }
-            System.err.println("received all");
+            int rc = bb.get() & 0xff;
+            int next = rand.next(bits) & 0xff;
+            if (rc != next)
+            {
+        System.err.println(rc+" != "+next);
+                errors++;
+            }
         }
+        System.err.println("received all");
         return errors;
     }
     

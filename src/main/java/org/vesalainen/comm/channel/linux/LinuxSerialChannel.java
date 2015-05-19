@@ -190,7 +190,7 @@ public class LinuxSerialChannel extends SerialChannel
             }
             else
             {
-                timeouts(handle, 0, 0);
+                timeouts(handle, 0, 10);
             }
         }
     }

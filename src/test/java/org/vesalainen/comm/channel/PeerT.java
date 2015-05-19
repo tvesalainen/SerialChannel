@@ -22,8 +22,6 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -49,33 +47,34 @@ public class PeerT
             try (SimpleSync ss = SimpleSync.open(12345))
             {
                 ByteBuffer wb = ByteBuffer.allocateDirect(10);
-                ByteBuffer rb = ByteBuffer.allocateDirect(20);
+                ByteBuffer rb = ByteBuffer.allocateDirect(100);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
                 RandomChar rcr = new RandomChar();
                 RandomChar rcw = new RandomChar();
-                SerialSelector selector = new SerialSelector();
-                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
+                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
                 {
                     for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE})
                     {
                         for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                         {
-                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B115200})
+                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B38400})
                             {
                                 System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                final int count = SerialChannel.getSpeed(speed)/4;
+                                final int count = 256;
                                 builder.setSpeed(speed)
                                         .setFlowControl(flow)
                                         .setParity(parity)
                                         .setDataBits(bits);
+                                ss.sync();
                                 try (SerialChannel sc = builder.get())
                                 {
                                     sc.configureBlocking(false);
+                                    SerialSelector selector = new SerialSelector();
                                     sc.register(selector, OP_READ);
                                     System.err.println("wait");
                                     ss.sync();
-                                    while (true)
+                                    while (selector.isOpen())
                                     {
                                         send(sc, wb, rcw, count);
                                         int c = selector.select();
@@ -88,6 +87,10 @@ public class PeerT
                                             {
                                                 rb.clear();
                                                 sc.read(rb);
+                                                //if (rb.position() == rb.capacity())
+                                                {
+                                                    System.err.println(rb);
+                                                }
                                                 rb.flip();
                                                 //System.err.println(rb);
                                                 while (rb.hasRemaining())
@@ -95,6 +98,10 @@ public class PeerT
                                                     int cc = rb.get() & 0xff;
                                                     int next = rcr.next(8);
                                                     //System.err.println("rc="+rcr.count()+" "+cc+" "+next);
+                                                    if (next != cc)
+                                                    {
+                                                        System.err.println();
+                                                    }
                                                     assertEquals("count="+rcr.count(), next, cc);
                                                     assertTrue(rcr.count() <= count);
                                                 }
@@ -104,6 +111,8 @@ public class PeerT
                                         if (rcr.count() == count)
                                         {
                                             rcr.resetCount();
+                                            rcw.resetCount();
+                                            selector.close();
                                             break;
                                         }
                                     }
@@ -127,7 +136,7 @@ public class PeerT
         while (rcw.count() < count && bb.hasRemaining())
         {
             bb.put((byte) rcw.next(8));
-}
+        }
         bb.flip();
         sc.write(bb);
     }

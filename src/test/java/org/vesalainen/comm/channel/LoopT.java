@@ -19,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
@@ -114,6 +116,19 @@ public class LoopT
                         Future<Void> ftra1 = exec.submit(tra1);
                         Transmitter tra2 = new Transmitter(c2, count);
                         Future<Void> ftra2 = exec.submit(tra2);
+                        try
+                        {
+                            ftra1.get();
+                            ftra2.get();
+                        }
+                        catch (InterruptedException ex)
+                        {
+                            Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        catch (ExecutionException ex)
+                        {
+                            fail(ex.getMessage());
+                        }
                     }
                 };
                 Timer timer = new Timer();

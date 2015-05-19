@@ -55,4 +55,11 @@ public class RandomChar
     {
         random.setSeed(SEED);
     }
+
+    @Override
+    public String toString()
+    {
+        return "count=" + count;
+    }
+    
 }

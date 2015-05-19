@@ -17,15 +17,23 @@
 package org.vesalainen.comm.channel;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import static java.net.StandardSocketOptions.IP_MULTICAST_LOOP;
 import static java.net.StandardSocketOptions.SO_BROADCAST;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  *
@@ -38,55 +46,98 @@ public class SimpleSync implements AutoCloseable
     private byte phase;
     private final ByteBuffer bb = ByteBuffer.allocateDirect(10);
     private final Selector selector;
+    private final SelectionKey selectionKey;
+    private final InetSocketAddress broadcast;
+    private final List<InetAddress> locals = new ArrayList<>();
     private SimpleSync(int port, DatagramChannel dc) throws IOException
     {
         this.port = port;
         this.dc = dc;
         this.selector = SelectorProvider.provider().openSelector();
-        dc.register(selector, OP_READ);
+        selectionKey = dc.register(selector, OP_READ);
+        broadcast = new InetSocketAddress("255.255.255.255", port);
+        populateLocals(locals);
     }
     public static SimpleSync open(int port) throws IOException
     {
         DatagramChannel c = DatagramChannel.open();
-        c.setOption(IP_MULTICAST_LOOP, false);
         c.setOption(SO_BROADCAST, true);
         InetSocketAddress ba = new InetSocketAddress(port);
         c.bind(ba);
+        c.setOption(IP_MULTICAST_LOOP, false);
         c.configureBlocking(false);
         return new SimpleSync(port, c);
     }
 
     public void sync() throws IOException
     {
-        InetSocketAddress ca = new InetSocketAddress("255.255.255.255", port);
+        System.err.println("sync phase="+phase);
+        send();
         while (true)
         {
-            bb.clear();
-            bb.put(phase);
-            bb.flip();
-            dc.send(bb, ca);
-            int count = selector.select(1000);
+            //System.err.println("select");
+            int count = selector.select(2000);
+            //System.err.println("count="+count);
+            //System.err.println("ops="+selectionKey.interestOps());
             if (count > 0)
             {
-                bb.clear();
-                SocketAddress sa = dc.receive(bb);
-                bb.flip();
-                byte b = bb.get();
-                if (b == phase)
+                try
                 {
-                    return;
+                    InetSocketAddress isa;
+                    do
+                    {
+                        bb.clear();
+                        isa = (InetSocketAddress) dc.receive(bb);
+                        if (isa != null && !locals.contains(isa.getAddress()))
+                        {
+                            bb.flip();
+                            byte b = bb.get();
+                            if (b == phase)
+                            {
+                                send();
+                                phase++;
+                                return;
+                            }
+                        }
+                    } while (isa != null);
                 }
-                if (b > phase)
+                finally
                 {
-                    throw new IllegalStateException("got "+b);
+                    selector.selectedKeys().remove(selectionKey);
                 }
             }
+            else
+            {
+                send();
+            }
         }
+    }
+    private void send() throws IOException
+    {
+        //System.err.println("send="+phase);
+        bb.clear();
+        bb.put(phase);
+        bb.flip();
+        dc.send(bb, broadcast);
     }
     @Override
     public void close() throws IOException
     {
         dc.close();
+    }
+
+    private void populateLocals(List<InetAddress> locals) throws SocketException
+    {
+        Enumeration<NetworkInterface> nis = NetworkInterface.getNetworkInterfaces();
+        while (nis.hasMoreElements())
+        {
+            NetworkInterface ni = nis.nextElement();
+            Enumeration<InetAddress> ias = ni.getInetAddresses();
+            while (ias.hasMoreElements())
+            {
+                locals.add(ias.nextElement());
+            }
+        }
     }
     
 }

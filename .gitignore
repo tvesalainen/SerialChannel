@@ -16,4 +16,6 @@ hs_err_pid*
 *.pdb
 *.exp
 *.lib
+*.o
+
 
