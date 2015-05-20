@@ -71,14 +71,12 @@ public class SimpleSync implements AutoCloseable
 
     public void sync() throws IOException
     {
+        boolean synced = false;
         System.err.println("sync phase="+phase);
         send();
         while (true)
         {
-            //System.err.println("select");
-            int count = selector.select(2000);
-            //System.err.println("count="+count);
-            //System.err.println("ops="+selectionKey.interestOps());
+            int count = selector.select(1000);
             if (count > 0)
             {
                 try
@@ -94,9 +92,8 @@ public class SimpleSync implements AutoCloseable
                             byte b = bb.get();
                             if (b == phase)
                             {
+                                synced = true;
                                 send();
-                                phase++;
-                                return;
                             }
                         }
                     } while (isa != null);
@@ -109,6 +106,12 @@ public class SimpleSync implements AutoCloseable
             else
             {
                 send();
+                if (synced)
+                {
+                    System.err.println("synced "+phase);
+                    phase++;
+                    return;
+                }
             }
         }
     }

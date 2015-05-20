@@ -22,6 +22,8 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -30,7 +32,7 @@ import org.junit.Test;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
 
 /**
- * These test needs two host connected together with a null modem cable.
+ * These test needs two hosts connected together with a null modem cable.
  * @author tkv
  */
 public class PeerT
@@ -41,79 +43,92 @@ public class PeerT
         //SerialChannel.debug(true);
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
-        assertTrue(ports.size() > 0);
+        assertTrue("no ports", ports.size() > 0);
         if (ports.size() >= 1)
         {
             try (SimpleSync ss = SimpleSync.open(12345))
             {
-                ByteBuffer wb = ByteBuffer.allocateDirect(10);
-                ByteBuffer rb = ByteBuffer.allocateDirect(100);
                 SerialChannel.Builder builder = new SerialChannel.Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false);
                 RandomChar rcr = new RandomChar();
                 RandomChar rcw = new RandomChar();
-                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.NONE})
+                for (SerialChannel.FlowControl flow : new SerialChannel.FlowControl[] {SerialChannel.FlowControl.XONXOFF})
                 {
-                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE})
+                    for (SerialChannel.Parity parity : new SerialChannel.Parity[] {SerialChannel.Parity.NONE, SerialChannel.Parity.EVEN, SerialChannel.Parity.ODD, SerialChannel.Parity.SPACE, SerialChannel.Parity.MARK})
                     {
                         for (SerialChannel.DataBits bits : new SerialChannel.DataBits[] {SerialChannel.DataBits.DATABITS_8})
                         {
-                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B4800, SerialChannel.Speed.B38400})
+                            for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B1200, SerialChannel.Speed.B115200})
                             {
-                                System.err.println(speed+" "+bits+" "+parity+" "+flow);
-                                final int count = 256;
-                                builder.setSpeed(speed)
-                                        .setFlowControl(flow)
-                                        .setParity(parity)
-                                        .setDataBits(bits);
-                                ss.sync();
-                                try (SerialChannel sc = builder.get())
+                                for (SerialChannel.StopBits stops : new SerialChannel.StopBits[] {SerialChannel.StopBits.STOPBITS_10, SerialChannel.StopBits.STOPBITS_20})
                                 {
-                                    sc.configureBlocking(false);
-                                    SerialSelector selector = new SerialSelector();
-                                    sc.register(selector, OP_READ);
-                                    System.err.println("wait");
+                                    System.err.println("\n"+speed+" "+bits+" "+parity+" "+flow+" "+stops);
+                                    builder.setSpeed(speed)
+                                            .setReplaceError(true)
+                                            .setFlowControl(flow)
+                                            .setParity(parity)
+                                            .setStopBits(stops)
+                                            .setDataBits(bits);
+                                    final int count = builder.getBytesPerSecond()*5;    // 5 second test
+                                    ByteBuffer wb = ByteBuffer.allocateDirect(count/10);
+                                    ByteBuffer rb = ByteBuffer.allocateDirect(count/5);
                                     ss.sync();
-                                    while (selector.isOpen())
+                                    try (SerialChannel sc = builder.get())
                                     {
-                                        send(sc, wb, rcw, count);
-                                        int c = selector.select();
-                                        assertTrue(c > 0);
-                                        Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
-                                        while(keyIterator.hasNext())
+                                        sc.configureBlocking(false);
+                                        SerialSelector selector = new SerialSelector();
+                                        sc.register(selector, OP_READ);
+                                        System.err.println("wait");
+                                        ss.sync();
+                                        while (selector.isOpen())
                                         {
-                                            SelectionKey sk = keyIterator.next();
-                                            if (sk.isReadable())
+                                            send(sc, wb, rcw, count);
+                                            int c = selector.select(5000);
+                                            assertTrue("count="+rcr.count()+" < "+count, c > 0);
+                                            Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
+                                            while(keyIterator.hasNext())
                                             {
-                                                rb.clear();
-                                                sc.read(rb);
-                                                //if (rb.position() == rb.capacity())
+                                                SelectionKey sk = keyIterator.next();
+                                                if (sk.isReadable())
                                                 {
-                                                    System.err.println(rb);
-                                                }
-                                                rb.flip();
-                                                //System.err.println(rb);
-                                                while (rb.hasRemaining())
-                                                {
-                                                    int cc = rb.get() & 0xff;
-                                                    int next = rcr.next(8);
-                                                    //System.err.println("rc="+rcr.count()+" "+cc+" "+next);
-                                                    if (next != cc)
+                                                    rb.clear();
+                                                    int rc = sc.read(rb);
+                                                    while (rc > 0)
                                                     {
-                                                        System.err.println();
+                                                        if (rb.position() == rb.capacity())
+                                                        {
+                                                            System.err.println(rb);
+                                                        }
+                                                        rb.flip();
+                                                        //System.err.println(rb);
+                                                        while (rb.hasRemaining())
+                                                        {
+                                                            byte b = rb.get();
+                                                            int cc = b & 0xff;
+                                                            int next = rcr.next(8);
+                                                            //System.err.println("rc="+rcr.count()+" "+cc+" "+next);
+                                                            if (next != cc)
+                                                            {
+                                                                System.err.println("expected="+next+" got="+cc);
+                                                            }
+                                                            assertEquals("count="+rcr.count(), next, cc);
+                                                            assertTrue("count="+rcr.count(), rcr.count() <= count);
+                                                        }
+                                                        rb.clear();
+                                                        rc = sc.read(rb);
                                                     }
-                                                    assertEquals("count="+rcr.count(), next, cc);
-                                                    assertTrue(rcr.count() <= count);
+                                                    keyIterator.remove();
                                                 }
-                                                keyIterator.remove();
                                             }
-                                        }
-                                        if (rcr.count() == count)
-                                        {
-                                            rcr.resetCount();
-                                            rcw.resetCount();
-                                            selector.close();
-                                            break;
+                                            if (rcr.count() == count)
+                                            {
+                                                System.err.println("\n----------------");
+                                                while (send(sc, wb, rcw, count));
+                                                rcr.resetCount();
+                                                rcw.resetCount();
+                                                selector.close();
+                                                break;
+                                            }
                                         }
                                     }
                                 }
@@ -130,15 +145,30 @@ public class PeerT
         }
     }
 
-    private void send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
+    private boolean send(SerialChannel sc, ByteBuffer bb, RandomChar rcw, int count) throws IOException
     {
         bb.clear();
         while (rcw.count() < count && bb.hasRemaining())
         {
-            bb.put((byte) rcw.next(8));
+            byte next = (byte) rcw.next(8);
+            //System.err.print(Byte.toUnsignedInt(next)+" ");
+            bb.put(next);
         }
         bb.flip();
-        sc.write(bb);
+        int remaining = bb.remaining();
+        if (bb.hasRemaining())
+        {
+            int rc = sc.write(bb);
+            if (rc != remaining)
+            {
+                System.err.print("\nremaining="+remaining+" rc="+rc);
+            }
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     

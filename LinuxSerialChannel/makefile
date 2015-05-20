@@ -1,6 +1,6 @@
 MACHINE=$(shell uname -m)
 JAVAH=$(JAVA_HOME)/bin/javah
-PROJECTDIR=/home/tkv/NetBeansProjects/SerialChannel
+PROJECTDIR=..
 JAVASRC=$(PROJECTDIR)/src/main/java
 RESOURCES=$(PROJECTDIR)/src/main/resources
 CFLAGS= -pthread -fPIC -I $(JAVA_HOME)/include -I $(JAVA_HOME)/include/linux

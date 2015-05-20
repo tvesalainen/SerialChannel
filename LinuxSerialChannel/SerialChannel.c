@@ -201,7 +201,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         ERRORRETURN
     }
-    if (tcflush(c->fd, TCIFLUSH) < 0)
+    if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
         exception(env, "java/io/IOException", "tcflush failed");
         ERRORRETURN;
@@ -380,6 +380,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 {
     CTX* c = (CTX*)ctx;
     DEBUG("close");
+    /*
     if (tcflush(c->fd, TCIFLUSH) < 0)
     {
         exception(env, "java/io/IOException", "tcflush failed");
@@ -390,11 +391,12 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         exception(env, "java/io/IOException", "tcflush failed");
         ERRORRETURNV;
     }
-    if (tcsetattr(c->fd, TCSANOW, &c->oldtio) < 0)
+    if (tcsetattr(c->fd, TCSADRAIN, &c->oldtio) < 0)
     {
         exception(env, "java/io/IOException", "tcsetattr failed");
         ERRORRETURNV;
     }
+    */
     if (close(c->fd) < 0)
     {
         exception(env, "java/io/IOException", "CloseHandle failed");
@@ -593,7 +595,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURN
     }
 
-    //hexdump(count, addr, dwWritten, len);
+    //hexdump(count, addr, rc, len);
     count += rc;
 
     if (barr != NULL)

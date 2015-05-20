@@ -65,8 +65,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected DataBits dataBits = DataBits.DATABITS_8;
     protected FlowControl flowControl = FlowControl.NONE;
 
-    protected Thread eventObserverThread;
-    
     protected boolean block = true;
     private boolean replaceError;
 
@@ -250,11 +248,16 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         if (handle != -1)
         {
+            int w = src.remaining();
             int count = 0;
             try
             {
                 begin();
                 count = doWrite(handle, src);
+                if (w != count)
+                {
+                    System.err.println("write rc="+count+" w="+w);
+                }
                 return count;
             }
             finally
@@ -369,10 +372,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     protected void implCloseSelectableChannel() throws IOException
     {
-        if (eventObserverThread != null)
-        {
-            eventObserverThread.interrupt();
-        }
         doClose();
     }
 
@@ -380,6 +379,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         doClose(handle);
         handle = -1;
+        System.err.println("\nClosed");
     }
 
     protected abstract void doClose(long handle) throws IOException;
@@ -488,6 +488,52 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             channel.configure(this);
             channel.configureBlocking(block);
             return channel;
+        }
+        public float getFrameSize()
+        {
+            float size = 1;   // start
+            switch (parity)
+            {
+                case NONE:
+                    break;
+                default:
+                    size++;
+            }
+            switch (dataBits)
+            {
+                case DATABITS_4:
+                    size += 4;
+                    break;
+                case DATABITS_5:
+                    size += 5;
+                    break;
+                case DATABITS_6:
+                    size += 6;
+                    break;
+                case DATABITS_7:
+                    size += 7;
+                    break;
+                case DATABITS_8:
+                    size += 8;
+                    break;
+            }
+            switch (stopBits)
+            {
+                case STOPBITS_10:
+                    size += 1;
+                    break;
+                case STOPBITS_15:
+                    size += 1.5;
+                    break;
+                case STOPBITS_20:
+                    size += 2;
+                    break;
+            }
+            return size;
+        }
+        public int getBytesPerSecond()
+        {
+            return (int) (SerialChannel.getSpeed(speed)/getFrameSize());
         }
         /**
          * Sets the port.

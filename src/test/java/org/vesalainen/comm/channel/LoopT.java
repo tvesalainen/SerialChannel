@@ -41,6 +41,46 @@ public class LoopT
     }
 
     @Test
+    public void testReplaceError()
+    {
+        List<String> ports = SerialChannel.getFreePorts();
+        assertNotNull(ports);
+        assertTrue(ports.size() >= 2);
+        try
+        {
+            Builder builder1 = new Builder(ports.get(0), Speed.B1200)
+                    .setReplaceError(true)
+                    .setParity(Parity.EVEN);
+            Builder builder2 = new Builder(ports.get(1), Speed.B1200)
+                    .setReplaceError(true)
+                    .setParity(Parity.ODD);
+            try (SerialChannel c1 = builder1.get();
+                SerialChannel c2 = builder2.get()
+                    )
+            {
+                ByteBuffer bb = ByteBuffer.allocateDirect(10);
+                bb.put((byte)31);
+                bb.put((byte)32);
+                bb.flip();
+                int rc = c1.write(bb);
+                bb.clear();
+                c2.read(bb);
+                bb.flip();
+                byte[] er = c2.getErrorReplacement();
+                for (byte b : er)
+                {
+                    byte rb = bb.get();
+                    assertEquals(b, rb);
+                }
+                assertEquals((byte)31, bb.get());
+            }
+        }
+        catch (IOException ex)
+        {
+            Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    //@Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -85,7 +125,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -182,7 +222,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);
