@@ -379,7 +379,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         doClose(handle);
         handle = -1;
-        System.err.println("\nClosed");
     }
 
     protected abstract void doClose(long handle) throws IOException;
@@ -447,48 +446,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         return read(dsts, 0, dsts.length);
     }
     
-    public static class Builder
+    public static class Configuration
     {
-        private String port;
-        private Speed speed;
-        private Parity parity = Parity.NONE;
-        private StopBits stopBits = StopBits.STOPBITS_10;
-        private DataBits dataBits = DataBits.DATABITS_8;
-        private FlowControl flowControl = FlowControl.NONE;
-        private boolean block = true;
-        private boolean replaceError;
-
-        public Builder(String port, Speed speed)
-        {
-            this.port = port;
-            this.speed = speed;
-        }
-
-        public Builder(String port, int speed)
-        {
-            this.port = port;
-            this.speed = Speed.valueOf("B"+speed);
-        }
-
-        public SerialChannel get() throws IOException
-        {
-            SerialChannel channel;
-            switch (getOS())
-            {
-                case Windows:
-                    channel = new WinSerialChannel(port);
-                    break;
-                case Linux:
-                    channel = new LinuxSerialChannel(port);
-                    break;
-                default:
-                    throw new UnsupportedOperationException("OS not supported");
-            }
-            channel.open();
-            channel.configure(this);
-            channel.configureBlocking(block);
-            return channel;
-        }
+        protected Speed speed;
+        protected Parity parity = Parity.NONE;
+        protected StopBits stopBits = StopBits.STOPBITS_10;
+        protected DataBits dataBits = DataBits.DATABITS_8;
+        protected FlowControl flowControl = FlowControl.NONE;
         public float getFrameSize()
         {
             float size = 1;   // start
@@ -535,66 +499,34 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             return (int) (SerialChannel.getSpeed(speed)/getFrameSize());
         }
-        /**
-         * Sets the port.
-         * @param port 
-         * @return  
-         */
-        public Builder setPort(String port)
-        {
-            this.port = port;
-            return this;
-        }
-        public Builder setDataBits(DataBits dataBits)
+        public Configuration setDataBits(DataBits dataBits)
         {
             this.dataBits = dataBits;
             return this;
         }
 
-        public Builder setFlowControl(FlowControl flowControl)
+        public Configuration setFlowControl(FlowControl flowControl)
         {
             this.flowControl = flowControl;
             return this;
         }
 
-        public Builder setParity(Parity parity)
+        public Configuration setParity(Parity parity)
         {
             this.parity = parity;
             return this;
         }
 
-        public Builder setSpeed(Speed speed)
+        public Configuration setSpeed(Speed speed)
         {
             this.speed = speed;
             return this;
         }
 
-        public Builder setStopBits(StopBits stopBits)
+        public Configuration setStopBits(StopBits stopBits)
         {
             this.stopBits = stopBits;
             return this;
-        }
-
-        public Builder setBlocking(boolean block)
-        {
-            this.block = block;
-            return this;
-        }
-
-        public Builder setReplaceError(boolean replace)
-        {
-            this.replaceError = replace;
-            return this;
-        }
-
-        public String getPort()
-        {
-            return port;
-        }
-
-        public Speed getSpeed()
-        {
-            return speed;
         }
 
         public Parity getParity()
@@ -617,6 +549,76 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return flowControl;
         }
 
+    }
+    public static class Builder extends Configuration
+    {
+        private String port;
+        private boolean block = true;
+        private boolean replaceError;
+
+        public Builder(String port, Speed speed)
+        {
+            this.port = port;
+            this.speed = speed;
+        }
+
+        public Builder(String port, int speed)
+        {
+            this.port = port;
+            this.speed = Speed.valueOf("B"+speed);
+        }
+
+        public SerialChannel get() throws IOException
+        {
+            SerialChannel channel;
+            switch (getOS())
+            {
+                case Windows:
+                    channel = new WinSerialChannel(port);
+                    break;
+                case Linux:
+                    channel = new LinuxSerialChannel(port);
+                    break;
+                default:
+                    throw new UnsupportedOperationException("OS not supported");
+            }
+            channel.open();
+            channel.configure(this);
+            channel.configureBlocking(block);
+            return channel;
+        }
+        /**
+         * Sets the port.
+         * @param port 
+         * @return  
+         */
+        public Builder setPort(String port)
+        {
+            this.port = port;
+            return this;
+        }
+        public Builder setBlocking(boolean block)
+        {
+            this.block = block;
+            return this;
+        }
+
+        public Builder setReplaceError(boolean replace)
+        {
+            this.replaceError = replace;
+            return this;
+        }
+
+        public String getPort()
+        {
+            return port;
+        }
+
+        public Speed getSpeed()
+        {
+            return speed;
+        }
+
         public boolean isBlock()
         {
             return block;
@@ -625,6 +627,36 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         public boolean isReplaceError()
         {
             return replaceError;
+        }
+
+        @Override
+        public Builder setStopBits(StopBits stopBits)
+        {
+            return (Builder) super.setStopBits(stopBits);
+        }
+
+        @Override
+        public Builder setSpeed(Speed speed)
+        {
+            return (Builder) super.setSpeed(speed);
+        }
+
+        @Override
+        public Builder setParity(Parity parity)
+        {
+            return (Builder) super.setParity(parity);
+        }
+
+        @Override
+        public Builder setFlowControl(FlowControl flowControl)
+        {
+            return (Builder) super.setFlowControl(flowControl);
+        }
+
+        @Override
+        public Builder setDataBits(DataBits dataBits)
+        {
+            return super.setDataBits(dataBits);
         }
         
     }
