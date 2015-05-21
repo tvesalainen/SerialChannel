@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
@@ -28,6 +30,9 @@ import org.vesalainen.comm.channel.SerialChannel.DataBits;
 import org.vesalainen.comm.channel.SerialChannel.FlowControl;
 import org.vesalainen.comm.channel.SerialChannel.Parity;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
+import org.vesalainen.loader.LibraryLoader;
+import org.vesalainen.loader.LibraryLoader.OS;
+import static org.vesalainen.loader.LibraryLoader.OS.Linux;
 
 /**
  * These test needs two serial ports connected together with null modem cable.
@@ -35,11 +40,92 @@ import org.vesalainen.comm.channel.SerialChannel.Speed;
  */
 public class LoopT
 {
-    
+    static OS os = LibraryLoader.getOS();
     public LoopT()
     {
     }
 
+    @Test
+    public void testSelectWrite()
+    {
+        if (os == Linux)
+        {
+            List<String> ports = SerialChannel.getFreePorts();
+            assertNotNull(ports);
+            assertTrue(ports.size() >= 2);
+            try
+            {
+                Builder builder1 = new Builder(ports.get(0), Speed.B115200)
+                        .setFlowControl(FlowControl.XONXOFF);
+                Builder builder2 = new Builder(ports.get(1), Speed.B115200)
+                        .setFlowControl(FlowControl.XONXOFF);
+                try (SerialChannel c1 = builder1.get();
+                    SerialChannel c2 = builder2.get()
+                        )
+                {
+                    SerialSelector selector = new SerialSelector();
+                    int size = 1000;
+                    byte[] buf = new byte[size];
+                    RandomChar rc = new RandomChar();
+                    for (int ii=0;ii<size;ii++)
+                    {
+                        buf[ii] = (byte) rc.next(ii);
+                    }
+                    selector.register(c1, OP_READ, ByteBuffer.allocate(size));
+                    selector.register(c2, OP_READ, ByteBuffer.allocate(size));
+                    selector.register(c1, OP_WRITE, ByteBuffer.wrap(buf));
+                    selector.register(c2, OP_WRITE, ByteBuffer.wrap(buf));
+                    while (selector.isOpen())
+                    {
+                        int kc = selector.select(5000);
+                        if (kc > 0)
+                        {
+                            Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+                            while (iterator.hasNext())
+                            {
+                                SelectionKey sk = iterator.next();
+                                if (sk.isReadable())
+                                {
+                                    ByteBuffer bb = (ByteBuffer) sk.attachment();
+                                    SerialChannel channel = (SerialChannel) sk.channel();
+                                    channel.read(bb);
+                                    if (!bb.hasRemaining())
+                                    {
+                                        sk.cancel();
+                                        assertTrue(Arrays.equals(buf, bb.array()));
+                                    }
+                                    //System.err.println("read "+bb);
+                                }
+                                if (sk.isWritable())
+                                {
+                                    ByteBuffer bb = (ByteBuffer) sk.attachment();
+                                    SerialChannel channel = (SerialChannel) sk.channel();
+                                    int limit = Math.min(bb.capacity(), bb.position()+size/5);
+                                    bb.limit(limit);
+                                    channel.write(bb);
+                                    if (bb.position() == bb.capacity())
+                                    {
+                                        sk.cancel();
+                                    }
+                                    //System.err.println("write "+bb);
+                                }
+                                iterator.remove();
+                            }
+                        }
+                        else
+                        {
+                            assertTrue(selector.keys().isEmpty());
+                            selector.close();
+                        }
+                    }
+                }
+            }
+            catch (IOException ex)
+            {
+                Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
     @Test
     public void testReplaceError()
     {
@@ -50,19 +136,23 @@ public class LoopT
         {
             Builder builder1 = new Builder(ports.get(0), Speed.B1200)
                     .setReplaceError(true)
+                    .setBlocking(false)
                     .setParity(Parity.EVEN);
             Builder builder2 = new Builder(ports.get(1), Speed.B1200)
                     .setReplaceError(true)
-                    .setParity(Parity.ODD);
+                    .setBlocking(false)
+                    .setParity(Parity.SPACE);
             try (SerialChannel c1 = builder1.get();
                 SerialChannel c2 = builder2.get()
                     )
             {
+                SerialSelector selector = new SerialSelector();
+                SelectionKey skr2 = selector.register(c2, OP_READ, null);
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
                 bb.put((byte)31);
-                bb.put((byte)32);
                 bb.flip();
                 int rc = c1.write(bb);
+                assertTrue("hangs", selector.select(1000) > 0);
                 bb.clear();
                 c2.read(bb);
                 bb.flip();
@@ -72,7 +162,10 @@ public class LoopT
                     byte rb = bb.get();
                     assertEquals(b, rb);
                 }
-                assertEquals((byte)31, bb.get());
+                if (os == OS.Linux)
+                {
+                    assertEquals((byte)31, bb.get());
+                }
             }
         }
         catch (IOException ex)
@@ -80,7 +173,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    //@Test
+    @Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -125,7 +218,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -222,7 +315,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);

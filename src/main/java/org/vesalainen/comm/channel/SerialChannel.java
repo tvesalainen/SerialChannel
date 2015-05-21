@@ -59,14 +59,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     protected long handle = -1;
     protected String port;
-    protected Speed speed;
-    protected Parity parity = Parity.NONE;
-    protected StopBits stopBits = StopBits.STOPBITS_10;
-    protected DataBits dataBits = DataBits.DATABITS_8;
-    protected FlowControl flowControl = FlowControl.NONE;
+    protected Configuration configuration;
 
     protected boolean block = true;
-    private boolean replaceError;
 
     protected SerialChannel()
     {
@@ -134,7 +129,19 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     }
     protected abstract long doOpen(byte[] port);
     
-    public abstract byte[] getErrorReplacement();
+    public static byte[] getErrorReplacement()
+    {
+        OS os = LibraryLoader.getOS();
+        switch (os)
+        {
+            case Windows:
+                return WinSerialChannel.errorReplacement();
+            case Linux:
+                return LinuxSerialChannel.errorReplacement();
+            default:
+                throw new UnsupportedOperationException(os+" not supported");
+        }
+    }
 
     /**
      * Change channel configuration
@@ -143,20 +150,15 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      */
     public void configure(Configuration config) throws IOException
     {
-        this.speed = config.speed;
-        this.parity = config.parity;
-        this.stopBits = config.stopBits;
-        this.dataBits = config.dataBits;
-        this.flowControl = config.flowControl;
-        this.replaceError = config.replaceError;
+        this.configuration = config;
         doConfigure(
                 handle,
-                getSpeed(speed), 
-                parity.ordinal(), 
-                dataBits.ordinal(), 
-                stopBits.ordinal(), 
-                flowControl.ordinal(),
-                replaceError
+                getSpeed(configuration.speed), 
+                configuration.parity.ordinal(), 
+                configuration.dataBits.ordinal(), 
+                configuration.stopBits.ordinal(), 
+                configuration.flowControl.ordinal(),
+                configuration.replaceError
         );
     }
 
@@ -341,32 +343,32 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     public DataBits getDataBits()
     {
-        return dataBits;
+        return configuration.dataBits;
     }
 
     public FlowControl getFlowControl()
     {
-        return flowControl;
+        return configuration.flowControl;
     }
 
     public Parity getParity()
     {
-        return parity;
+        return configuration.parity;
     }
 
     public Speed getSpeed()
     {
-        return speed;
+        return configuration.speed;
     }
 
     public StopBits getStopBits()
     {
-        return stopBits;
+        return configuration.stopBits;
     }
 
     public boolean isReplaceError()
     {
-        return replaceError;
+        return configuration.replaceError;
     }
 
     @Override
@@ -563,23 +565,35 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         }
 
     }
-    public static class Builder extends Configuration
+    public static class Builder
     {
         private String port;
         private boolean block = true;
+        private Configuration configuration;
+
+        public Builder(String port, int speed)
+        {
+            this(port, Speed.valueOf("B"+speed));
+        }
 
         public Builder(String port, Speed speed)
         {
             this.port = port;
-            this.speed = speed;
+            this.configuration = new Configuration();
+            this.configuration.setSpeed(speed);
         }
 
-        public Builder(String port, int speed)
+        public Builder(String port, Configuration configuration)
         {
             this.port = port;
-            this.speed = Speed.valueOf("B"+speed);
+            this.configuration = configuration;
         }
 
+        public void setConfiguration(Configuration configuration)
+        {
+            this.configuration = configuration;
+        }
+        
         public SerialChannel get() throws IOException
         {
             SerialChannel channel;
@@ -595,7 +609,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
                     throw new UnsupportedOperationException("OS not supported");
             }
             channel.open();
-            channel.configure(this);
+            channel.configure(configuration);
             channel.configureBlocking(block);
             return channel;
         }
@@ -622,7 +636,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
         public Speed getSpeed()
         {
-            return speed;
+            return configuration.speed;
         }
 
         public boolean isBlock()
@@ -630,40 +644,45 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return block;
         }
 
-        @Override
         public Builder setStopBits(StopBits stopBits)
         {
-            return (Builder) super.setStopBits(stopBits);
+            configuration.setStopBits(stopBits);
+            return this;
         }
 
-        @Override
         public Builder setSpeed(Speed speed)
         {
-            return (Builder) super.setSpeed(speed);
+            configuration.setSpeed(speed);
+            return this;
         }
 
-        @Override
         public Builder setParity(Parity parity)
         {
-            return (Builder) super.setParity(parity);
+            configuration.setParity(parity);
+            return this;
         }
 
-        @Override
         public Builder setFlowControl(FlowControl flowControl)
         {
-            return (Builder) super.setFlowControl(flowControl);
+            configuration.setFlowControl(flowControl);
+            return this;
         }
 
-        @Override
         public Builder setDataBits(DataBits dataBits)
         {
-            return (Builder) super.setDataBits(dataBits);
+            configuration.setDataBits(dataBits);
+            return this;
         }
 
-        @Override
         public Builder setReplaceError(boolean replace)
         {
-            return (Builder) super.setReplaceError(replace);
+            configuration.setReplaceError(replace);
+            return this;
+        }
+
+        public int getBytesPerSecond()
+        {
+            return configuration.getBytesPerSecond();
         }
         
     }

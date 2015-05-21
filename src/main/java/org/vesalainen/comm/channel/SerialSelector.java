@@ -60,6 +60,10 @@ public class SerialSelector extends AbstractSelector
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
     {
+        if (ch.isBlocking())
+        {
+            throw new IllegalArgumentException("blocking not allowed");
+        }
         if ((ops & ~ch.validOps()) != 0)
         {
             throw new IllegalArgumentException("ops is not supported");

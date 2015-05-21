@@ -56,11 +56,10 @@ public class Receiver implements Callable<Integer>
             int next = rand.next(bits) & 0xff;
             if (rc != next)
             {
-        System.err.println(rc+" != "+next);
                 errors++;
             }
         }
-        System.err.println("received all");
+        //System.err.println("received all");
         return errors;
     }
     

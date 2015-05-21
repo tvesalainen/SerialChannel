@@ -52,7 +52,7 @@ public class Transmitter implements Callable<Void>
             bb.put((byte) next);
         }
         flush();
-        System.err.println("transmitted all");
+        //System.err.println("transmitted all");
         return null;
     }
     private void flush() throws IOException

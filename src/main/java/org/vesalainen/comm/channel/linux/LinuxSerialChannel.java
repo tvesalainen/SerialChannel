@@ -95,8 +95,8 @@ public class LinuxSerialChannel extends SerialChannel
     protected native void doClose(long handle) throws IOException;
 
     private static final byte[] errorReplacement = new byte[] {(byte)0xff, 0x00};
-    @Override
-    public byte[] getErrorReplacement()
+
+    public static byte[] errorReplacement()
     {
         return errorReplacement;
     }

@@ -223,66 +223,61 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	)
 {
     CTX *c = (CTX*)ctx;
-    int baudrate = 0;
-    int bits = 0;
-    int stop = 0;
-    int par = 0;
-    int fctrl = 0;
     
     bzero(&c->newtio, sizeof(c->newtio));
     
     switch (bauds)
     {
         case 50:
-            baudrate = B50;
+            c->newtio.c_cflag |= B50;
             break;
         case 75:
-            baudrate = B75;
+            c->newtio.c_cflag |= B75;
             break;
         case 110:
-            baudrate = B110;
+            c->newtio.c_cflag |= B110;
             break;
         case 134:
-            baudrate = B134;
+            c->newtio.c_cflag |= B134;
             break;
         case 150:
-            baudrate = B150;
+            c->newtio.c_cflag |= B150;
             break;
         case 200:
-            baudrate = B200;
+            c->newtio.c_cflag |= B200;
             break;
         case 300:
-            baudrate = B300;
+            c->newtio.c_cflag |= B300;
             break;
         case 600:
-            baudrate = B600;
+            c->newtio.c_cflag |= B600;
             break;
         case 1200:
-            baudrate = B1200;
+            c->newtio.c_cflag |= B1200;
             break;
         case 2400:
-            baudrate = B2400;
+            c->newtio.c_cflag |= B2400;
             break;
         case 4800:
-            baudrate = B4800;
+            c->newtio.c_cflag |= B4800;
             break;
         case 9600:
-            baudrate = B9600;
+            c->newtio.c_cflag |= B9600;
             break;
         case 19200:
-            baudrate = B19200;
+            c->newtio.c_cflag |= B19200;
             break;
         case 38400:
-            baudrate = B38400;
+            c->newtio.c_cflag |= B38400;
             break;
         case 57600:
-            baudrate = B57600;
+            c->newtio.c_cflag |= B57600;
             break;
         case 115200:
-            baudrate = B115200;
+            c->newtio.c_cflag |= B115200;
             break;
         case 230400:
-            baudrate = B230400;
+            c->newtio.c_cflag |= B230400;
             break;
         default:
             exception(env, "java/io/IOException", "unknown baudrate");
@@ -293,18 +288,19 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     switch (parity)
     {
     case 0:	// NONE
+        c->newtio.c_iflag |= IGNPAR;
         break;
     case 1:	// ODD
-        par = PARENB | PARODD;
+        c->newtio.c_cflag |= PARENB | PARODD;
         break;
     case 2:	// EVEN
-        par = PARENB;
+        c->newtio.c_cflag |= PARENB;
         break;
     case 3:	// MARK
-        par = PARENB | CMSPAR | PARODD;
+        c->newtio.c_cflag |= PARENB | CMSPAR | PARODD;
         break;
     case 4:	// SPACE
-        par = PARENB | CMSPAR;
+        c->newtio.c_cflag |= PARENB | CMSPAR;
         break;
     default:
         exception(env, "java/io/IOException", "illegal parity value");
@@ -314,19 +310,19 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     switch (databits)
     {
     case 1:	// 5
-        bits = CS5;
+        c->newtio.c_cflag |= CS5;
         break;
     case 2:	// 6
-        bits = CS6;
+        c->newtio.c_cflag |= CS6;
         break;
     case 3:	// 7
-        bits = CS7;
+        c->newtio.c_cflag |= CS7;
         break;
     case 4:	// 8
-        bits = CS8;
+        c->newtio.c_cflag |= CS8;
         break;
     default:
-        exception(env, "java/io/IOException", "illegal databits value");
+        exception(env, "java/io/IOException", "illegal datac->newtio.c_cflag |value");
         ERRORRETURNV;
         break;
     }
@@ -335,23 +331,22 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     case 0:	// 1
         break;
     case 2:	// 2
-        stop = CSTOPB;
+        c->newtio.c_cflag |= CSTOPB;
         break;
     default:
-        exception(env, "java/io/IOException", "illegal stopbits value");
+        exception(env, "java/io/IOException", "illegal stopc->newtio.c_cflag |value");
         ERRORRETURNV;
         break;
     }
     switch (flow)
     {
     case 0:	// NONE
-        c->newtio.c_iflag |= IGNPAR;
         break;
     case 1:	// XONXOFF
         c->newtio.c_iflag |= IXON | IXOFF;
         break;
     case 2:	// RTSCTS
-        fctrl = CRTSCTS;
+        c->newtio.c_cflag |= CRTSCTS;
         break;
     case 3:	// DSRDTR
     default:
@@ -363,7 +358,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         c->newtio.c_iflag |= PARMRK;    // mark parity
     }
-    c->newtio.c_cflag = baudrate | bits | stop | par | fctrl | CLOCAL | CREAD;
+    c->newtio.c_cflag |= CLOCAL | CREAD;
     c->newtio.c_cc[VSTART] = 0x11;
     c->newtio.c_cc[VSTOP] = 0x13;
     c->newtio.c_cc[VMIN] = 1;   // block is default
