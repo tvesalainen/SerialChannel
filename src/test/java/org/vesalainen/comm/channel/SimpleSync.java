@@ -71,12 +71,13 @@ public class SimpleSync implements AutoCloseable
 
     public void sync() throws IOException
     {
-        boolean synced = false;
+        int countdown = 1000;
+        int synced = 0;
         System.err.println("sync phase="+phase);
-        send();
+        send(synced);
         while (true)
         {
-            int count = selector.select(1000);
+            int count = selector.select(100);
             if (count > 0)
             {
                 try
@@ -89,11 +90,13 @@ public class SimpleSync implements AutoCloseable
                         if (isa != null && !locals.contains(isa.getAddress()))
                         {
                             bb.flip();
+                            int cnt = bb.remaining();
                             byte b = bb.get();
                             if (b == phase)
                             {
-                                synced = true;
-                                send();
+                                synced = cnt;
+                                countdown -= Math.pow(10, synced);
+                                send(synced);
                             }
                         }
                     } while (isa != null);
@@ -105,21 +108,25 @@ public class SimpleSync implements AutoCloseable
             }
             else
             {
-                send();
-                if (synced)
-                {
-                    System.err.println("synced "+phase);
-                    phase++;
-                    return;
-                }
+                send(synced);
             }
+            if (countdown <= 0)
+            {
+                System.err.println("synced "+phase);
+                phase++;
+                return;
+            }
+            countdown--;
         }
     }
-    private void send() throws IOException
+    private void send(int synced) throws IOException
     {
         //System.err.println("send="+phase);
         bb.clear();
-        bb.put(phase);
+        for (int ii=0;ii<=synced;ii++)
+        {
+            bb.put(phase);
+        }
         bb.flip();
         dc.send(bb, broadcast);
     }
