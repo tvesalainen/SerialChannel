@@ -138,17 +138,17 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     /**
      * Change channel configuration
-     * @param builder
+     * @param config
      * @throws IOException 
      */
-    public void configure(Builder builder) throws IOException
+    public void configure(Configuration config) throws IOException
     {
-        this.speed = builder.speed;
-        this.parity = builder.parity;
-        this.stopBits = builder.stopBits;
-        this.dataBits = builder.dataBits;
-        this.flowControl = builder.flowControl;
-        this.replaceError = builder.replaceError;
+        this.speed = config.speed;
+        this.parity = config.parity;
+        this.stopBits = config.stopBits;
+        this.dataBits = config.dataBits;
+        this.flowControl = config.flowControl;
+        this.replaceError = config.replaceError;
         doConfigure(
                 handle,
                 getSpeed(speed), 
@@ -453,6 +453,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         protected StopBits stopBits = StopBits.STOPBITS_10;
         protected DataBits dataBits = DataBits.DATABITS_8;
         protected FlowControl flowControl = FlowControl.NONE;
+        protected boolean replaceError;
+        
         public float getFrameSize()
         {
             float size = 1;   // start
@@ -529,6 +531,12 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return this;
         }
 
+        public Configuration setReplaceError(boolean replace)
+        {
+            this.replaceError = replace;
+            return this;
+        }
+
         public Parity getParity()
         {
             return parity;
@@ -549,12 +557,16 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return flowControl;
         }
 
+        public boolean isReplaceError()
+        {
+            return replaceError;
+        }
+
     }
     public static class Builder extends Configuration
     {
         private String port;
         private boolean block = true;
-        private boolean replaceError;
 
         public Builder(String port, Speed speed)
         {
@@ -603,12 +615,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return this;
         }
 
-        public Builder setReplaceError(boolean replace)
-        {
-            this.replaceError = replace;
-            return this;
-        }
-
         public String getPort()
         {
             return port;
@@ -622,11 +628,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         public boolean isBlock()
         {
             return block;
-        }
-
-        public boolean isReplaceError()
-        {
-            return replaceError;
         }
 
         @Override
@@ -656,7 +657,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         @Override
         public Builder setDataBits(DataBits dataBits)
         {
-            return super.setDataBits(dataBits);
+            return (Builder) super.setDataBits(dataBits);
+        }
+
+        @Override
+        public Builder setReplaceError(boolean replace)
+        {
+            return (Builder) super.setReplaceError(replace);
         }
         
     }
