@@ -22,8 +22,6 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -70,8 +68,8 @@ public class PeerT
                                             .setStopBits(stops)
                                             .setDataBits(bits);
                                     final int count = builder.getBytesPerSecond()*5;    // 5 second test
-                                    ByteBuffer wb = ByteBuffer.allocateDirect(count/10);
-                                    ByteBuffer rb = ByteBuffer.allocateDirect(count/5);
+                                    ByteBuffer wb = ByteBuffer.allocateDirect(2048);
+                                    ByteBuffer rb = ByteBuffer.allocateDirect(2048);
                                     ss.sync();
                                     try (SerialChannel sc = builder.get())
                                     {
@@ -105,7 +103,7 @@ public class PeerT
                                                         {
                                                             byte b = rb.get();
                                                             int cc = b & 0xff;
-                                                            int next = rcr.next(8);
+                                                            int next = rcr.next();
                                                             //System.err.println("rc="+rcr.count()+" "+cc+" "+next);
                                                             if (next != cc)
                                                             {
@@ -150,25 +148,17 @@ public class PeerT
         bb.clear();
         while (rcw.count() < count && bb.hasRemaining())
         {
-            byte next = (byte) rcw.next(8);
+            byte next = (byte) rcw.next();
             //System.err.print(Byte.toUnsignedInt(next)+" ");
             bb.put(next);
         }
         bb.flip();
-        int remaining = bb.remaining();
-        if (bb.hasRemaining())
+        boolean hasRemaining = bb.hasRemaining();
+        while (bb.hasRemaining())
         {
             int rc = sc.write(bb);
-            if (rc != remaining)
-            {
-                System.err.print("\nremaining="+remaining+" rc="+rc);
-            }
-            return true;
         }
-        else
-        {
-            return false;
-        }
+        return hasRemaining;
     }
 
     

@@ -392,6 +392,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURNV;
     }
     */
+    fprintf(stderr, "close\n");
     if (close(c->fd) < 0)
     {
         exception(env, "java/io/IOException", "CloseHandle failed");
@@ -463,6 +464,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 
     DEBUG("read");
     rc = read(c->fd, addr, len);
+    if (rc < 0 && errno == EAGAIN)
+    {
+        rc = 0;
+    }
     if (rc < 0)
     {
         if (barr != NULL)
@@ -559,18 +564,21 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         gmid = (*env)->GetMethodID(env, cls, "get", "([B)Ljava/nio/ByteBuffer;");
         if (gmid == NULL)
         {
+            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
             (*env)->DeleteLocalRef(env, barr);
             ERRORRETURN
         }
         (*env)->CallObjectMethod(env, bb, gmid, barr);
         if ((*env)->ExceptionCheck(env))
         {
+            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
             (*env)->DeleteLocalRef(env, barr);
             ERRORRETURN
         }
         arr = (*env)->GetByteArrayElements(env, barr, NULL);
         if (arr == NULL)
         {
+            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
             (*env)->DeleteLocalRef(env, barr);
             ERRORRETURN
         }
@@ -582,10 +590,17 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
 
     rc = write(c->fd, addr, len);
+    if (rc < 0 && errno == EAGAIN)
+    {
+        rc = 0;
+    }
     if (rc < 0)
     {
-        (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-        (*env)->DeleteLocalRef(env, barr);
+        if (barr != NULL)
+        {
+            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+            (*env)->DeleteLocalRef(env, barr);
+        }
         exception(env, "java/io/IOException", NULL);
         ERRORRETURN
     }
@@ -703,6 +718,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
   (JNIEnv *env, jobject obj, jlong ctx, jint min, jint time)
 {
     CTX* c = (CTX*)ctx;
+    int flags = 0;
     
     c->newtio.c_cc[VMIN] = min;
     c->newtio.c_cc[VTIME] = time;
@@ -711,6 +727,28 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         exception(env, "java/io/IOException", "tcsetattr failed");
         ERRORRETURNV;
+    }
+    flags = fcntl(c->fd, F_GETFL, 0);
+    if (flags < 0)
+    {
+        exception(env, "java/io/IOException", "fcntl failed");
+        ERRORRETURNV;
+    }
+    if (!min)
+    {
+        if (fcntl(c->fd, F_SETFL, flags | O_NONBLOCK) < 0)
+        {
+            exception(env, "java/io/IOException", "fcntl failed");
+            ERRORRETURNV;
+        }
+    }
+    else
+    {
+        if (fcntl(c->fd, F_SETFL, flags & ~O_NONBLOCK) < 0)
+        {
+            exception(env, "java/io/IOException", "fcntl failed");
+            ERRORRETURNV;
+        }
     }
 }
 

@@ -16,7 +16,6 @@
  */
 package org.vesalainen.comm.channel;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 
@@ -41,7 +40,7 @@ public class Receiver implements Callable<Integer>
     {
         int errors = 0;
         int bits = channel.getDataBits().ordinal() + 4;
-        RandomChar rand = new RandomChar();
+        RandomChar rand = new RandomChar(bits);
         channel.read(bb);
         bb.flip();
         for (int ii = 0; ii < count; ii++)
@@ -53,7 +52,7 @@ public class Receiver implements Callable<Integer>
                 bb.flip();
             }
             int rc = bb.get() & 0xff;
-            int next = rand.next(bits) & 0xff;
+            int next = rand.next() & 0xff;
             if (rc != next)
             {
                 errors++;

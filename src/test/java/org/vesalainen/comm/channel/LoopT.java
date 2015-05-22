@@ -10,9 +10,13 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -26,10 +30,12 @@ import java.util.logging.Logger;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
+import org.vesalainen.comm.channel.SerialChannel.Configuration;
 import org.vesalainen.comm.channel.SerialChannel.DataBits;
 import org.vesalainen.comm.channel.SerialChannel.FlowControl;
 import org.vesalainen.comm.channel.SerialChannel.Parity;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
+import org.vesalainen.comm.channel.SerialChannel.StopBits;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.OS.Linux;
@@ -45,7 +51,7 @@ public class LoopT
     {
     }
 
-    @Test
+    //@Test
     public void testSelectWrite()
     {
         if (os == Linux)
@@ -56,8 +62,10 @@ public class LoopT
             try
             {
                 Builder builder1 = new Builder(ports.get(0), Speed.B115200)
+                        .setBlocking(false)
                         .setFlowControl(FlowControl.XONXOFF);
                 Builder builder2 = new Builder(ports.get(1), Speed.B115200)
+                        .setBlocking(false)
                         .setFlowControl(FlowControl.XONXOFF);
                 try (SerialChannel c1 = builder1.get();
                     SerialChannel c2 = builder2.get()
@@ -69,7 +77,7 @@ public class LoopT
                     RandomChar rc = new RandomChar();
                     for (int ii=0;ii<size;ii++)
                     {
-                        buf[ii] = (byte) rc.next(ii);
+                        buf[ii] = (byte) rc.next();
                     }
                     selector.register(c1, OP_READ, ByteBuffer.allocate(size));
                     selector.register(c2, OP_READ, ByteBuffer.allocate(size));
@@ -126,7 +134,7 @@ public class LoopT
             }
         }
     }
-    @Test
+    //@Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -173,7 +181,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    @Test
+    //@Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -218,7 +226,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -287,7 +295,7 @@ public class LoopT
                                 bb.flip();
                                 while (bb.hasRemaining())
                                 {
-                                    int next = rc.next(8);
+                                    int next = rc.next();
                                     byte cc = bb.get();
                                     assertEquals((byte)next, cc);
                                     c--;
@@ -315,7 +323,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);
@@ -369,5 +377,87 @@ public class LoopT
         }
     }
 
-    
+    @Test
+    public synchronized void autoConfTest() throws InterruptedException
+    {
+        //SerialChannel.debug(true);
+        ExecutorService exec = Executors.newCachedThreadPool();
+        List<String> ports = SerialChannel.getFreePorts();
+        assertNotNull(ports);
+        assertTrue(ports.size() >= 2);
+        List<Configuration> randConfigs = new ArrayList<>();
+        List<Configuration> optConfigs = new ArrayList<>();
+        for (FlowControl flow : new FlowControl[] {FlowControl.NONE})
+        {
+            for (Parity parity : new Parity[] {Parity.NONE, Parity.EVEN, Parity.ODD, Parity.MARK, Parity.SPACE})
+            {
+                for (DataBits bits : new DataBits[] {DataBits.DATABITS_8})
+                {
+                    for (StopBits stops : new StopBits[] {StopBits.STOPBITS_10, StopBits.STOPBITS_20})
+                    {
+                        for (Speed speed : new Speed[] {Speed.B4800, Speed.B38400})
+                        {
+                            Configuration conf = new Configuration()
+                            .setDataBits(bits)
+                            .setFlowControl(flow)
+                            .setParity(parity)
+                            .setStopBits(stops)
+                            .setSpeed(speed);
+                            randConfigs.add(conf);
+                            optConfigs.add(conf);
+                        }
+                    }
+                }
+            }
+        }
+        Random random = new Random(12345);
+        Collections.shuffle(randConfigs, random);
+        for (Configuration randConf : randConfigs)
+        {
+            System.err.println("\ntransmit "+randConf);
+            wait(3000);
+            Builder builder = new Builder(ports.get(0), randConf);
+            try (SerialChannel sc = builder.get())
+            {
+                Transmitter tra = new Transmitter(sc, Integer.MAX_VALUE, new RandomASCII());
+                Future<Void> ftra = exec.submit(tra);
+                AutoConfigurer ac = new AutoConfigurer(1000, 100, 1000);
+                ac.addConfigurations(optConfigs);
+                ac.addRange((byte)'\r');
+                ac.addRange((byte)'\n');
+                ac.addRange((byte)' ', (byte)0b1111111);
+                Map<String, Configuration> map = ac.configure(ports.subList(1, ports.size()), 1, TimeUnit.DAYS);
+                assertEquals(1, map.size());
+                Configuration detectedConf = map.get(ports.get(1));
+                assertEquals(randConf.speed, detectedConf.speed);
+                comp(randConf, detectedConf);
+                ftra.cancel(true);
+            }
+            catch (IOException ex)
+            {
+                ex.printStackTrace();
+                fail(ex.getMessage());
+            }
+        }
+    }
+    void comp(Configuration c1, Configuration c2)
+    {
+        if (c1.speed != c2.speed)
+        {
+            System.err.print(c1.speed+" != "+c2.speed+" ");
+        }
+        if (c1.dataBits != c2.dataBits)
+        {
+            System.err.print(c1.dataBits+" != "+c2.dataBits+" ");
+        }
+        if (c1.parity != c2.parity)
+        {
+            System.err.print(c1.parity+" != "+c2.parity+" ");
+        }
+        if (c1.stopBits != c2.stopBits)
+        {
+            System.err.print(c1.stopBits+" != "+c2.stopBits);
+        }
+        System.err.println();
+    }
 }

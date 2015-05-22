@@ -27,9 +27,22 @@ public class RandomChar
 {
     private static final int SEED = 123456;
     private int count;
+    protected int bits;
 
-    private Random random = new Random(SEED);
-    public int next(int bits)
+    protected Random random = new Random(SEED);
+
+    public RandomChar()
+    {
+        this(8);
+    }
+
+    public RandomChar(int bits)
+    {
+        this.bits = bits;
+    }
+    
+    
+    public int next()
     {
         return (count++ % 200)+32;
         /*

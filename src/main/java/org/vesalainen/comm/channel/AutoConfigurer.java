@@ -18,10 +18,10 @@ package org.vesalainen.comm.channel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,7 +39,31 @@ public class AutoConfigurer
 {
     private enum State {Success, Fail, GoOn };
     
+    private long waitMillis;
+    private int testLength;
+    private int maxCount;
+    private List<Range> ranges = new ArrayList<>();
+    
     private List<Configuration> configurations = new ArrayList<>();
+
+    public AutoConfigurer()
+    {
+        this(1000, 20, 100);
+    }
+    public AutoConfigurer(long waitMillis, int testLength, int maxCount)
+    {
+        this.waitMillis = waitMillis;
+        this.testLength = testLength;
+        this.maxCount = maxCount;
+    }
+    public void addRange(byte b)
+    {
+        ranges.add(new Range(b));
+    }
+    public void addRange(byte start, byte end)
+    {
+        ranges.add(new Range(start, end));
+    }
     /**
      * Adds configuration candidate
      * @param config 
@@ -48,25 +72,33 @@ public class AutoConfigurer
     {
         configurations.add(config);
     }
-    
+    public void addConfigurations(Collection<? extends Configuration> all)
+    {
+        configurations.addAll(all);
+    }
     public Map<String, Configuration> configure(List<String> ports, long timeout, TimeUnit unit) throws IOException
     {
         if (configurations.isEmpty())
         {
             throw new IllegalArgumentException("no configurations");
         }
+        if (ranges.isEmpty())
+        {
+            throw new IllegalArgumentException("no ranges");
+        }
         long timeLimit = unit.toMillis(timeout)+System.currentTimeMillis();
         Map<String, Configuration> map = new HashMap<>();
         SerialSelector selector = new SerialSelector();
+        System.err.println("try "+configurations.get(0));
         try (CloseableSet<SerialChannel> channels = openAll(ports))
         {
             for (SerialChannel sc : channels)
             {
-                selector.register(sc, OP_READ, new Ctx());
+                selector.register(sc, OP_READ, new Ctx(sc.getPort()));
             }
             while (hasTimeLeft(timeLimit))
             {
-                int count = selector.select(5000);
+                int count = selector.select(waitMillis);
                 if (count > 0)
                 {
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
@@ -138,7 +170,12 @@ public class AutoConfigurer
         String port;
         int confNo;
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        Matcher matcher = new Matcher(SerialChannel.getErrorReplacement());
+        Matcher matcher = new Matcher(ranges);
+
+        public Ctx(String port)
+        {
+            this.port = port;
+        }
         
         State tryMatch(SelectionKey sk) throws IOException
         {
@@ -156,14 +193,9 @@ public class AutoConfigurer
                         case Success:
                             return s;
                         case Fail:
-                            confNo++;
-                            if (confNo == configurations.size())
+                            if (!nextConfiguration(sk))
                             {
                                 return s;
-                            }
-                            else
-                            {
-                                channel.configure(configurations.get(confNo));
                             }
                             break;
                     }
@@ -193,7 +225,9 @@ public class AutoConfigurer
             else
             {
                 SerialChannel channel = (SerialChannel) sk.channel();
-                channel.configure(configurations.get(confNo));
+                Configuration conf = configurations.get(confNo);
+                System.err.println("try "+conf);
+                channel.configure(conf);
                 matcher.reset();
                 return true;
             }
@@ -202,50 +236,42 @@ public class AutoConfigurer
     }
     private class Matcher
     {
-        byte[] prefix;
-        int index;
-        int bytes;
+        int corrects;
         int errors;
-        int skip = 20;
+        int count;
+        private final List<Range> ranges;
 
-        public Matcher(byte[] prefix)
+        public Matcher(List<Range> ranges)
         {
-            this.prefix = prefix;
+            this.ranges = ranges;
         }
         
         State match(byte b)
         {
-            if (skip-- < 0)
+            if (count > maxCount)
             {
-                if (prefix[index++] == b)
-                {
-                    if (index == prefix.length)
-                    {
-                        errors++;
-                        index = 0;
-                    }
-                }
-                else
-                {
-                    bytes++;
-                    index = 0;
-                }
-                if (bytes > 100)
-                {
-                    float ratio = (float)errors/(float)bytes;
-                    reset();
-                    errors = 0;
-                    bytes = 0;
-                    skip = 20;
-                    if (ratio > 0.1)
-                    {
-                        return State.Fail;
-                    }
-                    else
-                    {
-                        return State.Success;
-                    }
-                }
+                return State.Fail;
+            }
+            count++;
+            if (!inRange(ranges, b))
+            {
+                errors++;
+                corrects = 0;
+                //System.err.print(b+"-");
+            }
+            else
+            {
+                errors = 0;
+                corrects++;
+                //System.err.print('+');
+            }
+            if (corrects > testLength)
+            {
+                return State.Success;
+            }
+            if (errors > testLength)
+            {
+                return State.Fail;
             }
             return State.GoOn;
         }
@@ -253,9 +279,41 @@ public class AutoConfigurer
         private void reset()
         {
             errors = 0;
-            bytes = 0;
-            skip = 20;
+            corrects = 0;
+            count = 0;
         }
+    }
+    public class Range
+    {
+        byte start;
+        byte end;
+
+        public Range(byte b)
+        {
+            this.start = b;
+            this.end = b;
+        }
+
+        public Range(byte start, byte end)
+        {
+            this.start = start;
+            this.end = end;
+        }
+        boolean in(byte b)
+        {
+            return b >= start && b <= end;
+        }
+    }
+    static boolean inRange(Collection<? extends Range> ranges, byte b)
+    {
+        for (Range r : ranges)
+        {
+            if (r.in(b))
+            {
+                return true;
+            }
+        }
+        return false;
     }
     private class CloseableSet<T extends AutoCloseable> extends HashSet<T> implements AutoCloseable
     {

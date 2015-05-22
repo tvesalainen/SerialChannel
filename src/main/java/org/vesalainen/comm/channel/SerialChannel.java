@@ -30,6 +30,7 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
@@ -250,16 +251,11 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         if (handle != -1)
         {
-            int w = src.remaining();
             int count = 0;
             try
             {
                 begin();
                 count = doWrite(handle, src);
-                if (w != count)
-                {
-                    System.err.println("write rc="+count+" w="+w);
-                }
                 return count;
             }
             finally
@@ -562,6 +558,128 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         public boolean isReplaceError()
         {
             return replaceError;
+        }
+
+        @Override
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append("baud="+SerialChannel.getSpeed(speed));
+            switch (parity)
+            {
+                case NONE:
+                    sb.append(" parity=N");
+                    break;
+                case EVEN:
+                    sb.append(" parity=E");
+                    break;
+                case ODD:
+                    sb.append(" parity=O");
+                    break;
+                case MARK:
+                    sb.append(" parity=M");
+                    break;
+                case SPACE:
+                    sb.append(" parity=S");
+                    break;
+            }
+            switch (dataBits)
+            {
+                case DATABITS_4:
+                    sb.append(" data=4");
+                    break;
+                case DATABITS_5:
+                    sb.append(" data=5");
+                    break;
+                case DATABITS_6:
+                    sb.append(" data=6");
+                    break;
+                case DATABITS_7:
+                    sb.append(" data=7");
+                    break;
+                case DATABITS_8:
+                    sb.append(" data=8");
+                    break;
+            }
+            switch (stopBits)
+            {
+                case STOPBITS_10:
+                    sb.append(" stop=1");
+                    break;
+                case STOPBITS_15:
+                    sb.append(" stop=1.5");
+                    break;
+                case STOPBITS_20:
+                    sb.append(" stop=2");
+                    break;
+            }
+            switch (flowControl)
+            {
+                case NONE:
+                    break;
+                case XONXOFF:
+                    sb.append(" flow=2");
+                    break;
+                case RTSCTS:
+                    sb.append(" flow=RTS/CTS");
+                    break;
+                case DSRDTR:
+                    sb.append(" flo=DSR/DTR");
+                    break;
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int hash = 7;
+            hash = 89 * hash + Objects.hashCode(this.speed);
+            hash = 89 * hash + Objects.hashCode(this.parity);
+            hash = 89 * hash + Objects.hashCode(this.stopBits);
+            hash = 89 * hash + Objects.hashCode(this.dataBits);
+            hash = 89 * hash + Objects.hashCode(this.flowControl);
+            hash = 89 * hash + (this.replaceError ? 1 : 0);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            final Configuration other = (Configuration) obj;
+            if (this.speed != other.speed)
+            {
+                return false;
+            }
+            if (this.parity != other.parity)
+            {
+                return false;
+            }
+            if (this.stopBits != other.stopBits)
+            {
+                return false;
+            }
+            if (this.dataBits != other.dataBits)
+            {
+                return false;
+            }
+            if (this.flowControl != other.flowControl)
+            {
+                return false;
+            }
+            if (this.replaceError != other.replaceError)
+            {
+                return false;
+            }
+            return true;
         }
 
     }

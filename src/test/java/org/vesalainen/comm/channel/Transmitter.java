@@ -17,7 +17,6 @@
 package org.vesalainen.comm.channel;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 
@@ -30,21 +29,26 @@ public class Transmitter implements Callable<Void>
     private final SerialChannel channel;
     private final ByteBuffer bb = ByteBuffer.allocate(70);
     private final int count;
+    private RandomChar rand;
 
     public Transmitter(SerialChannel channel, int count)
     {
+        this(channel, count, new RandomChar(channel.getDataBits().ordinal() + 4));
+    }
+    public Transmitter(SerialChannel channel, int count, RandomChar rand)
+    {
         this.channel = channel;
         this.count = count;
+        this.rand = rand;
     }
 
     @Override
     public Void call() throws Exception
     {
         int bits = channel.getDataBits().ordinal() + 4;
-        RandomChar rand = new RandomChar();
         for (int ii = 0; ii < count; ii++)
         {
-            int next = rand.next(bits);
+            int next = rand.next();
             if (!bb.hasRemaining())
             {
                 flush();
