@@ -257,13 +257,13 @@ public class AutoConfigurer
             {
                 errors++;
                 corrects = 0;
-                //System.err.print(b+"-");
+                System.err.print(b+"-");
             }
             else
             {
                 errors = 0;
                 corrects++;
-                //System.err.print('+');
+                System.err.print('+');
             }
             if (corrects > testLength)
             {
