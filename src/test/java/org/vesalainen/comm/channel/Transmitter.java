@@ -45,7 +45,6 @@ public class Transmitter implements Callable<Void>
     @Override
     public Void call() throws Exception
     {
-        int bits = channel.getDataBits().ordinal() + 4;
         for (int ii = 0; ii < count; ii++)
         {
             int next = rand.next();

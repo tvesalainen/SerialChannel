@@ -65,6 +65,9 @@ public class WinSerialChannel extends SerialChannel
         this.port = port;
     }
 
+    @Override
+    protected native void doClearBuffers(long address);
+
     private static native void staticInit();
     
     @Override
@@ -109,7 +112,7 @@ public class WinSerialChannel extends SerialChannel
     @Override
     protected void setTimeouts() throws IOException
     {
-        timeouts(handle,
+        timeouts(address,
                 readIntervalTimeout,
                 readTotalTimeoutMultiplier,
                 readTotalTimeoutConstant,
@@ -139,7 +142,7 @@ public class WinSerialChannel extends SerialChannel
         for (SelectionKey sk : keys)
         {
             WinSerialChannel channel = (WinSerialChannel) sk.channel();
-            handles[index] = channel.handle;
+            handles[index] = channel.address;
             int interestOps = sk.interestOps();
             int mask = 0;
             if ((interestOps & OP_READ) != 0)
@@ -200,17 +203,17 @@ public class WinSerialChannel extends SerialChannel
     @Override
     public int read(ByteBuffer dst) throws IOException
     {
-        if (handle != -1)
+        if (address != -1)
         {
             int count = 0;
             try
             {
                 begin();
-                count = doRead(handle, dst);
+                count = doRead(address, dst);
                 while (block && count == 0)
                 {
                     waitEvent(EV_RXCHAR);
-                    count = doRead(handle, dst);
+                    count = doRead(address, dst);
                 }
                 return count;
             }
@@ -233,12 +236,12 @@ public class WinSerialChannel extends SerialChannel
 
     protected void setEventMask(int mask) throws IOException
     {
-        setEventMask(handle, mask);
+        setEventMask(address, mask);
     }
 
     protected int waitEvent(int mask) throws IOException
     {
-        return waitEvent(handle, mask);
+        return waitEvent(address, mask);
     }
 
     public int getReadIntervalTimeout()

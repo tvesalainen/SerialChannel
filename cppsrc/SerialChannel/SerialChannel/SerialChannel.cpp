@@ -80,6 +80,17 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_st
 	CHECKV(midList_Add);
 
 }
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doClearBuffers
+(JNIEnv *env, jobject obj, jlong ctx)
+{
+	CTX *c = (CTX*)ctx;
+	DEBUG("PurgeComm");
+	if (!PurgeComm(c->hComm, PURGE_RXCLEAR | PURGE_TXCLEAR))
+	{
+		EXCEPTIONV("PurgeComm");
+	}
+}
+
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {

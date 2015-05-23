@@ -65,6 +65,9 @@ public class LinuxSerialChannel extends SerialChannel
     }
     
     @Override
+    protected native void doClearBuffers(long address);
+
+    @Override
     protected native void doConfigure(
             long handle,
             int baudRate, 
@@ -124,11 +127,11 @@ public class LinuxSerialChannel extends SerialChannel
             int mask = 0;
             if ((interestOps & OP_READ) != 0)
             {
-                reads[readIndex++] = channel.handle;
+                reads[readIndex++] = channel.address;
             }
             if ((interestOps & OP_WRITE) != 0)
             {
-                writes[writeIndex++] = channel.handle;
+                writes[writeIndex++] = channel.address;
             }
         }
         int rc = LinuxSerialChannel.doSelect(readIndex, writeIndex, reads, writes, timeout);
@@ -182,15 +185,15 @@ public class LinuxSerialChannel extends SerialChannel
     @Override
     protected void setTimeouts() throws IOException
     {
-        if (handle != -1)
+        if (address != -1)
         {
             if (block)
             {
-                timeouts(handle, min, time);
+                timeouts(address, min, time);
             }
             else
             {
-                timeouts(handle, 0, 10);
+                timeouts(address, 0, 10);
             }
         }
     }

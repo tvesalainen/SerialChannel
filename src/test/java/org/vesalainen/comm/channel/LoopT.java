@@ -51,7 +51,7 @@ public class LoopT
     {
     }
 
-    @Test
+    //@Test
     public void testSelectWrite()
     {
         if (os == Linux)
@@ -142,7 +142,7 @@ public class LoopT
             }
         }
     }
-    @Test
+    //@Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -189,7 +189,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    @Test
+    //@Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -234,7 +234,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -331,7 +331,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);
@@ -385,7 +385,7 @@ public class LoopT
         }
     }
 
-    //@Test
+    @Test
     public synchronized void autoConfTest() throws InterruptedException
     {
         //SerialChannel.debug(true);
@@ -427,6 +427,7 @@ public class LoopT
             Builder builder = new Builder(ports.get(0), randConf);
             try (SerialChannel sc = builder.get())
             {
+                sc.setClearOnClose(true);
                 Transmitter tra = new Transmitter(sc, Integer.MAX_VALUE, new RandomASCII());
                 Future<Void> ftra = exec.submit(tra);
                 AutoConfigurer ac = new AutoConfigurer(1000, 100, 1000);

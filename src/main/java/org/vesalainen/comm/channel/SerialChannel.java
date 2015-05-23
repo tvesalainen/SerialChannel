@@ -58,11 +58,12 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
     public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
 
-    protected long handle = -1;
+    protected long address = -1;
     protected String port;
     protected Configuration configuration;
 
     protected boolean block = true;
+    protected boolean clearOnClose;
 
     protected SerialChannel()
     {
@@ -70,6 +71,25 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     }
     
     protected abstract int version();
+    /**
+     * Clears input and output buffers.
+     */
+    public void clearBuffers()
+    {
+        doClearBuffers(address);
+    }
+    
+    protected abstract void doClearBuffers(long address);
+
+    public boolean isClearOnClose()
+    {
+        return clearOnClose;
+    }
+
+    public void setClearOnClose(boolean clearOnClose)
+    {
+        this.clearOnClose = clearOnClose;
+    }
 
     public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
@@ -126,7 +146,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      */
     protected void open() throws IOException
     {
-        handle = doOpen(port.getBytes());
+        address = doOpen(port.getBytes());
     }
     protected abstract long doOpen(byte[] port);
     
@@ -152,8 +172,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public void configure(Configuration config) throws IOException
     {
         this.configuration = config;
-        doConfigure(
-                handle,
+        doConfigure(address,
                 getSpeed(configuration.speed), 
                 configuration.parity.ordinal(), 
                 configuration.dataBits.ordinal(), 
@@ -218,13 +237,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     public int read(ByteBuffer dst) throws IOException
     {
-        if (handle != -1)
+        if (address != -1)
         {
             int count = 0;
             try
             {
                 begin();
-                count = doRead(handle, dst);
+                count = doRead(address, dst);
                 return count;
             }
             finally
@@ -249,13 +268,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     public int write(ByteBuffer src) throws IOException
     {
-        if (handle != -1)
+        if (address != -1)
         {
             int count = 0;
             try
             {
                 begin();
-                count = doWrite(handle, src);
+                count = doWrite(address, src);
                 return count;
             }
             finally
@@ -370,13 +389,17 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     protected void implCloseSelectableChannel() throws IOException
     {
+        if (clearOnClose)
+        {
+            clearBuffers();
+        }
         doClose();
     }
 
     protected void doClose() throws IOException
     {
-        doClose(handle);
-        handle = -1;
+        doClose(address);
+        address = -1;
     }
 
     protected abstract void doClose(long handle) throws IOException;

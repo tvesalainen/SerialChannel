@@ -17,6 +17,14 @@ extern "C" {
 #define org_vesalainen_comm_channel_winx_WinSerialChannel_MaxSelect 64L
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
+ * Method:    doClearBuffers
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doClearBuffers
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    staticInit
  * Signature: ()V
  */

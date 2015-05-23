@@ -13,6 +13,14 @@ extern "C" {
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors 64L
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
+ * Method:    doClearBuffers
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClearBuffers
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doConfigure
  * Signature: (JIIIIIZ)V
  */

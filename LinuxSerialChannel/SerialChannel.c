@@ -71,6 +71,16 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     debug = on;
 }
 
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClearBuffers
+(JNIEnv *env, jobject obj, jlong ctx)
+{
+	CTX *c = (CTX*)ctx;
+	if (tcflush(c->fd, TCIOFLUSH) < 0)
+	{
+		EXCEPTIONV("tcflush failed");
+	}
+}
+
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
   (JNIEnv *env, jclass cls)
 {
@@ -597,11 +607,11 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
     {
         if (message != NULL)
         {
-            sprintf(buf, "%s: %s", strerror(errno), message);
+			sprintf(buf, "%d: %s: %s", errno, strerror(errno), message);
         }
         else
         {
-            sprintf(buf, "%s", strerror(errno));
+			sprintf(buf, "%d: %s", errno, strerror(errno));
         }
         (*env)->ThrowNew(env, exc, buf);
     }
