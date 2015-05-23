@@ -51,7 +51,7 @@ public class LoopT
     {
     }
 
-    //@Test
+    @Test
     public void testSelectWrite()
     {
         if (os == Linux)
@@ -96,10 +96,18 @@ public class LoopT
                                 {
                                     ByteBuffer bb = (ByteBuffer) sk.attachment();
                                     SerialChannel channel = (SerialChannel) sk.channel();
-                                    channel.read(bb);
+                                    int rem1 = bb.remaining();
+                                    int read = channel.read(bb);
+                                    int rem2 = bb.remaining();
+                                    assertEquals(rem1-rem2, read);
                                     if (!bb.hasRemaining())
                                     {
                                         sk.cancel();
+                                        byte[] array = bb.array();
+                                        if (!Arrays.equals(buf, array))
+                                        {
+                                            Arrays.toString(array);
+                                        }
                                         assertTrue(Arrays.equals(buf, bb.array()));
                                     }
                                     //System.err.println("read "+bb);
@@ -134,7 +142,7 @@ public class LoopT
             }
         }
     }
-    //@Test
+    @Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -181,7 +189,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    //@Test
+    @Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -226,7 +234,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -323,7 +331,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);
@@ -377,7 +385,7 @@ public class LoopT
         }
     }
 
-    @Test
+    //@Test
     public synchronized void autoConfTest() throws InterruptedException
     {
         //SerialChannel.debug(true);

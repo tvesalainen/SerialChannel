@@ -24,11 +24,40 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 #define MIN(x,y)	(x) < (y) ? (x) : (y);
 #define MAX(x,y)	(x) > (y) ? (x) : (y);
-#define ERRORRETURNV if (debug) fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);
-#define ERRORRETURN if (debug) fprintf(stderr, "Error %s at %d\n", strerror(errno), __LINE__);return 0;
+
+#define ERRORRETURNV if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return;
+#define ERRORRETURN if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return 0;
 #define DEBUG(s) if (debug) fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);
 
+#define CHECK(p)	if (!(p)) {ERRORRETURN;}
+#define CHECKV(p)	if (!(p)) {ERRORRETURNV;}
+#define CHECKEXC if ((*env)->ExceptionCheck(env)) {ERRORRETURN;};
+#define CHECKEXCV if ((*env)->ExceptionCheck(env)) {ERRORRETURNV;};
+
+#define EXCEPTION(m) exception(env, "java/io/IOException", m);ERRORRETURN;
+#define EXCEPTIONV(m) exception(env, "java/io/IOException", m);ERRORRETURNV;
+
+#define GETPOSITION(bb) (*env)->CallIntMethod(env, bb, midByteBuffer_GetPosition);CHECKEXC;
+#define GETLIMIT(bb) (*env)->CallIntMethod(env, bb, midByteBuffer_GetLimit);CHECKEXC;
+#define SETPOSITION(bb, newPos) (*env)->CallObjectMethod(env, bb, midByteBuffer_SetPosition, newPos);CHECKEXC;
+
+#define PUT(bb, barr) (*env)->CallObjectMethod(env, bb, midByteBuffer_PutByteArr, barr);CHECKEXC;
+#define GET(bb, barr) (*env)->CallObjectMethod(env, bb, midByteBuffer_GetByteArr, barr);CHECKEXC;
+
+#define ADD(list, item) (*env)->CallObjectMethod(env, list, midList_Add, item);CHECKEXC;
+#define ADDV(list, item) (*env)->CallObjectMethod(env, list, midList_Add, item);CHECKEXCV;
+
 static int debug;
+
+static jclass clsByteBuffer;
+static jmethodID midByteBuffer_GetPosition;
+static jmethodID midByteBuffer_GetLimit;
+static jmethodID midByteBuffer_SetPosition;
+static jmethodID midByteBuffer_PutByteArr;
+static jmethodID midByteBuffer_GetByteArr;
+static jclass clsList;
+static jmethodID midList_Add;
+
 static pthread_t selectThread;
 static sigset_t origmask;
 
@@ -54,8 +83,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     
     if (sigaction(SIGUSR1, &act, NULL) < 0)
     {
-        exception(env, "java/io/IOException", "sigaction");
-        ERRORRETURNV;
+        EXCEPTIONV("sigaction");
     }
         
     sigemptyset(&mask);
@@ -63,10 +91,26 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     
     if (pthread_sigmask(SIG_BLOCK, &mask, &origmask) < 0)
     {
-        exception(env, "java/io/IOException", "sigprocmask");
-        ERRORRETURNV;
+		EXCEPTIONV("sigprocmask");
     }
     
+	clsByteBuffer = (*env)->FindClass(env, "java/nio/ByteBuffer");
+	CHECKV(clsByteBuffer);
+	midByteBuffer_GetPosition = (*env)->GetMethodID(env, clsByteBuffer, "position", "()I");
+	CHECKV(midByteBuffer_GetPosition);
+	midByteBuffer_GetLimit = (*env)->GetMethodID(env, clsByteBuffer, "limit", "()I");
+	CHECKV(midByteBuffer_GetLimit);
+	midByteBuffer_SetPosition = (*env)->GetMethodID(env, clsByteBuffer, "position", "(I)Ljava/nio/Buffer;");
+	CHECKV(midByteBuffer_SetPosition);
+	midByteBuffer_PutByteArr = (*env)->GetMethodID(env, clsByteBuffer, "put", "([B)Ljava/nio/ByteBuffer;");
+	CHECKV(midByteBuffer_PutByteArr);
+	midByteBuffer_GetByteArr = (*env)->GetMethodID(env, clsByteBuffer, "get", "([B)Ljava/nio/ByteBuffer;");
+	CHECKV(midByteBuffer_GetByteArr);
+
+	clsList = (*env)->FindClass(env, "java/util/List");
+	CHECKV(clsList);
+	midList_Add = (*env)->GetMethodID(env, clsList, "add", "(Ljava/lang/Object;)Z");
+	CHECKV(midList_Add);
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
@@ -87,17 +131,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     selectThread = pthread_self();
     
     readArr = (*env)->GetLongArrayElements(env, reads, NULL);
-    if (readArr == NULL)
-    {
-        exception(env, "java/io/IOException", "GetLongArrayElements");
-        ERRORRETURN;
-    }
+	CHECK(readArr);
     writeArr = (*env)->GetLongArrayElements(env, writes, NULL);
-    if (writeArr == NULL)
-    {
-        exception(env, "java/io/IOException", "GetLongArrayElements");
-        ERRORRETURN;
-    }
+	CHECK(writeArr);
+
     FD_ZERO(&readfds);
     FD_ZERO(&writefds);
     for (ii=0;ii<readCount;ii++)
@@ -124,8 +161,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
         (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
-        exception(env, "java/io/IOException", "pselect");
-        ERRORRETURN;
+        EXCEPTION("pselect");
     }
     for (ii=0;ii<readCount;ii++)
     {
@@ -151,8 +187,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     {
         if (pthread_kill(selectThread, SIGUSR1) < 0)
         {
-            exception(env, "java/io/IOException", "pthread_kill");
-            ERRORRETURNV
+			EXCEPTIONV("pthread_kill");
         }
     }
 }
@@ -191,20 +226,17 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
     c->fd = open(c->szPort, O_RDWR | O_NOCTTY);
     if (c->fd < 0)
     {
-        exception(env, "java/io/IOException", c->szPort);
-        (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
-        ERRORRETURN
+		(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+		EXCEPTION(c->szPort);
     }
     if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
-        exception(env, "java/io/IOException", "tcgetattr failed");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
-        ERRORRETURN
-    }
+		EXCEPTION("tcgetattr failed");
+	}
     if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
-        exception(env, "java/io/IOException", "tcflush failed");
-        ERRORRETURN;
+		EXCEPTION("tcflush failed");
     }
     (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 
@@ -280,8 +312,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
             c->newtio.c_cflag |= B230400;
             break;
         default:
-            exception(env, "java/io/IOException", "unknown baudrate");
-            ERRORRETURNV;
+			EXCEPTIONV("unknown baudrate");
             break;
     }
     
@@ -303,8 +334,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         c->newtio.c_cflag |= PARENB | CMSPAR;
         break;
     default:
-        exception(env, "java/io/IOException", "illegal parity value");
-        ERRORRETURNV;
+		EXCEPTIONV("illegal parity value");
         break;
     }
     switch (databits)
@@ -322,8 +352,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         c->newtio.c_cflag |= CS8;
         break;
     default:
-        exception(env, "java/io/IOException", "illegal datac->newtio.c_cflag |value");
-        ERRORRETURNV;
+		EXCEPTIONV("illegal datac->newtio.c_cflag |value");
         break;
     }
     switch (stopbits)
@@ -334,8 +363,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         c->newtio.c_cflag |= CSTOPB;
         break;
     default:
-        exception(env, "java/io/IOException", "illegal stopc->newtio.c_cflag |value");
-        ERRORRETURNV;
+		EXCEPTIONV("illegal stopc->newtio.c_cflag |value");
         break;
     }
     switch (flow)
@@ -350,8 +378,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         break;
     case 3:	// DSRDTR
     default:
-        exception(env, "java/io/IOException", "illegal flow control value");
-        ERRORRETURNV;
+		EXCEPTIONV("illegal flow control value");
         break;
     }
     if (replaceError)
@@ -365,8 +392,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     
     if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
     {
-        exception(env, "java/io/IOException", "tcsetattr failed");
-        ERRORRETURNV;
+		EXCEPTIONV("tcsetattr failed");
     }
 }
 
@@ -392,11 +418,9 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         ERRORRETURNV;
     }
     */
-    fprintf(stderr, "close\n");
     if (close(c->fd) < 0)
     {
-        exception(env, "java/io/IOException", "CloseHandle failed");
-        ERRORRETURNV
+		EXCEPTIONV("CloseHandle failed");
     }
     free(c);
 }
@@ -406,11 +430,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     int pos;
     int lim;
     void* addr;
-    jclass cls;
-    jmethodID pmid;
-    jmethodID lmid;
-    jmethodID putmid;
-    jmethodID spmid;
     jbyteArray barr = NULL;
     jint len;
     jbyte* arr;
@@ -419,44 +438,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     ssize_t rc;
     CTX* c = (CTX*)ctx;
     DEBUG("init read");
-    cls = (*env)->GetObjectClass(env, bb);
-    pmid = (*env)->GetMethodID(env, cls, "position", "()I");
-    if (pmid == NULL)
-    {
-        ERRORRETURN
-    }
-    pos = (*env)->CallIntMethod(env, bb, pmid);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
-    lmid = (*env)->GetMethodID(env, cls, "limit", "()I");
-    if (lmid == NULL)
-    {
-        ERRORRETURN
-    }
-    lim = (*env)->CallIntMethod(env, bb, lmid);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
+	pos = GETPOSITION(bb);
+	lim = GETLIMIT(bb);
     len = lim - pos;
     addr = (*env)->GetDirectBufferAddress(env, bb);
     if (addr == NULL)
     {
-        barr = (*env)->NewByteArray(env, len);
-        if (barr == NULL)
-        {
-            ERRORRETURN
-        }
-        arr = (*env)->GetByteArrayElements(env, barr, NULL);
-        if (arr == NULL)
-        {
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        addr = arr;
-    }
+		barr = (*env)->NewByteArray(env, len);
+		CHECK(barr);
+		arr = (*env)->GetByteArrayElements(env, barr, NULL);
+		CHECK(arr);
+		addr = arr;
+	}
     else
     {
         addr += pos;
@@ -473,40 +466,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         if (barr != NULL)
         {
             (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-            (*env)->DeleteLocalRef(env, barr);
         }
-        exception(env, "java/io/IOException", NULL);
-        ERRORRETURN
+		EXCEPTION(NULL);
     }
-    if (barr != NULL)
+	//hexdump(0, addr, rc, len);
+	if (barr != NULL)
     {
-        (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-        putmid = (*env)->GetMethodID(env, cls, "put", "([B)Ljava/nio/ByteBuffer;");
-        if (putmid == NULL)
-        {
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        (*env)->CallObjectMethod(env, bb, putmid, barr);
-        if ((*env)->ExceptionCheck(env))
-        {
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        (*env)->DeleteLocalRef(env, barr);
-    }
-    spmid = (*env)->GetMethodID(env, cls, "position", "(I)Ljava/nio/Buffer;");
-    if (spmid == NULL)
-    {
-        ERRORRETURN
-    }
+		(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+		PUT(bb, barr);
+	}
     newPos = pos + rc;
-    (*env)->CallObjectMethod(env, bb, spmid, newPos);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
-    return rc;
+	SETPOSITION(bb, newPos);
+	return rc;
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
@@ -516,11 +487,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     int pos;
     int lim;
     char* addr;
-    jclass cls;
-    jmethodID pmid;
-    jmethodID lmid;
-    jmethodID gmid;
-    jmethodID spmid;
     jbyteArray barr = NULL;
     jint len;
     jbyte* arr;
@@ -531,59 +497,19 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     CTX* c = (CTX*)ctx;
     
     DEBUG("write");
-    cls = (*env)->GetObjectClass(env, bb);
-    pmid = (*env)->GetMethodID(env, cls, "position", "()I");
-    if (pmid == NULL)
-    {
-        ERRORRETURN
-    }
-    pos = (*env)->CallIntMethod(env, bb, pmid);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
-    lmid = (*env)->GetMethodID(env, cls, "limit", "()I");
-    if (lmid == NULL)
-    {
-        ERRORRETURN
-    }
-    lim = (*env)->CallIntMethod(env, bb, lmid);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
-    len = lim - pos;
+	pos = GETPOSITION(bb);
+	lim = GETLIMIT(bb);
+	len = lim - pos;
     addr = (*env)->GetDirectBufferAddress(env, bb);
     if (addr == NULL)
     {
-        barr = (*env)->NewByteArray(env, len);
-        if (barr == NULL)
-        {
-            ERRORRETURN
-        }
-        gmid = (*env)->GetMethodID(env, cls, "get", "([B)Ljava/nio/ByteBuffer;");
-        if (gmid == NULL)
-        {
-            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        (*env)->CallObjectMethod(env, bb, gmid, barr);
-        if ((*env)->ExceptionCheck(env))
-        {
-            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        arr = (*env)->GetByteArrayElements(env, barr, NULL);
-        if (arr == NULL)
-        {
-            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-            (*env)->DeleteLocalRef(env, barr);
-            ERRORRETURN
-        }
-        addr = arr;
-    }
+		barr = (*env)->NewByteArray(env, len);
+		CHECK(barr);
+		GET(bb, barr);
+		arr = (*env)->GetByteArrayElements(env, barr, NULL);
+		CHECK(arr);
+		addr = arr;
+	}
     else
     {
         addr += pos;
@@ -599,10 +525,8 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         if (barr != NULL)
         {
             (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-            (*env)->DeleteLocalRef(env, barr);
         }
-        exception(env, "java/io/IOException", NULL);
-        ERRORRETURN
+		EXCEPTION(NULL);
     }
 
     //hexdump(count, addr, rc, len);
@@ -611,45 +535,25 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     if (barr != NULL)
     {
         (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-        (*env)->DeleteLocalRef(env, barr);
     }
-    spmid = (*env)->GetMethodID(env, cls, "position", "(I)Ljava/nio/Buffer;");
-    if (spmid == NULL)
-    {
-        ERRORRETURN
-    }
-    newPos = pos + rc;
-    (*env)->CallObjectMethod(env, bb, spmid, newPos);
-    if ((*env)->ExceptionCheck(env))
-    {
-        ERRORRETURN
-    }
-    return rc;
+	newPos = pos + rc;
+	SETPOSITION(bb, newPos);
+	return rc;
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
   (JNIEnv *env, jobject obj, jobject list)
 {
-    jclass cls;
     jstring str;
-    jmethodID addid;
-    char buf[256];
-    char target[256];
+    char buf[PATH_MAX];
+	char target[PATH_MAX];
     DIR *dp;
     struct dirent *de = NULL;
-
-    cls = (*env)->GetObjectClass(env, list);
-    addid = (*env)->GetMethodID(env, cls, "add", "(Ljava/lang/Object;)Z");
-    if (addid == NULL)
-    {
-        ERRORRETURNV;
-    }
 
     dp = opendir("/dev");
     if (dp == NULL)
     {
-        exception(env, "java/io/IOException", NULL);
-        ERRORRETURNV;
+		EXCEPTIONV(NULL);
     }
     de = readdir(dp);
     while (de != NULL)
@@ -669,15 +573,8 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
                     char b[PATH_MAX];
                     sprintf(b, "/dev/%s", de->d_name);
                     str = (*env)->NewStringUTF(env, b);
-                    if (str == NULL)
-                    {
-                            ERRORRETURNV;
-                    }
-                    (*env)->CallObjectMethod(env, list, addid, str);
-                    if ((*env)->ExceptionCheck(env))
-                    {
-                            ERRORRETURNV;
-                    }
+					CHECKV(str);
+					ADDV(list, str);
                 }
             }
         }

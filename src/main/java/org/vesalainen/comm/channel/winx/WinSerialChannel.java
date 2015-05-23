@@ -57,6 +57,7 @@ public class WinSerialChannel extends SerialChannel
         {
             throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex.getMessage());
         }
+        staticInit();
     }
 
     public WinSerialChannel(String port)
@@ -64,6 +65,8 @@ public class WinSerialChannel extends SerialChannel
         this.port = port;
     }
 
+    private static native void staticInit();
+    
     @Override
     protected native void doConfigure(
             long handle,
