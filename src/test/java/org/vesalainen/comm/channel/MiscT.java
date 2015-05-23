@@ -38,8 +38,8 @@ public class MiscT
             assertNotNull(allPorts);
             for (String port : allPorts)
             {
-                SerialChannel.Builder builder = new SerialChannel.Builder(port, SerialChannel.Speed.B57600)
-                        .setParity(SerialChannel.Parity.EVEN)
+                SerialChannel.Builder builder = new SerialChannel.Builder(port, SerialChannel.Speed.B4800)
+                        .setParity(SerialChannel.Parity.SPACE)
                         .setReplaceError(true);
                 SerialChannel sc = builder.get();
                 try (InputStream is = sc.getInputStream(80))

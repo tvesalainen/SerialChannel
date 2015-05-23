@@ -558,6 +558,11 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             return this;
         }
 
+        public Speed getSpeed()
+        {
+            return speed;
+        }
+
         public Parity getParity()
         {
             return parity;

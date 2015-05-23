@@ -385,7 +385,7 @@ public class LoopT
         }
     }
 
-    @Test
+    //@Test
     public synchronized void autoConfTest() throws InterruptedException
     {
         //SerialChannel.debug(true);
@@ -393,60 +393,32 @@ public class LoopT
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() >= 2);
-        List<Configuration> randConfigs = new ArrayList<>();
-        List<Configuration> optConfigs = new ArrayList<>();
-        for (FlowControl flow : new FlowControl[] {FlowControl.NONE})
+        Speed speed = Speed.B38400;
+        System.err.println("\ntransmit "+speed);
+        wait(3000);
+        Builder builder = new Builder(ports.get(0), Speed.B4800);
+        try (SerialChannel sc = builder.get())
         {
-            for (Parity parity : new Parity[] {Parity.NONE, Parity.EVEN, Parity.ODD, Parity.MARK, Parity.SPACE})
-            {
-                for (DataBits bits : new DataBits[] {DataBits.DATABITS_8})
-                {
-                    for (StopBits stops : new StopBits[] {StopBits.STOPBITS_10, StopBits.STOPBITS_20})
-                    {
-                        for (Speed speed : new Speed[] {Speed.B4800, Speed.B38400})
-                        {
-                            Configuration conf = new Configuration()
-                            .setDataBits(bits)
-                            .setFlowControl(flow)
-                            .setParity(parity)
-                            .setStopBits(stops)
-                            .setSpeed(speed);
-                            randConfigs.add(conf);
-                            optConfigs.add(conf);
-                        }
-                    }
-                }
-            }
+            sc.setClearOnClose(true);
+            Transmitter tra = new Transmitter(sc, Integer.MAX_VALUE, new RandomASCII());
+            Future<Void> ftra = exec.submit(tra);
+            SpeedDetector sd = new SpeedDetector(1000, 100, 1000);
+            sd.addSpeed(Speed.B1200);
+            sd.addSpeed(Speed.B4800);
+            sd.addSpeed(Speed.B38400);
+            sd.addRange((byte)'\r');
+            sd.addRange((byte)'\n');
+            sd.addRange((byte)' ', (byte)0b1111111);
+            Map<String, Speed> map = sd.configure(ports.subList(1, ports.size()), 1, TimeUnit.DAYS);
+            assertEquals(1, map.size());
+            Speed detectedSpeed = map.get(ports.get(1));
+            assertEquals(speed, detectedSpeed);
+            ftra.cancel(true);
         }
-        Random random = new Random(12345);
-        Collections.shuffle(randConfigs, random);
-        for (Configuration randConf : randConfigs)
+        catch (IOException ex)
         {
-            System.err.println("\ntransmit "+randConf);
-            wait(3000);
-            Builder builder = new Builder(ports.get(0), randConf);
-            try (SerialChannel sc = builder.get())
-            {
-                sc.setClearOnClose(true);
-                Transmitter tra = new Transmitter(sc, Integer.MAX_VALUE, new RandomASCII());
-                Future<Void> ftra = exec.submit(tra);
-                AutoConfigurer ac = new AutoConfigurer(1000, 100, 1000);
-                ac.addConfigurations(optConfigs);
-                ac.addRange((byte)'\r');
-                ac.addRange((byte)'\n');
-                ac.addRange((byte)' ', (byte)0b1111111);
-                Map<String, Configuration> map = ac.configure(ports.subList(1, ports.size()), 1, TimeUnit.DAYS);
-                assertEquals(1, map.size());
-                Configuration detectedConf = map.get(ports.get(1));
-                assertEquals(randConf.speed, detectedConf.speed);
-                comp(randConf, detectedConf);
-                ftra.cancel(true);
-            }
-            catch (IOException ex)
-            {
-                ex.printStackTrace();
-                fail(ex.getMessage());
-            }
+            ex.printStackTrace();
+            fail(ex.getMessage());
         }
     }
     void comp(Configuration c1, Configuration c2)

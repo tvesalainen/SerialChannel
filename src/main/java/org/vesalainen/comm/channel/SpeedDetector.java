@@ -30,12 +30,13 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
 import org.vesalainen.comm.channel.SerialChannel.Configuration;
+import org.vesalainen.comm.channel.SerialChannel.Speed;
 
 /**
- *
+ * This class is experimental!!!
  * @author tkv
  */
-public class AutoConfigurer
+public class SpeedDetector
 {
     private enum State {Success, Fail, GoOn };
     
@@ -46,11 +47,11 @@ public class AutoConfigurer
     
     private List<Configuration> configurations = new ArrayList<>();
 
-    public AutoConfigurer()
+    public SpeedDetector()
     {
         this(1000, 20, 100);
     }
-    public AutoConfigurer(long waitMillis, int testLength, int maxCount)
+    public SpeedDetector(long waitMillis, int testLength, int maxCount)
     {
         this.waitMillis = waitMillis;
         this.testLength = testLength;
@@ -68,15 +69,18 @@ public class AutoConfigurer
      * Adds configuration candidate
      * @param config 
      */
-    public void addConfiguration(Configuration config)
+    public void addSpeed(Speed speed)
     {
-        configurations.add(config);
+        configurations.add(new Configuration().setSpeed(speed));
     }
-    public void addConfigurations(Collection<? extends Configuration> all)
+    public void addSpeeds(Collection<? extends Speed> all)
     {
-        configurations.addAll(all);
+        for (Speed speed : all)
+        {
+            addSpeed(speed);
+        }
     }
-    public Map<String, Configuration> configure(List<String> ports, long timeout, TimeUnit unit) throws IOException
+    public Map<String, Speed> configure(List<String> ports, long timeout, TimeUnit unit) throws IOException
     {
         if (configurations.isEmpty())
         {
@@ -87,7 +91,7 @@ public class AutoConfigurer
             throw new IllegalArgumentException("no ranges");
         }
         long timeLimit = unit.toMillis(timeout)+System.currentTimeMillis();
-        Map<String, Configuration> map = new HashMap<>();
+        Map<String, Speed> map = new HashMap<>();
         SerialSelector selector = new SerialSelector();
         System.err.println("try "+configurations.get(0));
         try (CloseableSet<SerialChannel> channels = openAll(ports))
@@ -109,7 +113,7 @@ public class AutoConfigurer
                         switch (ctx.tryMatch(sk))
                         {
                             case Success:
-                                map.put(ctx.getPort(), ctx.getConfiguration());
+                                map.put(ctx.getPort(), ctx.getConfiguration().getSpeed());
                                 sk.cancel();
                                 break;
                             case Fail:
@@ -226,7 +230,7 @@ public class AutoConfigurer
             {
                 SerialChannel channel = (SerialChannel) sk.channel();
                 Configuration conf = configurations.get(confNo);
-                System.err.println("try "+conf);
+                System.err.println("\ntry "+conf);
                 channel.configure(conf);
                 matcher.reset();
                 return true;

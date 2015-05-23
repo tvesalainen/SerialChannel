@@ -192,7 +192,7 @@ public class WinSerialChannel extends SerialChannel
 
     private static native int doSelect(int len, long[] handles, int[] masks, int timeout) throws IOException;
 
-    private static final byte[] errorReplacement = new byte[] {(byte)0xff};
+    private static final byte[] errorReplacement = new byte[] {(byte)0xff, (byte)0xff};
     
     public static byte[] errorReplacement()
     {
