@@ -194,12 +194,21 @@ public class LoopT
     }
     private ByteBuffer[] alloc(int size, Random rand)
     {
+        boolean direct = false;
         List<ByteBuffer> list = new ArrayList<>();
         int limit = size/3;
         while (size > limit)
         {
             int next = rand.nextInt(size+1);
-            list.add(ByteBuffer.allocateDirect(next));
+            if (direct)
+            {
+                list.add(ByteBuffer.allocateDirect(next));
+            }
+            else
+            {
+                list.add(ByteBuffer.allocate(next));
+            }
+            direct = !direct;
             size -= next;
         }
         list.add(ByteBuffer.allocateDirect(size));

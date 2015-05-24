@@ -509,11 +509,8 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 			(*env)->ReleaseByteArrayElements(env, barr[ii], arr[ii], 0);
 			PUT(bb[ii], barr[ii]);
 		}
-		if (r)
-		{
-			newPos = pos[ii] + r;
-			SETPOSITION(bb[ii], newPos);
-		}
+		newPos = pos[ii] + r;
+		SETPOSITION(bb[ii], newPos);
 	}
 	return rc;
 }
