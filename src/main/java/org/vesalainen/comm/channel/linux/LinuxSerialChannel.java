@@ -18,6 +18,8 @@ package org.vesalainen.comm.channel.linux;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.LongBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -35,9 +37,12 @@ public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
     public static final int MaxSelectors = 64;
-    private static long[] reads = new long[MaxSelectors];
-    private static long[] writes = new long[MaxSelectors];
-
+    private static LongBuffer reads = ByteBuffer.allocateDirect(8*MaxSelectors)
+            .order(ByteOrder.nativeOrder())
+            .asLongBuffer();
+    private static LongBuffer writes = ByteBuffer.allocateDirect(8*MaxSelectors)
+            .order(ByteOrder.nativeOrder())
+            .asLongBuffer();
     private int min=1;
     private int time;
     
@@ -127,11 +132,11 @@ public class LinuxSerialChannel extends SerialChannel
             int mask = 0;
             if ((interestOps & OP_READ) != 0)
             {
-                reads[readIndex++] = channel.address;
+                reads.put(readIndex++, channel.address);
             }
             if ((interestOps & OP_WRITE) != 0)
             {
-                writes[writeIndex++] = channel.address;
+                writes.put(writeIndex++, channel.address);
             }
         }
         int rc = LinuxSerialChannel.doSelect(readIndex, writeIndex, reads, writes, timeout);
@@ -145,14 +150,14 @@ public class LinuxSerialChannel extends SerialChannel
                 int readyOps = 0;
                 if ((interestOps & OP_READ) != 0)
                 {
-                    if (reads[readIndex++] != 0)
+                    if (reads.get(readIndex++) != 0)
                     {
                         readyOps |= OP_READ;
                     }
                 }
                 if ((interestOps & OP_WRITE) != 0)
                 {
-                    if (writes[writeIndex++] != 0)
+                    if (writes.get(writeIndex++) != 0)
                     {
                         readyOps |= OP_WRITE;
                     }
@@ -180,7 +185,7 @@ public class LinuxSerialChannel extends SerialChannel
         return updated;
     }
 
-    private static native int doSelect(int readCount, int writeCount, long[] reads, long[] writes, int timeout);
+    private static native int doSelect(int readCount, int writeCount, LongBuffer reads, LongBuffer writes, int timeout);
 
     @Override
     protected void setTimeouts() throws IOException

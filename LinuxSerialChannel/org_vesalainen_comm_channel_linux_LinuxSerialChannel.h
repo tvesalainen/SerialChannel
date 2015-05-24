@@ -94,10 +94,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doSelect
- * Signature: (II[J[JI)I
+ * Signature: (IILjava/nio/LongBuffer;Ljava/nio/LongBuffer;I)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
-  (JNIEnv *, jclass, jint, jint, jlongArray, jlongArray, jint);
+  (JNIEnv *, jclass, jint, jint, jobject, jobject, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel

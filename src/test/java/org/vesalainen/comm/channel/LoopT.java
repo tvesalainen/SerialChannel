@@ -10,13 +10,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -27,15 +24,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
 import org.vesalainen.comm.channel.SerialChannel.Configuration;
 import org.vesalainen.comm.channel.SerialChannel.DataBits;
 import org.vesalainen.comm.channel.SerialChannel.FlowControl;
 import org.vesalainen.comm.channel.SerialChannel.Parity;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
-import org.vesalainen.comm.channel.SerialChannel.StopBits;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.OS.Linux;
@@ -51,7 +47,7 @@ public class LoopT
     {
     }
 
-    //@Test
+    @Test
     public void testSelectWrite()
     {
         if (os == Linux)
@@ -142,7 +138,7 @@ public class LoopT
             }
         }
     }
-    //@Test
+    @Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -189,7 +185,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    //@Test
+    @Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -234,7 +230,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void testSelect()
     {
         //SerialChannel.debug(true);

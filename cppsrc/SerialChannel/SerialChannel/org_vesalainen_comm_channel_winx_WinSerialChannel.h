@@ -122,10 +122,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 /*
  * Class:     org_vesalainen_comm_channel_winx_WinSerialChannel
  * Method:    doSelect
- * Signature: (I[J[II)I
+ * Signature: (ILjava/nio/LongBuffer;I)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-  (JNIEnv *, jclass, jint, jlongArray, jintArray, jint);
+  (JNIEnv *, jclass, jint, jobject, jint);
 
 #ifdef __cplusplus
 }

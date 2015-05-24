@@ -19,12 +19,15 @@ package org.vesalainen.comm.channel.winx;
 import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.LongBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.SerialSelectionKey;
+import static org.vesalainen.comm.channel.linux.LinuxSerialChannel.MaxSelectors;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -37,8 +40,9 @@ public class WinSerialChannel extends SerialChannel
     public static final int MAXDWORD = 0xffffffff;
     public static final int EV_RXCHAR = 0x0001;
     public static final int MaxSelect = 64;
-    private static long[] handles = new long[MaxSelect];
-    private static int[] masks = new int[MaxSelect];
+    private static LongBuffer reads = ByteBuffer.allocateDirect(8*MaxSelectors)
+            .order(ByteOrder.nativeOrder())
+            .asLongBuffer();
 
     private int readIntervalTimeout = MAXDWORD;
     private int readTotalTimeoutMultiplier = MAXDWORD;
@@ -138,28 +142,24 @@ public class WinSerialChannel extends SerialChannel
     public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         int updated = 0;
-        int index = 0;
+        int readIndex = 0;
         for (SelectionKey sk : keys)
         {
             WinSerialChannel channel = (WinSerialChannel) sk.channel();
-            handles[index] = channel.address;
             int interestOps = sk.interestOps();
-            int mask = 0;
             if ((interestOps & OP_READ) != 0)
             {
-                mask |= EV_RXCHAR;
+                reads.put(readIndex++, channel.address);
             }
-            masks[index] = mask;
-            index++;
         }
-        int rc = WinSerialChannel.doSelect(index, handles, masks, timeout);
+        int rc = WinSerialChannel.doSelect(readIndex, reads, timeout);
         if (rc != 0)
         {
-            index = 0;
+            readIndex = 0;
             for (SelectionKey sk : keys)
             {
                 int readyOps = 0;
-                if ((masks[index] & EV_RXCHAR) != 0)
+                if (reads.get(readIndex++) == 0)
                 {
                     readyOps |= OP_READ;
                 }
@@ -181,7 +181,6 @@ public class WinSerialChannel extends SerialChannel
                         selected.add(sk);
                     }
                 }
-                index++;
             }
         }
         return updated;
@@ -190,7 +189,7 @@ public class WinSerialChannel extends SerialChannel
 
     private native int waitEvent(long handle, int mask) throws IOException;
 
-    private static native int doSelect(int len, long[] handles, int[] masks, int timeout) throws IOException;
+    private static native int doSelect(int len, LongBuffer handles, int timeout) throws IOException;
 
     private static final byte[] errorReplacement = new byte[] {(byte)0xff, (byte)0xff};
     

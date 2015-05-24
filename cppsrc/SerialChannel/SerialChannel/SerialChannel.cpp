@@ -417,10 +417,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_wa
 	return dwCommEvent;
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_doSelect
-(JNIEnv *env, jobject obj, jint len, jlongArray ctxs, jintArray masks, jint timeout)
+(JNIEnv *env, jobject obj, jint len, jobject ctxs, jint timeout)
 {
 	jlong *ctxArr;
-	jint *pMask;
 	jint count = 0;
 	DWORD dwCommEvent[MAXIMUM_WAIT_OBJECTS];
 	DWORD dwRes;
@@ -439,52 +438,39 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	{
 		EXCEPTION("too many channels");
 	}
-	ctxArr = (*env)->GetLongArrayElements(env, ctxs, NULL);
+	ctxArr = (*env)->GetDirectBufferAddress(env, ctxs);
 	CHECK(ctxArr);
-	pMask = (*env)->GetIntArrayElements(env, masks, NULL);
-	CHECK(pMask);
 	for (ii = 0; ii < len; ii++)
 	{
-		int mask = pMask[ii];
-		pMask[ii] = 0;
 		CTX *ctx = (CTX*)ctxArr[ii];
-		if ((mask & EV_RXCHAR) != 0)
+		DEBUG("SetCommMask");
+		if (!SetCommMask(ctx->hComm, EV_RXCHAR))
 		{
-			DEBUG("SetCommMask");
-			if (!SetCommMask(ctx->hComm, EV_RXCHAR))
-			{
-				(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-				(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-				EXCEPTION(NULL);
-			}
-			osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+			EXCEPTION(NULL);
+		}
+		osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-			if (osStatus[ii].hEvent == NULL)
-			{
-				(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-				(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-				exception(env, "java/io/IOException", NULL);
-				ERRORRETURN
-			}
-			DEBUG("WaitCommEvent");
-			if (!WaitCommEvent(ctx->hComm, dwCommEvent + ii, osStatus + ii))
-			{
-				if (GetLastError() != ERROR_IO_PENDING)
-				{
-					(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-					(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
-					CloseHandle(osStatus[ii].hEvent);
-					EXCEPTION(NULL);
-				}
-				index[waitCount] = ii;
-				waits[waitCount++] = osStatus[ii].hEvent;
-			}
-			else
+		if (osStatus[ii].hEvent == NULL)
+		{
+			exception(env, "java/io/IOException", NULL);
+			ERRORRETURN
+		}
+		DEBUG("WaitCommEvent");
+		if (!WaitCommEvent(ctx->hComm, dwCommEvent + ii, osStatus + ii))
+		{
+			if (GetLastError() != ERROR_IO_PENDING)
 			{
 				CloseHandle(osStatus[ii].hEvent);
-				pMask[ii] |= EV_RXCHAR;
-				count++;
+				EXCEPTION(NULL);
 			}
+			index[waitCount] = ii;
+			waits[waitCount++] = osStatus[ii].hEvent;
+		}
+		else
+		{
+			CloseHandle(osStatus[ii].hEvent);
+			ctxArr[ii] = 0;
+			count++;
 		}
 	}
 	if (waitCount)
@@ -499,8 +485,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		case WAIT_TIMEOUT:
 			break;
 		case WAIT_FAILED:
-			(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-			(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 			for (ii = 0; ii < waitCount; ii++)
 			{
 				CloseHandle(waits[ii]);
@@ -517,8 +501,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 				{
 					if (GetLastError() != ERROR_IO_INCOMPLETE)
 					{
-						(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-						(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 						for (ii = 0; ii < waitCount; ii++)
 						{
 							CloseHandle(waits[ii]);
@@ -529,15 +511,13 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 				else
 				{
 					CloseHandle(waits[ii]);
-					pMask[jj] |= EV_RXCHAR;
+					ctxArr[jj] = 0;
 					count++;
 				}
 			}
 			break;
 		}
 	}
-	(*env)->ReleaseLongArrayElements(env, ctxs, ctxArr, 0);
-	(*env)->ReleaseIntArrayElements(env, masks, pMask, 0);
 	return count;
 }
 

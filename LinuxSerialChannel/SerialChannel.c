@@ -124,7 +124,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
-  (JNIEnv *env, jclass cls, jint readCount, jint writeCount, jlongArray reads, jlongArray writes, jint timeout)
+  (JNIEnv *env, jclass cls, jint readCount, jint writeCount, jobject reads, jobject writes, jint timeout)
 {
     jlong *readArr;
     jlong *writeArr;
@@ -140,9 +140,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     
     selectThread = pthread_self();
     
-    readArr = (*env)->GetLongArrayElements(env, reads, NULL);
+	readArr = (*env)->GetDirectBufferAddress(env, reads);
 	CHECK(readArr);
-    writeArr = (*env)->GetLongArrayElements(env, writes, NULL);
+	writeArr = (*env)->GetDirectBufferAddress(env, writes);
 	CHECK(writeArr);
 
     FD_ZERO(&readfds);
@@ -169,8 +169,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &origmask);
     if (rc < 0 && errno != EINTR)
     {
-        (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
-        (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
         EXCEPTION("pselect");
     }
     for (ii=0;ii<readCount;ii++)
@@ -183,8 +181,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         CTX *c = (CTX*)writeArr[ii];
         writeArr[ii] = FD_ISSET(c->fd, &writefds);
     }
-    (*env)->ReleaseLongArrayElements(env, reads, readArr, 0);
-    (*env)->ReleaseLongArrayElements(env, writes, writeArr, 0);
     selectThread = 0;
     return rc;
 }
