@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
@@ -36,7 +37,14 @@ import org.vesalainen.loader.LibraryLoader;
 public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
+    /**
+     * The maximum number of reads or writes in select
+     */
     public static final int MaxSelectors = 64;
+    /**
+     * The maximum number of buffers in Gathering or Scattering  operations.
+     */
+    public static final int MaxBuffers = 16;
     private static LongBuffer reads = ByteBuffer.allocateDirect(8*MaxSelectors)
             .order(ByteOrder.nativeOrder())
             .asLongBuffer();
@@ -90,10 +98,96 @@ public class LinuxSerialChannel extends SerialChannel
     protected native long doOpen(byte[] port);
 
     @Override
-    protected native int doRead(long handle, ByteBuffer dst) throws IOException;
+    public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
+    {
+        if (address != -1)
+        {
+            long count = 0;
+            readLock.lock();
+            try
+            {
+                begin();
+                count = doRead(address, dsts, offset, length);
+                return count;
+            }
+            finally
+            {
+                readLock.unlock();
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
+    }
+
+    static ByteBuffer[] readBuffer = new ByteBuffer[1];
+    
+    @Override
+    protected int doRead(long handle, ByteBuffer dst) throws IOException
+    {
+        readBuffer[0] = dst;
+        int count = 0;
+        readLock.lock();
+        try
+        {
+            begin();
+            count = doRead(address, readBuffer, 0, 1);
+            return count;
+        }
+        finally
+        {
+            readLock.unlock();
+            end(count > 0);
+        }
+    }
+
+    protected native int doRead(long handle, ByteBuffer[] dsts, int offset, int length) throws IOException;
 
     @Override
-    protected native int doWrite(long handle, ByteBuffer src) throws IOException;
+    public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
+    {
+        if (address != -1)
+        {
+            writeLock.lock();
+            long count = 0;
+            try
+            {
+                begin();
+                count = doWrite(address, srcs, offset, length);
+                return count;
+            }
+            finally
+            {
+                writeLock.unlock();
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
+    }
+
+    static ByteBuffer[] writeBuffer = new ByteBuffer[1];
+    
+    @Override
+    protected int doWrite(long handle, ByteBuffer src) throws IOException
+    {
+        writeLock.lock();
+        try
+        {
+            writeBuffer[0] = src;
+            return doWrite(address, writeBuffer, 0, 1);
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
+    }
+
+    protected native int doWrite(long handle, ByteBuffer[] srcs, int offset, int length) throws IOException;
 
     public static native void setDebug(boolean on);
 

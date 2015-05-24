@@ -19,6 +19,7 @@
 #undef __cplusplus
 
 #include "SerialChannel.h"
+#define MAX_BUFFERS org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers
 
 void hexdump(int count, char* buf, int len, int bufsize);
 
@@ -431,106 +432,150 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     free(c);
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
-  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
+(JNIEnv *env, jobject obj, jlong ctx, jobjectArray bba, jint offset, jint length)
 {
-    int pos;
-    int lim;
-    void* addr;
-    jbyteArray barr = NULL;
-    jint len;
-    jbyte* arr;
+	int pos[MAX_BUFFERS];
+	int lim[MAX_BUFFERS];
+	void* addr;
+	jbyteArray barr[MAX_BUFFERS] = { 0 };
+	jbyte* arr[MAX_BUFFERS];
+	jobject bb[MAX_BUFFERS];
+	jsize len[MAX_BUFFERS];
     jint newPos;
+	struct iovec vec[MAX_BUFFERS];
+	int ii;
+	int res;
 
     ssize_t rc;
     CTX* c = (CTX*)ctx;
     DEBUG("init read");
-	pos = GETPOSITION(bb);
-	lim = GETLIMIT(bb);
-    len = lim - pos;
-    addr = (*env)->GetDirectBufferAddress(env, bb);
-    if (addr == NULL)
-    {
-		barr = (*env)->NewByteArray(env, len);
-		CHECK(barr);
-		arr = (*env)->GetByteArrayElements(env, barr, NULL);
-		CHECK(arr);
-		addr = arr;
+	for (ii = 0; ii < length; ii++)
+	{
+		bb[ii] = (*env)->GetObjectArrayElement(env, bba, ii+offset);
+		CHECKEXC;
+		pos[ii] = GETPOSITION(bb[ii]);
+		lim[ii] = GETLIMIT(bb[ii]);
+		len[ii] = lim[ii] - pos[ii];
+		addr = (*env)->GetDirectBufferAddress(env, bb[ii]);
+		if (addr == NULL)
+		{
+			barr[ii] = (*env)->NewByteArray(env, len[ii]);
+			CHECK(barr[ii]);
+			arr[ii] = (*env)->GetByteArrayElements(env, barr[ii], NULL);
+			CHECK(arr[ii]);
+			addr = arr[ii];
+		}
+		else
+		{
+			addr += pos[ii];
+		}
+		vec[ii].iov_base = addr;
+		vec[ii].iov_len = len[ii];
 	}
-    else
-    {
-        addr += pos;
-    }
 
     DEBUG("read");
-    rc = read(c->fd, addr, len);
+    rc = readv(c->fd, vec, length);
     if (rc < 0 && errno == EAGAIN)
     {
         rc = 0;
     }
     if (rc < 0)
     {
-        if (barr != NULL)
+		for (ii = 0; ii < length; ii++)
         {
-            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+			if (barr[ii])
+			{
+				(*env)->ReleaseByteArrayElements(env, barr[ii], arr[ii], 0);
+			}
         }
 		EXCEPTION(NULL);
     }
-	//hexdump(0, addr, rc, len);
-	if (barr != NULL)
-    {
-		(*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-		PUT(bb, barr);
+	res = rc;
+	for (ii = 0; ii < length; ii++)
+	{
+		int r = 0;
+		if (res >= len[ii])
+		{
+			r = len[ii];
+			res -= len[ii];
+		}
+		else
+		{
+			r = res;
+			res = 0;
+		}
+		if (barr[ii] != NULL)
+		{
+			(*env)->ReleaseByteArrayElements(env, barr[ii], arr[ii], 0);
+			PUT(bb[ii], barr[ii]);
+		}
+		if (r)
+		{
+			newPos = pos[ii] + r;
+			SETPOSITION(bb[ii], newPos);
+		}
 	}
-    newPos = pos + rc;
-	SETPOSITION(bb, newPos);
 	return rc;
 }
 
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
-  (JNIEnv *env, jobject obj, jlong ctx, jobject bb)
+(JNIEnv *env, jobject obj, jlong ctx, jobjectArray bba, jint offset, jint length)
 {
     static int count = 0;
-    int pos;
-    int lim;
+	int pos[MAX_BUFFERS];
+	int lim[MAX_BUFFERS];
     char* addr;
-    jbyteArray barr = NULL;
-    jint len;
-    jbyte* arr;
-    jint newPos;
+	jbyteArray barr[MAX_BUFFERS] = { 0 };
+	jbyte* arr[MAX_BUFFERS];
+	jobject bb[MAX_BUFFERS];
+	jint len[MAX_BUFFERS];
+	jint newPos;
+	struct iovec vec[MAX_BUFFERS];
+	int ii;
+	int res;
 
     ssize_t rc;
 
     CTX* c = (CTX*)ctx;
     
     DEBUG("write");
-	pos = GETPOSITION(bb);
-	lim = GETLIMIT(bb);
-	len = lim - pos;
-    addr = (*env)->GetDirectBufferAddress(env, bb);
-    if (addr == NULL)
-    {
-		barr = (*env)->NewByteArray(env, len);
-		CHECK(barr);
-		GET(bb, barr);
-		arr = (*env)->GetByteArrayElements(env, barr, NULL);
-		CHECK(arr);
-		addr = arr;
+	for (ii = 0; ii < length; ii++)
+	{
+		bb[ii] = (*env)->GetObjectArrayElement(env, bba, ii + offset);
+		pos[ii] = GETPOSITION(bb[ii]);
+		lim[ii] = GETLIMIT(bb[ii]);
+		len[ii] = lim[ii] - pos[ii];
+		addr = (*env)->GetDirectBufferAddress(env, bb[ii]);
+		if (addr == NULL)
+		{
+			barr[ii] = (*env)->NewByteArray(env, len[ii]);
+			CHECK(barr[ii]);
+			GET(bb[ii], barr[ii]);
+			arr[ii] = (*env)->GetByteArrayElements(env, barr[ii], NULL);
+			CHECK(arr[ii]);
+			addr = arr[ii];
+		}
+		else
+		{
+			addr += pos[ii];
+		}
+		vec[ii].iov_base = addr;
+		vec[ii].iov_len = len[ii];
 	}
-    else
-    {
-        addr += pos;
-    }
 
-    rc = write(c->fd, addr, len);
+    rc = writev(c->fd, vec, length);
     if (rc < 0 && errno == EAGAIN)
     {
         rc = 0;
     }
     if (rc < 0)
     {
-        if (barr != NULL)
+		for (ii = 0; ii < length;ii++)
         {
-            (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
+			if (barr[ii])
+			{
+				(*env)->ReleaseByteArrayElements(env, barr[ii], arr[ii], 0);
+			}
         }
 		EXCEPTION(NULL);
     }
@@ -538,12 +583,30 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     //hexdump(count, addr, rc, len);
     count += rc;
 
-    if (barr != NULL)
-    {
-        (*env)->ReleaseByteArrayElements(env, barr, arr, 0);
-    }
-	newPos = pos + rc;
-	SETPOSITION(bb, newPos);
+	res = rc;
+	for (ii = 0; ii < length; ii++)
+	{
+		int r = 0;
+		if (res >= len[ii])
+		{
+			r = len[ii];
+			res -= len[ii];
+		}
+		else
+		{
+			r = res;
+			res = 0;
+		}
+		if (barr[ii] != NULL)
+		{
+			(*env)->ReleaseByteArrayElements(env, barr[ii], arr[ii], 0);
+		}
+		if (r)
+		{
+			newPos = pos[ii] + r;
+			SETPOSITION(bb[ii], newPos);
+		}
+	}
 	return rc;
 }
 

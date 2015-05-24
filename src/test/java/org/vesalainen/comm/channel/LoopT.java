@@ -10,10 +10,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutionException;
@@ -57,10 +59,10 @@ public class LoopT
             assertTrue(ports.size() >= 2);
             try
             {
-                Builder builder1 = new Builder(ports.get(0), Speed.B115200)
+                Builder builder1 = new Builder(ports.get(0), Speed.B1200)
                         .setBlocking(false)
                         .setFlowControl(FlowControl.XONXOFF);
-                Builder builder2 = new Builder(ports.get(1), Speed.B115200)
+                Builder builder2 = new Builder(ports.get(1), Speed.B1200)
                         .setBlocking(false)
                         .setFlowControl(FlowControl.XONXOFF);
                 try (SerialChannel c1 = builder1.get();
@@ -75,10 +77,11 @@ public class LoopT
                     {
                         buf[ii] = (byte) rc.next();
                     }
-                    selector.register(c1, OP_READ, ByteBuffer.allocate(size));
-                    selector.register(c2, OP_READ, ByteBuffer.allocate(size));
-                    selector.register(c1, OP_WRITE, ByteBuffer.wrap(buf));
-                    selector.register(c2, OP_WRITE, ByteBuffer.wrap(buf));
+                    Random rand = new Random(123456);
+                    selector.register(c1, OP_READ, alloc(size, rand));
+                    selector.register(c2, OP_READ, alloc(size, rand));
+                    selector.register(c1, OP_WRITE, alloc(buf, rand));
+                    selector.register(c2, OP_WRITE, alloc(buf, rand));
                     while (selector.isOpen())
                     {
                         int kc = selector.select(5000);
@@ -90,32 +93,29 @@ public class LoopT
                                 SelectionKey sk = iterator.next();
                                 if (sk.isReadable())
                                 {
-                                    ByteBuffer bb = (ByteBuffer) sk.attachment();
+                                    ByteBuffer[] bba = (ByteBuffer[]) sk.attachment();
                                     SerialChannel channel = (SerialChannel) sk.channel();
-                                    int rem1 = bb.remaining();
-                                    int read = channel.read(bb);
-                                    int rem2 = bb.remaining();
+                                    int rem1 = remaining(bba);
+                                    int off = offset(bba);
+                                    long read = channel.read(bba, off, bba.length-off);
+                                    System.err.println("read "+read);
+                                    int rem2 = remaining(bba);
                                     assertEquals(rem1-rem2, read);
-                                    if (!bb.hasRemaining())
+                                    if (remaining(bba) == 0)
                                     {
                                         sk.cancel();
-                                        byte[] array = bb.array();
-                                        if (!Arrays.equals(buf, array))
-                                        {
-                                            Arrays.toString(array);
-                                        }
-                                        assertTrue(Arrays.equals(buf, bb.array()));
+                                        assertTrue(equals(buf, bba));
                                     }
                                     //System.err.println("read "+bb);
                                 }
                                 if (sk.isWritable())
                                 {
-                                    ByteBuffer bb = (ByteBuffer) sk.attachment();
+                                    ByteBuffer[] bba = (ByteBuffer[]) sk.attachment();
                                     SerialChannel channel = (SerialChannel) sk.channel();
-                                    int limit = Math.min(bb.capacity(), bb.position()+size/5);
-                                    bb.limit(limit);
-                                    channel.write(bb);
-                                    if (bb.position() == bb.capacity())
+                                    int off = offset(bba);
+                                    long write = channel.write(bba, off, bba.length-off);
+                                    System.err.println("write "+write);
+                                    if (remaining(bba) == 0)
                                     {
                                         sk.cancel();
                                     }
@@ -138,7 +138,74 @@ public class LoopT
             }
         }
     }
-    @Test
+    private int offset(ByteBuffer[] bba)
+    {
+        int off = 0;
+        for (ByteBuffer bb : bba)
+        {
+            if (bb.hasRemaining())
+            {
+                return off;
+            }
+            off++;
+        }
+        return off;
+    }
+    private int remaining(ByteBuffer[] bba)
+    {
+        int remaining = 0;
+        for (ByteBuffer bb : bba)
+        {
+            remaining += bb.remaining();
+        }
+        return remaining;
+    }
+    private boolean equals(byte[] buf, ByteBuffer[] bba)
+    {
+        int off=0;
+        for (ByteBuffer bb : bba)
+        {
+            bb.clear();
+            while (bb.hasRemaining())
+            {
+                byte b = bb.get();
+                if (b != buf[off])
+                {
+                    System.err.println("error at "+off);
+                    return false;
+                }
+                off++;
+            }
+        }
+        return true;
+    }
+    private ByteBuffer[] alloc(byte[] buf, Random rand)
+    {
+        int off=0;
+        ByteBuffer[] bba = alloc(buf.length, rand);
+        for (ByteBuffer bb : bba)
+        {
+            int remaining = bb.remaining();
+            bb.put(buf, off, remaining);
+            bb.flip();
+            off += remaining;
+        }
+        return bba;
+    }
+    private ByteBuffer[] alloc(int size, Random rand)
+    {
+        List<ByteBuffer> list = new ArrayList<>();
+        int limit = size/3;
+        while (size > limit)
+        {
+            int next = rand.nextInt(size+1);
+            list.add(ByteBuffer.allocateDirect(next));
+            size -= next;
+        }
+        list.add(ByteBuffer.allocateDirect(size));
+        return list.toArray(new ByteBuffer[list.size()]);
+    }
+    //@Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -185,7 +252,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    @Test
+    //@Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -230,7 +297,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         //SerialChannel.debug(true);

@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
@@ -64,6 +65,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     protected boolean block = true;
     protected boolean clearOnClose;
+    
+    protected ReentrantLock readLock = new ReentrantLock();
+    protected ReentrantLock writeLock = new ReentrantLock();
 
     protected SerialChannel()
     {
@@ -240,6 +244,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         if (address != -1)
         {
             int count = 0;
+            readLock.lock();
             try
             {
                 begin();
@@ -248,6 +253,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             }
             finally
             {
+                readLock.unlock();
                 end(count > 0);
             }
         }
@@ -271,6 +277,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         if (address != -1)
         {
             int count = 0;
+            writeLock.lock();
             try
             {
                 begin();
@@ -279,6 +286,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             }
             finally
             {
+                writeLock.unlock();
                 end(count > 0);
             }
         }
@@ -408,20 +416,28 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
     {
-        long res = 0;
-        for  (int ii=0;ii<length;ii++)
+        writeLock.lock();
+        try
         {
-            ByteBuffer bb = srcs[ii+offset];
-            if (bb.hasRemaining())
+            long res = 0;
+            for  (int ii=0;ii<length;ii++)
             {
-                res += write(bb);
+                ByteBuffer bb = srcs[ii+offset];
                 if (bb.hasRemaining())
                 {
-                    break;
+                    res += write(bb);
+                    if (bb.hasRemaining())
+                    {
+                        break;
+                    }
                 }
             }
+            return res;
         }
-        return res;
+        finally
+        {
+            writeLock.unlock();
+        }
     }
 
     @Override
@@ -433,32 +449,40 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     @Override
     public long read(ByteBuffer[] dsts, int offset, int length) throws IOException
     {
-        long res = 0;
-        for  (int ii=0;ii<length;ii++)
+        readLock.lock();
+        try
         {
-            ByteBuffer bb = dsts[ii+offset];
-            if (bb.hasRemaining())
+            long res = 0;
+            for  (int ii=0;ii<length;ii++)
             {
-                int rc = read(bb);
-                if (rc == -1)
-                {
-                    if (res == 0)
-                    {
-                        return -1;
-                    }
-                    else
-                    {
-                        return res;
-                    }
-                }
-                res += rc;
+                ByteBuffer bb = dsts[ii+offset];
                 if (bb.hasRemaining())
                 {
-                    break;
+                    int rc = read(bb);
+                    if (rc == -1)
+                    {
+                        if (res == 0)
+                        {
+                            return -1;
+                        }
+                        else
+                        {
+                            return res;
+                        }
+                    }
+                    res += rc;
+                    if (bb.hasRemaining())
+                    {
+                        break;
+                    }
                 }
             }
+            return res;
         }
-        return res;
+        finally
+        {
+            readLock.unlock();
+        }
     }
 
     @Override

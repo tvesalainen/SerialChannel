@@ -11,6 +11,8 @@ extern "C" {
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION 1L
 #undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors 64L
+#undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers
+#define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers 16L
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doClearBuffers
@@ -46,18 +48,18 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doRead
- * Signature: (JLjava/nio/ByteBuffer;)I
+ * Signature: (J[Ljava/nio/ByteBuffer;II)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
-  (JNIEnv *, jobject, jlong, jobject);
+  (JNIEnv *, jobject, jlong, jobjectArray, jint, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    doWrite
- * Signature: (JLjava/nio/ByteBuffer;)I
+ * Signature: (J[Ljava/nio/ByteBuffer;II)I
  */
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
-  (JNIEnv *, jobject, jlong, jobject);
+  (JNIEnv *, jobject, jlong, jobjectArray, jint, jint);
 
 /*
  * Class:     org_vesalainen_comm_channel_linux_LinuxSerialChannel
