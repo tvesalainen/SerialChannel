@@ -56,7 +56,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public enum Speed {B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B230400, B256000};
     public enum Parity {NONE, ODD, EVEN, MARK, SPACE};
     public enum DataBits {DATABITS_4, DATABITS_5, DATABITS_6, DATABITS_7, DATABITS_8};
-    public enum StopBits {STOPBITS_10, STOPBITS_15, STOPBITS_20};
+    public enum StopBits {STOPBITS_1, STOPBITS_1_5, STOPBITS_2};
     public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
 
     protected long address = -1;
@@ -135,6 +135,26 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public static int getSpeed(Speed speed)
     {
         return Integer.parseInt(speed.name().substring(1));
+    }
+    public static Speed getSpeed(int speed)
+    {
+        return Speed.valueOf("B"+speed);
+    }
+    public static DataBits getDataBits(int bits)
+    {
+        return DataBits.valueOf("DATABITS_"+bits);
+    }
+    public static StopBits getStopBits(int bits)
+    {
+        return StopBits.valueOf("STOPBITS_"+bits);
+    }
+    public static Parity getParity(String parity)
+    {
+        return Parity.valueOf(parity);
+    }
+    public static FlowControl getFlowControl(String flow)
+    {
+        return FlowControl.valueOf(flow);
     }
     /**
      * Returns the port.
@@ -495,7 +515,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     {
         protected Speed speed;
         protected Parity parity = Parity.NONE;
-        protected StopBits stopBits = StopBits.STOPBITS_10;
+        protected StopBits stopBits = StopBits.STOPBITS_1;
         protected DataBits dataBits = DataBits.DATABITS_8;
         protected FlowControl flowControl = FlowControl.NONE;
         protected boolean replaceError;
@@ -530,13 +550,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             }
             switch (stopBits)
             {
-                case STOPBITS_10:
+                case STOPBITS_1:
                     size += 1;
                     break;
-                case STOPBITS_15:
+                case STOPBITS_1_5:
                     size += 1.5;
                     break;
-                case STOPBITS_20:
+                case STOPBITS_2:
                     size += 2;
                     break;
             }
@@ -655,13 +675,13 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             }
             switch (stopBits)
             {
-                case STOPBITS_10:
+                case STOPBITS_1:
                     sb.append(" stop=1");
                     break;
-                case STOPBITS_15:
+                case STOPBITS_1_5:
                     sb.append(" stop=1.5");
                     break;
-                case STOPBITS_20:
+                case STOPBITS_2:
                     sb.append(" stop=2");
                     break;
             }
