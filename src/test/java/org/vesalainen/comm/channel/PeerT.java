@@ -58,7 +58,7 @@ public class PeerT
                         {
                             for (SerialChannel.Speed speed : new SerialChannel.Speed[] {SerialChannel.Speed.B1200, SerialChannel.Speed.B115200})
                             {
-                                for (SerialChannel.StopBits stops : new SerialChannel.StopBits[] {SerialChannel.StopBits.STOPBITS_10, SerialChannel.StopBits.STOPBITS_20})
+                                for (SerialChannel.StopBits stops : new SerialChannel.StopBits[] {SerialChannel.StopBits.STOPBITS_1, SerialChannel.StopBits.STOPBITS_2})
                                 {
                                     System.err.println("\n"+speed+" "+bits+" "+parity+" "+flow+" "+stops);
                                     builder.setSpeed(speed)

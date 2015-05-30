@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
+import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
 import java.util.HashSet;
@@ -101,11 +102,7 @@ public class SerialSelector extends AbstractSelector
         }
         synchronized(keys)
         {
-            Set<SelectionKey> cancelledKeys = cancelledKeys();
-            synchronized(cancelledKeys)
-            {
-                keys.removeAll(cancelledKeys);
-            }
+            handleCancelled();
             if (!keys.isEmpty())
             {
                 begin();
@@ -119,12 +116,25 @@ public class SerialSelector extends AbstractSelector
                 {
                     threads.remove(currentThread);
                     end();
+                    handleCancelled();
                 }
             }
         }
         return 0;
     }
 
+    private void handleCancelled()
+    {
+        Set<SelectionKey> cancelledKeys = cancelledKeys();
+        synchronized(cancelledKeys)
+        {
+            for (SelectionKey sk : cancelledKeys)
+            {
+                deregister((AbstractSelectionKey)sk);
+                keys.remove(sk);
+            }
+        }
+    }
     @Override
     public int select() throws IOException
     {

@@ -11,7 +11,6 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +77,10 @@ public class LoopT
                         buf[ii] = (byte) rc.next();
                     }
                     Random rand = new Random(123456);
-                    selector.register(c1, OP_READ, alloc(size, rand));
-                    selector.register(c2, OP_READ, alloc(size, rand));
-                    selector.register(c1, OP_WRITE, alloc(buf, rand));
-                    selector.register(c2, OP_WRITE, alloc(buf, rand));
+                    c1.register(selector, OP_READ, alloc(size, rand));
+                    c2.register(selector, OP_READ, alloc(size, rand));
+                    c1.register(selector, OP_WRITE, alloc(buf, rand));
+                    c2.register(selector, OP_WRITE, alloc(buf, rand));
                     while (selector.isOpen())
                     {
                         int kc = selector.select(5000);
@@ -214,7 +213,7 @@ public class LoopT
         list.add(ByteBuffer.allocateDirect(size));
         return list.toArray(new ByteBuffer[list.size()]);
     }
-    //@Test
+    @Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -235,7 +234,7 @@ public class LoopT
                     )
             {
                 SerialSelector selector = new SerialSelector();
-                SelectionKey skr2 = selector.register(c2, OP_READ, null);
+                SelectionKey skr2 = c2.register(selector, OP_READ, null);
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
                 bb.put((byte)31);
                 bb.flip();
@@ -250,10 +249,7 @@ public class LoopT
                     byte rb = bb.get();
                     assertEquals(b, rb);
                 }
-                if (os == OS.Linux)
-                {
-                    assertEquals((byte)31, bb.get());
-                }
+                assertEquals((byte)31, bb.get());
             }
         }
         catch (IOException ex)
@@ -261,7 +257,7 @@ public class LoopT
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    //@Test
+    @Test
     public void testWakeupSelect()
     {
         final ExecutorService exec = Executors.newCachedThreadPool();
@@ -279,8 +275,8 @@ public class LoopT
                 SerialChannel c2 = builder2.get()
                     )
             {
-                SelectionKey skr1 = selector.register(c1, OP_READ, null);
-                SelectionKey skr2 = selector.register(c2, OP_READ, null);
+                SelectionKey skr1 = c1.register(selector, OP_READ, null);
+                SelectionKey skr2 = c2.register(selector, OP_READ, null);
                 TimerTask task = new TimerTask() {
 
                     @Override
@@ -306,7 +302,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
@@ -326,8 +322,8 @@ public class LoopT
                     )
             {
                 final int count = 1000;
-                SelectionKey skr1 = selector.register(c1, OP_READ, new Object[] {c1, new RandomChar(), ByteBuffer.allocateDirect(101), count});
-                SelectionKey skr2 = selector.register(c2, OP_READ, new Object[] {c2, new RandomChar(), ByteBuffer.allocateDirect(102), count});
+                SelectionKey skr1 = c1.register(selector, OP_READ, new Object[] {c1, new RandomChar(), ByteBuffer.allocateDirect(101), count});
+                SelectionKey skr2 = c2.register(selector, OP_READ, new Object[] {c2, new RandomChar(), ByteBuffer.allocateDirect(102), count});
                 TimerTask task = new TimerTask() {
 
                     @Override
@@ -403,7 +399,7 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    //@Test
+    @Test
     public void regressionTest()
     {
         //SerialChannel.debug(true);
