@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.SerialChannel;
 import org.vesalainen.comm.channel.SerialSelectionKey;
+import org.vesalainen.comm.channel.WrappedSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -221,7 +222,8 @@ public class LinuxSerialChannel extends SerialChannel
         int writeIndex = 0;
         for (SelectionKey sk : keys)
         {
-            LinuxSerialChannel channel = (LinuxSerialChannel) sk.channel();
+            WrappedSerialChannel wrappedCannel = (WrappedSerialChannel) sk.channel();
+            LinuxSerialChannel channel = (LinuxSerialChannel) wrappedCannel.getSerialChannel();
             int interestOps = sk.interestOps();
             int mask = 0;
             if ((interestOps & OP_READ) != 0)
