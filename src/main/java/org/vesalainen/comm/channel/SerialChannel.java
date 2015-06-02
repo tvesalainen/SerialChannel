@@ -48,7 +48,7 @@ import static org.vesalainen.loader.LibraryLoader.getOS;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author tkv
  */
-public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel, WrappedSerialChannel
+public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
 {
     /**
      * Baud rate. Depends on used devices which are supported.
@@ -74,13 +74,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         super(SerialSelectorProvider.provider());
     }
 
-    @Override
-    public SerialChannel getSerialChannel()
-    {
-        return this;
-    }
-
-    
     protected abstract int version();
     /**
      * Clears input and output buffers.

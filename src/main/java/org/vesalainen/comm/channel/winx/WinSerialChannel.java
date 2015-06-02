@@ -27,7 +27,6 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.SerialSelectionKey;
-import org.vesalainen.comm.channel.WrappedSerialChannel;
 import static org.vesalainen.comm.channel.linux.LinuxSerialChannel.MaxSelectors;
 import org.vesalainen.loader.LibraryLoader;
 
@@ -146,8 +145,7 @@ public class WinSerialChannel extends SerialChannel
         int readIndex = 0;
         for (SelectionKey sk : keys)
         {
-            WrappedSerialChannel wrappedChannel = (WrappedSerialChannel) sk.channel();
-            WinSerialChannel channel = (WinSerialChannel) wrappedChannel.getSerialChannel();
+            WinSerialChannel channel = (WinSerialChannel) sk.channel();
             int interestOps = sk.interestOps();
             if ((interestOps & OP_READ) != 0)
             {
@@ -306,8 +304,7 @@ public class WinSerialChannel extends SerialChannel
         {
             for (SelectionKey sk : keys)
             {
-                WrappedSerialChannel wrappedChannel = (WrappedSerialChannel) sk.channel();
-                WinSerialChannel channel = (WinSerialChannel) wrappedChannel.getSerialChannel();
+                WinSerialChannel channel = (WinSerialChannel) sk.channel();
                 channel.setEventMask(0);
             }
         }
