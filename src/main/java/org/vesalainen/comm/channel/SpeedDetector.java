@@ -92,7 +92,7 @@ public class SpeedDetector
         }
         long timeLimit = unit.toMillis(timeout)+System.currentTimeMillis();
         Map<String, Speed> map = new HashMap<>();
-        SerialSelector selector = new SerialSelector();
+        SerialSelector selector = SerialSelector.open();
         System.err.println("try "+configurations.get(0));
         try (CloseableSet<SerialChannel> channels = openAll(ports))
         {

@@ -74,7 +74,7 @@ public class PeerT
                                     try (SerialChannel sc = builder.get())
                                     {
                                         sc.configureBlocking(false);
-                                        SerialSelector selector = new SerialSelector();
+                                        SerialSelector selector = SerialSelector.open();
                                         sc.register(selector, OP_READ);
                                         System.err.println("wait");
                                         ss.sync();

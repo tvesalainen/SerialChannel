@@ -68,7 +68,7 @@ public class LoopT
                     SerialChannel c2 = builder2.get()
                         )
                 {
-                    SerialSelector selector = new SerialSelector();
+                    SerialSelector selector = SerialSelector.open();
                     int size = 1000;
                     byte[] buf = new byte[size];
                     RandomChar rc = new RandomChar();
@@ -233,7 +233,7 @@ public class LoopT
                 SerialChannel c2 = builder2.get()
                     )
             {
-                SerialSelector selector = new SerialSelector();
+                SerialSelector selector = SerialSelector.open();
                 SelectionKey skr2 = c2.register(selector, OP_READ, null);
                 ByteBuffer bb = ByteBuffer.allocateDirect(10);
                 bb.put((byte)31);
@@ -266,7 +266,7 @@ public class LoopT
         assertTrue(ports.size() >= 2);
         try
         {
-            final SerialSelector selector = new SerialSelector();
+            final SerialSelector selector = SerialSelector.open();
             Builder builder1 = new Builder(ports.get(0), Speed.B1200)
                     .setBlocking(false);
             Builder builder2 = new Builder(ports.get(1), Speed.B1200)
@@ -312,7 +312,7 @@ public class LoopT
         assertTrue(ports.size() >= 2);
         try
         {
-            SerialSelector selector = new SerialSelector();
+            SerialSelector selector = SerialSelector.open();
             Builder builder1 = new Builder(ports.get(0), Speed.B1200)
                     .setBlocking(false);
             Builder builder2 = new Builder(ports.get(1), Speed.B1200)

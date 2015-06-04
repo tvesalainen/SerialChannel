@@ -57,7 +57,7 @@ public class SerialSelectorProvider extends SelectorProvider
     }
 
     @Override
-    public AbstractSelector openSelector() throws IOException
+    public SerialSelector openSelector() throws IOException
     {
         return new SerialSelector();
     }

@@ -27,8 +27,8 @@ import java.nio.channels.spi.AbstractSelectionKey;
  */
 public class SerialSelectionKey extends AbstractSelectionKey
 {
-    private SelectableChannel channel;
-    private Selector selector;
+    private final SelectableChannel channel;
+    private final Selector selector;
     private int interestOps;
     private int readyOps;
 
@@ -74,6 +74,12 @@ public class SerialSelectionKey extends AbstractSelectionKey
     public void readyOps(int ops)
     {
         this.readyOps = ops;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "SerialSelectionKey{" + "channel=" + channel + ", readyOps=" + readyOps + '}';
     }
     
 }

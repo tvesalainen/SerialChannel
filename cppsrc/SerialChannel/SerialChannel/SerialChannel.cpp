@@ -19,8 +19,8 @@
 
 #include "stdafx.h"
 #include "SerialChannel.h"
-
 void hexdump(int count, char* buf, int len, int bufsize);
+
 
 #define MIN(x,y)	(x) < (y) ? (x) : (y);
 #define MAX(x,y)	(x) > (y) ? (x) : (y);
@@ -456,7 +456,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			ERRORRETURN
 		}
 		DEBUG("WaitCommEvent");
-		if (!WaitCommEvent(ctx->hComm, dwCommEvent + ii, osStatus + ii))
+		if (!WaitCommEvent(ctx->hComm, &dwCommEvent[ii], &osStatus[ii]))
 		{
 			if (GetLastError() != ERROR_IO_PENDING)
 			{
@@ -475,14 +475,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	}
 	if (waitCount)
 	{
-		if (waitCount == len)
+		if (waitCount != len)	// we already have event
 		{
-			timeout = INFINITE;
+			to = 0;
 		}
 		dwRes = WaitForMultipleObjects(waitCount, waits, FALSE, to);
 		switch (dwRes)
 		{
 		case WAIT_TIMEOUT:
+			for (ii = 0; ii < waitCount; ii++)
+			{
+				CloseHandle(waits[ii]);
+			}
 			break;
 		case WAIT_FAILED:
 			for (ii = 0; ii < waitCount; ii++)
@@ -493,11 +497,11 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 				break;
 		default:
 
-			for (ii = dwRes - WAIT_OBJECT_0; ii < waitCount; ii++)
+			for (ii = WAIT_OBJECT_0; ii < waitCount; ii++)
 			{
 				int jj = index[ii];
 				CTX *ctx = (CTX*)ctxArr[jj];
-				if (!GetOverlappedResult(ctx->hComm, osStatus + jj, dwCommEvent + jj, FALSE))
+				if (!GetOverlappedResult(ctx->hComm, &osStatus[jj], &dwCommEvent[jj], FALSE))
 				{
 					if (GetLastError() != ERROR_IO_INCOMPLETE)
 					{
@@ -507,10 +511,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 						}
 						EXCEPTION(NULL);
 					}
+					else
+					{
+						CloseHandle(waits[ii]);
+					}
 				}
 				else
 				{
 					CloseHandle(waits[ii]);
+					if (dwCommEvent[jj] != 4)
+					{
+						fprintf(stderr, "ev=%d\n", dwCommEvent[jj]);
+					}
 					ctxArr[jj] = 0;
 					count++;
 				}

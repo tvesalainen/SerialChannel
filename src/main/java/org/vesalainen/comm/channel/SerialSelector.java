@@ -23,6 +23,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,11 +39,16 @@ public class SerialSelector extends AbstractSelector
     private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
     private boolean wakeupPending;
     
-    public SerialSelector()
+    SerialSelector()
     {
         super(SerialSelectorProvider.provider());
     }
 
+    public static SerialSelector open() throws IOException 
+    {
+        return SerialSelectorProvider.provider().openSelector();
+    }
+    
     @Override
     protected void implCloseSelector() throws IOException
     {
