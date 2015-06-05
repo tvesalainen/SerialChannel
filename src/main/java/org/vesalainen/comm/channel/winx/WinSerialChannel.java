@@ -27,11 +27,19 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.Set;
 import org.vesalainen.comm.channel.SerialSelectionKey;
-import static org.vesalainen.comm.channel.linux.LinuxSerialChannel.MaxSelectors;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
- *
+ * A Windows implementation of SerialChannel
+ * 
+ * <p>Implementation notes:
+ * <p>Scattering/Gathering IO is implemented in java.
+ * <p>Select implementation uses CancelIo function which cancels all io for the
+ * channel. Currently this will cause problem if one thread calls read/write,
+ * while another thread calls select. Since select is usually used in one thread 
+ * applications, it is not problem at all. 
+ * <p>If this class later implements AsynchronousChannel, the CancelIo has to be
+ * implemented in another way!
  * @author tkv
  */
 public class WinSerialChannel extends SerialChannel
@@ -302,6 +310,7 @@ public class WinSerialChannel extends SerialChannel
     {
         try
         {
+            System.err.println("wakeup");
             for (SelectionKey sk : keys)
             {
                 WinSerialChannel channel = (WinSerialChannel) sk.channel();

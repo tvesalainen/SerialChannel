@@ -38,10 +38,6 @@ public class LinuxSerialChannel extends SerialChannel
 {
     public static final int VERSION = 1;
     /**
-     * The maximum number of reads or writes in select
-     */
-    public static final int MaxSelectors = 64;
-    /**
      * The maximum number of buffers in Gathering or Scattering  operations.
      */
     public static final int MaxBuffers = 16;
