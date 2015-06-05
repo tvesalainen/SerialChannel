@@ -513,16 +513,20 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 					}
 					else
 					{
+						if (!CancelIo(ctx->hComm))
+						{
+							for (ii = 0; ii < waitCount; ii++)
+							{
+								CloseHandle(waits[ii]);
+							}
+							EXCEPTION(NULL);
+						}
 						CloseHandle(waits[ii]);
 					}
 				}
 				else
 				{
 					CloseHandle(waits[ii]);
-					if (dwCommEvent[jj] != 4)
-					{
-						fprintf(stderr, "ev=%d\n", dwCommEvent[jj]);
-					}
 					ctxArr[jj] = 0;
 					count++;
 				}
