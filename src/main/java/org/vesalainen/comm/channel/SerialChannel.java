@@ -89,6 +89,11 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     
     protected abstract void doClearBuffers(long address);
 
+    public Configuration getConfiguration()
+    {
+        return configuration;
+    }
+
     public boolean isClearOnClose()
     {
         return clearOnClose;
