@@ -446,7 +446,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 		DEBUG("SetCommMask");
 		if (!SetCommMask(ctx->hComm, EV_RXCHAR))
 		{
-			EXCEPTION(NULL);
+			EXCEPTION("SetCommMask");
 		}
 		osStatus[ii].hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
@@ -461,7 +461,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			if (GetLastError() != ERROR_IO_PENDING)
 			{
 				CloseHandle(osStatus[ii].hEvent);
-				EXCEPTION(NULL);
+				EXCEPTION("WaitCommEvent");
 			}
 			index[waitCount] = ii;
 			waits[waitCount++] = osStatus[ii].hEvent;
@@ -493,7 +493,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 			{
 				CloseHandle(waits[ii]);
 			}
-			EXCEPTION(NULL);
+			EXCEPTION("WaitForMultipleObjects");
 				break;
 		default:
 
@@ -509,7 +509,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 						{
 							CloseHandle(waits[ii]);
 						}
-						EXCEPTION(NULL);
+						EXCEPTION("GetOverlappedResult");
 					}
 					else
 					{
@@ -519,7 +519,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 							{
 								CloseHandle(waits[ii]);
 							}
-							EXCEPTION(NULL);
+							EXCEPTION("CancelIo");
 						}
 						CloseHandle(waits[ii]);
 					}
@@ -828,11 +828,11 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 	{
 		if (message != NULL)
 		{
-			sprintf_s(buf, sizeof(buf), "%s: %s", lpMsgBuf, message);
+			sprintf_s(buf, sizeof(buf), "%d: %s: %s", err, lpMsgBuf, message);
 		}
 		else
 		{
-			sprintf_s(buf, sizeof(buf), "%s", lpMsgBuf);
+			sprintf_s(buf, sizeof(buf), "%d: %s", err, lpMsgBuf);
 		}
 		(*env)->ThrowNew(env, exc, buf);
 	}

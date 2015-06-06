@@ -7,6 +7,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef org_vesalainen_comm_channel_winx_WinSerialChannel_MaxSelectors
+#define org_vesalainen_comm_channel_winx_WinSerialChannel_MaxSelectors 64L
 #undef org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION
 #define org_vesalainen_comm_channel_winx_WinSerialChannel_VERSION 7L
 #undef org_vesalainen_comm_channel_winx_WinSerialChannel_MAXDWORD

@@ -310,7 +310,6 @@ public class WinSerialChannel extends SerialChannel
     {
         try
         {
-            System.err.println("wakeup");
             for (SelectionKey sk : keys)
             {
                 WinSerialChannel channel = (WinSerialChannel) sk.channel();

@@ -23,7 +23,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
