@@ -60,6 +60,7 @@ static jclass clsList;
 static jmethodID midList_Add;
 
 static pthread_t selectThread;
+static pthread_mutex_t  selectMutex = PTHREAD_MUTEX_INITIALIZER;
 static sigset_t origmask;
 
 static void sighdl(int sig)
@@ -182,21 +183,37 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
         CTX *c = (CTX*)writeArr[ii];
         writeArr[ii] = FD_ISSET(c->fd, &writefds);
     }
+	if (pthread_mutex_lock(&selectMutex) < 0)
+	{
+		EXCEPTION("pthread_mutex_lock");
+	}
     selectThread = 0;
-    return rc;
+	if (pthread_mutex_unlock(&selectMutex) < 0)
+	{
+		EXCEPTION("pthread_mutex_unlock");
+	}
+	return rc;
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
   (JNIEnv *env, jclass cls)
 {
 
-    if (selectThread)
+	if (pthread_mutex_lock(&selectMutex) < 0)
+	{
+		EXCEPTIONV("pthread_mutex_lock");
+	}
+	if (selectThread)
     {
         if (pthread_kill(selectThread, SIGUSR1) < 0)
         {
 			EXCEPTIONV("pthread_kill");
         }
     }
+	if (pthread_mutex_unlock(&selectMutex) < 0)
+	{
+		EXCEPTIONV("pthread_mutex_unlock");
+	}
 }
 
 /*

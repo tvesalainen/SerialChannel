@@ -7,10 +7,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION
-#define org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION 1L
 #undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxSelectors 64L
+#undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION
+#define org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION 1L
 #undef org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers
 #define org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers 16L
 /*
