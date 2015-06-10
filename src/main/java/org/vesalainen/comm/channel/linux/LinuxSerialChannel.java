@@ -317,5 +317,11 @@ public class LinuxSerialChannel extends SerialChannel
     }
     
     private static native void wakeupSelect() throws IOException;
+
+    @Override
+    public String toString()
+    {
+        return "LinuxSerialChannel{" + port+": "+configuration+"}";
+    }
     
 }
