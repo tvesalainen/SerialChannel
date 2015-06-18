@@ -34,8 +34,8 @@ void hexdump(int count, char* buf, int len, int bufsize);
 #define CHECKEXC if ((*env)->ExceptionCheck(env)) {ERRORRETURN;};
 #define CHECKEXCV if ((*env)->ExceptionCheck(env)) {ERRORRETURNV;};
 
-#define EXCEPTION(m) exception(env, "java/io/IOException", m);ERRORRETURN;
-#define EXCEPTIONV(m) exception(env, "java/io/IOException", m);ERRORRETURNV;
+#define EXCEPTION(m) exception(env, "java/io/IOException", m, __FILE__, __LINE__);ERRORRETURN;
+#define EXCEPTIONV(m) exception(env, "java/io/IOException", m, __FILE__, __LINE__);ERRORRETURNV;
 
 #define GETPOSITION(bb) (*env)->CallIntMethod(env, bb, midByteBuffer_GetPosition);CHECKEXC;
 #define GETLIMIT(bb) (*env)->CallIntMethod(env, bb, midByteBuffer_GetLimit);CHECKEXC;
@@ -452,19 +452,30 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 
 		if (osStatus[ii].hEvent == NULL)
 		{
-			exception(env, "java/io/IOException", NULL);
-			ERRORRETURN
+			EXCEPTION("CreateEvent");
 		}
 		DEBUG("WaitCommEvent");
 		if (!WaitCommEvent(ctx->hComm, &dwCommEvent[ii], &osStatus[ii]))
 		{
-			if (GetLastError() != ERROR_IO_PENDING)
+			switch (GetLastError())
 			{
-				CloseHandle(osStatus[ii].hEvent);
+			case ERROR_IO_PENDING:
+				index[waitCount] = ii;
+				waits[waitCount++] = osStatus[ii].hEvent;
+				break;
+			case ERROR_INVALID_PARAMETER:
+				// wakeup is implemented by calling SetCommMask from a different thread
+				// which causes this error
+				for (ii = 0; ii < waitCount; ii++)
+				{
+					CloseHandle(waits[ii]);
+				}
+				return 0;
+				break;
+			default:
 				EXCEPTION("WaitCommEvent");
+				break;
 			}
-			index[waitCount] = ii;
-			waits[waitCount++] = osStatus[ii].hEvent;
 		}
 		else
 		{
@@ -798,7 +809,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_winx_WinSerialChannel_do
 	}
 }
 
-void exception(JNIEnv * env, const char* clazz, const char* message)
+void exception(JNIEnv * env, const char* clazz, const char* message, const char* filename, int lineno)
 {
 	jclass exc;
 	char buf[256];
@@ -828,11 +839,11 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
 	{
 		if (message != NULL)
 		{
-			sprintf_s(buf, sizeof(buf), "%d: %s: %s", err, lpMsgBuf, message);
+			sprintf_s(buf, sizeof(buf), "%s %d err %d: %s: %s", filename, lineno, err, lpMsgBuf, message);
 		}
 		else
 		{
-			sprintf_s(buf, sizeof(buf), "%d: %s", err, lpMsgBuf);
+			sprintf_s(buf, sizeof(buf), "%s %d err %d: %s", filename, lineno, err, lpMsgBuf);
 		}
 		(*env)->ThrowNew(env, exc, buf);
 	}

@@ -151,42 +151,48 @@ public class WinSerialChannel extends SerialChannel
     {
         int updated = 0;
         int readIndex = 0;
-        for (SelectionKey sk : keys)
+        synchronized(keys)
         {
-            WinSerialChannel channel = (WinSerialChannel) sk.channel();
-            int interestOps = sk.interestOps();
-            if ((interestOps & OP_READ) != 0)
+            for (SelectionKey sk : keys)
             {
-                reads.put(readIndex++, channel.address);
+                WinSerialChannel channel = (WinSerialChannel) sk.channel();
+                int interestOps = sk.interestOps();
+                if ((interestOps & OP_READ) != 0)
+                {
+                    reads.put(readIndex++, channel.address);
+                }
             }
         }
         int rc = WinSerialChannel.doSelect(readIndex, reads, timeout);
         if (rc != 0)
         {
             readIndex = 0;
-            for (SelectionKey sk : keys)
+            synchronized(keys)
             {
-                int readyOps = 0;
-                if (reads.get(readIndex++) == 0)
+                for (SelectionKey sk : keys)
                 {
-                    readyOps |= OP_READ;
-                }
-                if (readyOps != 0)
-                {
-                    SerialSelectionKey ssk = (SerialSelectionKey) sk;
-                    if (selected.contains(sk))
+                    int readyOps = 0;
+                    if (reads.get(readIndex++) == 0)
                     {
-                        if (ssk.readyOps() != readyOps)
+                        readyOps |= OP_READ;
+                    }
+                    if (readyOps != 0)
+                    {
+                        SerialSelectionKey ssk = (SerialSelectionKey) sk;
+                        if (selected.contains(sk))
+                        {
+                            if (ssk.readyOps() != readyOps)
+                            {
+                                updated++;
+                                ssk.readyOps(readyOps);
+                            }
+                        }
+                        else
                         {
                             updated++;
                             ssk.readyOps(readyOps);
+                            selected.add(ssk);
                         }
-                    }
-                    else
-                    {
-                        updated++;
-                        ssk.readyOps(readyOps);
-                        selected.add(sk);
                     }
                 }
             }
@@ -310,10 +316,13 @@ public class WinSerialChannel extends SerialChannel
     {
         try
         {
-            for (SelectionKey sk : keys)
+            synchronized(keys)
             {
-                WinSerialChannel channel = (WinSerialChannel) sk.channel();
-                channel.setEventMask(0);
+                for (SelectionKey sk : keys)
+                {
+                    WinSerialChannel channel = (WinSerialChannel) sk.channel();
+                    channel.setEventMask(0);
+                }
             }
         }
         catch (IOException ex)

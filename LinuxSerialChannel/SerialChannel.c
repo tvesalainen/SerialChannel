@@ -169,25 +169,32 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     ts.tv_sec = timeout / 1000;
     ts.tv_nsec = (timeout % 1000)*1000000;
     rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &origmask);
-    if (rc < 0 && errno != EINTR)
+	if (rc < 0 && errno != EINTR)
     {
         EXCEPTION("pselect");
     }
-    for (ii=0;ii<readCount;ii++)
-    {
-        CTX *c = (CTX*)readArr[ii];
-        readArr[ii] = FD_ISSET(c->fd, &readfds);
-    }
-    for (ii=0;ii<writeCount;ii++)
-    {
-        CTX *c = (CTX*)writeArr[ii];
-        writeArr[ii] = FD_ISSET(c->fd, &writefds);
-    }
+	if (errno == EINTR)
+	{
+		rc = 0;
+	}
+	else
+	{
+		for (ii = 0; ii < readCount; ii++)
+		{
+			CTX *c = (CTX*)readArr[ii];
+			readArr[ii] = FD_ISSET(c->fd, &readfds);
+		}
+		for (ii = 0; ii < writeCount; ii++)
+		{
+			CTX *c = (CTX*)writeArr[ii];
+			writeArr[ii] = FD_ISSET(c->fd, &writefds);
+		}
+	}
 	if (pthread_mutex_lock(&selectMutex) < 0)
 	{
 		EXCEPTION("pthread_mutex_lock");
 	}
-    selectThread = 0;
+	selectThread = 0;
 	if (pthread_mutex_unlock(&selectMutex) < 0)
 	{
 		EXCEPTION("pthread_mutex_unlock");
@@ -407,14 +414,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
     if (replaceError)
     {
-        c->newtio.c_iflag |= PARMRK;    // mark parity
+        c->newtio.c_iflag |= PARMRK | INPCK;    // mark parity
     }
     c->newtio.c_cflag |= CLOCAL | CREAD;
     c->newtio.c_cc[VSTART] = 0x11;
     c->newtio.c_cc[VSTOP] = 0x13;
     c->newtio.c_cc[VMIN] = 1;   // block is default
     
-    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
+    if (tcsetattr(c->fd, TCSADRAIN, &c->newtio) < 0)
     {
 		EXCEPTIONV("tcsetattr failed");
     }

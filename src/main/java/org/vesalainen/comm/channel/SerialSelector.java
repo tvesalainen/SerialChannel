@@ -25,6 +25,7 @@ import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -33,7 +34,7 @@ import java.util.Set;
  */
 public class SerialSelector extends AbstractSelector
 {
-    private Set<SelectionKey> keys = new HashSet<>();
+    private Set<SelectionKey> keys = Collections.synchronizedSet(new HashSet<SelectionKey>());
     private Set<SelectionKey> selected = new HashSet<>();
     private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
     private boolean wakeupPending;
@@ -58,25 +59,25 @@ public class SerialSelector extends AbstractSelector
                 wakeup();
             }
         }
-        keys = null;
-        selected = null;
-        threads = null;
     }
 
     @Override
     protected SelectionKey register(AbstractSelectableChannel ch, int ops, Object att)
     {
-        if (ch.isBlocking())
+        synchronized(keys)
         {
-            throw new IllegalArgumentException("blocking not allowed");
+            if (ch.isBlocking())
+            {
+                throw new IllegalArgumentException("blocking not allowed");
+            }
+            if ((ops & ~ch.validOps()) != 0)
+            {
+                throw new IllegalArgumentException("ops is not supported");
+            }
+            SelectionKey sk = new SerialSelectionKey(ch, this, ops, att);
+            keys.add(sk);
+            return sk;
         }
-        if ((ops & ~ch.validOps()) != 0)
-        {
-            throw new IllegalArgumentException("ops is not supported");
-        }
-        SelectionKey sk = new SerialSelectionKey(ch, this, ops, att);
-        keys.add(sk);
-        return sk;
     }
 
     @Override
@@ -105,24 +106,21 @@ public class SerialSelector extends AbstractSelector
             wakeupPending = false;
             return 0;
         }
-        synchronized(keys)
+        handleCancelled();
+        if (!keys.isEmpty())
         {
-            handleCancelled();
-            if (!keys.isEmpty())
+            begin();
+            Thread currentThread = Thread.currentThread();
+            threads.add(currentThread);
+            try
             {
-                begin();
-                Thread currentThread = Thread.currentThread();
-                threads.add(currentThread);
-                try
-                {
-                    return SerialChannel.select(keys, selected, (int)timeout);
-                }
-                finally
-                {
-                    threads.remove(currentThread);
-                    end();
-                    handleCancelled();
-                }
+                return SerialChannel.select(keys, selected, (int)timeout);
+            }
+            finally
+            {
+                threads.remove(currentThread);
+                end();
+                handleCancelled();
             }
         }
         return 0;
@@ -133,10 +131,13 @@ public class SerialSelector extends AbstractSelector
         Set<SelectionKey> cancelledKeys = cancelledKeys();
         synchronized(cancelledKeys)
         {
-            for (SelectionKey sk : cancelledKeys)
+            Iterator<SelectionKey> iterator = cancelledKeys.iterator();
+            while (iterator.hasNext())
             {
+                SelectionKey sk = iterator.next();
                 deregister((AbstractSelectionKey)sk);
                 keys.remove(sk);
+                iterator.remove();
             }
         }
     }
