@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import org.vesalainen.util.concurrent.ConcurrentArraySet;
 
 /**
  *
@@ -34,9 +35,10 @@ import java.util.Set;
  */
 public class SerialSelector extends AbstractSelector
 {
-    private Set<SelectionKey> keys = Collections.synchronizedSet(new HashSet<SelectionKey>());
-    private Set<SelectionKey> selected = new HashSet<>();
-    private Set<Thread> threads = Collections.synchronizedSet(new HashSet<Thread>());
+    private final Set<SelectionKey> keys = new ConcurrentArraySet<>();
+    private final Set<SelectionKey> unmodifiableKeys = Collections.unmodifiableSet(keys);
+    private final Set<SelectionKey> selected = new ConcurrentArraySet<>();
+    private final Set<Thread> threads = new ConcurrentArraySet<>();
     private boolean wakeupPending;
     
     SerialSelector()
@@ -83,13 +85,13 @@ public class SerialSelector extends AbstractSelector
     @Override
     public Set<SelectionKey> keys()
     {
-        return keys;    // TODO immutable
+        return unmodifiableKeys;
     }
 
     @Override
     public Set<SelectionKey> selectedKeys()
     {
-        return selected;    // TODO immutable
+        return selected;
     }
 
     @Override
