@@ -421,7 +421,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     c->newtio.c_cc[VSTOP] = 0x13;
     c->newtio.c_cc[VMIN] = 1;   // block is default
     
-    if (tcsetattr(c->fd, TCSADRAIN, &c->newtio) < 0)
+    if (tcsetattr(c->fd, TCSAFLUSH, &c->newtio) < 0)
     {
 		EXCEPTIONV("tcsetattr failed");
     }

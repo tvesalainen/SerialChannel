@@ -24,7 +24,6 @@ import java.nio.channels.spi.AbstractSelectableChannel;
 import java.nio.channels.spi.AbstractSelectionKey;
 import java.nio.channels.spi.AbstractSelector;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import org.vesalainen.util.concurrent.ConcurrentArraySet;
@@ -161,5 +160,11 @@ public class SerialSelector extends AbstractSelector
             wakeupPending = true;
         }
         return this;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "SerialSelector{" +"keys="+keys.size()+ '}';
     }
 }
