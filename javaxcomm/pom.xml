@@ -9,7 +9,6 @@
     <groupId>org.vesalainen</groupId>
     <artifactId>javaxcomm</artifactId>
     <version>1.0.0</version>
-    <packaging>jar</packaging>
     <name>javax.comm</name>
     <description>
         Implementation of javax.comm

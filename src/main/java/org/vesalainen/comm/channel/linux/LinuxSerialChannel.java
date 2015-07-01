@@ -26,6 +26,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import org.vesalainen.comm.channel.SerialChannel;
 import org.vesalainen.comm.channel.SerialSelectionKey;
 import org.vesalainen.loader.LibraryLoader;
@@ -229,7 +230,10 @@ public class LinuxSerialChannel extends SerialChannel
                 writes.put(writeIndex++, channel.address);
             }
         }
-        int rc = LinuxSerialChannel.doSelect(readIndex, writeIndex, reads, writes, timeout);
+        log.finest("select(%d, %d, %d)", readIndex, writeIndex, timeout);
+        debug(log.isLoggable(Level.FINEST));
+        int rc = doSelect(readIndex, writeIndex, reads, writes, timeout);
+        log.finest("rc=%d", rc);
         if (rc != 0)
         {
             readIndex = 0;

@@ -1,1 +1,0 @@
-java -Djava.library.path=cppsrc\SerialChannel\Release -classpath dist\SerialChannel.jar org.vesalainen.comm.channel.test.TestConnection %1 %2

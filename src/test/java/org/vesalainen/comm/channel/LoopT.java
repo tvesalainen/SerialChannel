@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.junit.After;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
@@ -48,6 +49,11 @@ public class LoopT
     {
     }
 
+    @After
+    public synchronized void after() throws InterruptedException
+    {
+        wait(5000);
+    }
     @Test
     public void testSelectWrite()
     {
@@ -133,6 +139,7 @@ public class LoopT
             }
             catch (IOException ex)
             {
+                fail(ex.getMessage());
                 Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
@@ -254,13 +261,13 @@ public class LoopT
         }
         catch (IOException ex)
         {
+            fail(ex.getMessage());
             Logger.getLogger(LoopT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    @Test
+    //@Test
     public void testWakeupSelect()
     {
-        final ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() >= 2);

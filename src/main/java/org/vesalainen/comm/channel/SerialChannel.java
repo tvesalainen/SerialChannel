@@ -33,10 +33,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Logger;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.getOS;
+import org.vesalainen.util.logging.JavaLogging;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
@@ -72,6 +74,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     
     protected ReentrantLock readLock = new ReentrantLock();
     protected ReentrantLock writeLock = new ReentrantLock();
+    
+    protected static final JavaLogging log = new JavaLogging("org.vesalainen.comm.channel");
 
     protected SerialChannel()
     {
