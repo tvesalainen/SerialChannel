@@ -169,15 +169,18 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     ts.tv_sec = timeout / 1000;
     ts.tv_nsec = (timeout % 1000)*1000000;
     rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &origmask);
-	//fprintf(stderr, "sec=%d nsec=%d rc=%d\n", ts.tv_sec, ts.tv_nsec, rc);
-	if (rc < 0 && errno != EINTR)
+	if (debug) fprintf(stderr, "sec=%d nsec=%d rc=%d\n", ts.tv_sec, ts.tv_nsec, rc);
+	if (rc < 0)
     {
-        EXCEPTION("pselect");
+		if (errno != EINTR)
+		{
+			EXCEPTION("pselect");
+		}
+		else
+		{
+			rc = 0;
+		}
     }
-	if (errno == EINTR)
-	{
-		rc = 0;
-	}
 	else
 	{
 		for (ii = 0; ii < readCount; ii++)
