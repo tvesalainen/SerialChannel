@@ -3,7 +3,7 @@ package javax.comm;
 public abstract class CommPort
 {
 
-    protected java.lang.String name;
+    protected String name;
 
     public String getName()
     {

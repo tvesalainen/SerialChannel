@@ -13,4 +13,16 @@
     <description>
         Implementation of javax.comm
     </description>
+    <dependencies>
+        <dependency>
+            <groupId>org.vesalainen</groupId>
+            <artifactId>comm</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

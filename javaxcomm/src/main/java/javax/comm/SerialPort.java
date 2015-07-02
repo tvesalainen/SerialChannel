@@ -23,7 +23,6 @@ public abstract class SerialPort extends CommPort
 
     public SerialPort()
     {
-        throw new UnsupportedOperationException("not supported");
     }
 
     public abstract int getBaudRate();
