@@ -1,0 +1,10 @@
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialChannel.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialInputStream.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialOutputStream.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialSelectorProvider.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\loader\LibraryLoader.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\winx\WinSerialChannel.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialSelector.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\linux\LinuxSerialChannel.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SpeedDetector.java
+G:\tkv\NetBeansProjects\SerialChannel\comm\src\main\java\org\vesalainen\comm\channel\SerialSelectionKey.java

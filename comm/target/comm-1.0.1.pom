@@ -7,10 +7,22 @@
     </parent>    
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.vesalainen</groupId>
-    <artifactId>javaxcomm</artifactId>
-    <version>1.0.0</version>
-    <name>javax.comm</name>
+    <artifactId>comm</artifactId>
+    <version>1.0.1</version>
+    <packaging>jar</packaging>
+    <name>Serial communications library</name>
     <description>
-        Implementation of javax.comm
+        Library for serial communication
     </description>
+    <dependencies>
+        <dependency>
+            <groupId>org.vesalainen</groupId>
+            <artifactId>util</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

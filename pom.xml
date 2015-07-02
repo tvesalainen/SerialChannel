@@ -1,28 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.vesalainen</groupId>
         <artifactId>parent</artifactId>
         <version>1.0.6</version>
     </parent>    
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.vesalainen</groupId>
-    <artifactId>comm</artifactId>
+    <groupId>org.vesalainen.comm</groupId>
+    <artifactId>parent</artifactId>
     <version>1.0.1</version>
-    <packaging>jar</packaging>
-    <name>Serial communications library</name>
+    <packaging>pom</packaging>
+    <modules>
+        <module>comm</module>
+        <module>javaxcomm</module>
+    </modules>
+    <name>Serial Utilities</name>
     <description>
-        Library for serial communication
+        Serial Utilities
     </description>
-    <dependencies>
-        <dependency>
-            <groupId>org.vesalainen</groupId>
-            <artifactId>util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
 </project>
