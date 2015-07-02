@@ -17,7 +17,6 @@
  */
 package org.vesalainen.comm.channel;
 
-import org.vesalainen.comm.channel.winx.WinSerialChannel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.getOS;

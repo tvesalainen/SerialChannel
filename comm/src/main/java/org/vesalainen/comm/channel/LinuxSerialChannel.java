@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.vesalainen.comm.channel.linux;
+package org.vesalainen.comm.channel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,8 +27,6 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
-import org.vesalainen.comm.channel.SerialChannel;
-import org.vesalainen.comm.channel.SerialSelectionKey;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -64,7 +62,7 @@ public class LinuxSerialChannel extends SerialChannel
         staticInit();
     }
 
-    public LinuxSerialChannel(String port)
+    LinuxSerialChannel(String port)
     {
         this.port = port;
         int version = version();
@@ -211,7 +209,7 @@ public class LinuxSerialChannel extends SerialChannel
 
     private static native void staticInit();
     
-    public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
+    static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout)
     {
         int updated = 0;
         int readIndex = 0;
@@ -220,7 +218,6 @@ public class LinuxSerialChannel extends SerialChannel
         {
             LinuxSerialChannel channel = (LinuxSerialChannel) sk.channel();
             int interestOps = sk.interestOps();
-            int mask = 0;
             if ((interestOps & OP_READ) != 0)
             {
                 reads.put(readIndex++, channel.address);
@@ -308,7 +305,7 @@ public class LinuxSerialChannel extends SerialChannel
         return OP_READ | OP_WRITE;
     }
 
-    public static void wakeupSelect(Set<SelectionKey> keys)
+    static void wakeupSelect(Set<SelectionKey> keys)
     {
         try
         {

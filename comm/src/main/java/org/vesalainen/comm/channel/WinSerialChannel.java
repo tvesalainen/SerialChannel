@@ -14,9 +14,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.vesalainen.comm.channel.winx;
+package org.vesalainen.comm.channel;
 
-import org.vesalainen.comm.channel.SerialChannel;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -26,7 +25,6 @@ import java.nio.channels.SelectionKey;
 import static java.nio.channels.SelectionKey.OP_READ;
 import java.util.List;
 import java.util.Set;
-import org.vesalainen.comm.channel.SerialSelectionKey;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -72,7 +70,7 @@ public class WinSerialChannel extends SerialChannel
         staticInit();
     }
 
-    public WinSerialChannel(String port)
+    WinSerialChannel(String port)
     {
         this.port = port;
     }
@@ -147,7 +145,7 @@ public class WinSerialChannel extends SerialChannel
         return OP_READ;
     }
     
-    public static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
+    static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         int updated = 0;
         int readIndex = 0;
@@ -312,7 +310,7 @@ public class WinSerialChannel extends SerialChannel
         return this;
     }
 
-    public static void wakeupSelect(Set<SelectionKey> keys)
+    static void wakeupSelect(Set<SelectionKey> keys)
     {
         try
         {
