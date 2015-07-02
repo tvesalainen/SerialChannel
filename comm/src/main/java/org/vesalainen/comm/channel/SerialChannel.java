@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Logger;
 import org.vesalainen.comm.channel.linux.LinuxSerialChannel;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
@@ -42,9 +41,7 @@ import org.vesalainen.util.logging.JavaLogging;
 
 /**
  * A class for making connection to a serial port E.g RS232. You make the connection 
- * by getting SerialChannel instance with getInstance method. After that call connect method.
- * Sending and receiving data is done either with ByteBuffer method read and write. 
- * This is the recommended way. It is also recommended to use direct buffers.
+ * by using SerialChannel.Builder
  * 
  * <p>
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
@@ -92,7 +89,10 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     }
     
     protected abstract void doClearBuffers(long address);
-
+    /**
+     * Returns the current configuration
+     * @return 
+     */
     public Configuration getConfiguration()
     {
         return configuration;
@@ -108,7 +108,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         this.clearOnClose = clearOnClose;
     }
 
-    public static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
+    static int select(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         OS os = LibraryLoader.getOS();
         switch (os)
@@ -122,7 +122,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         }
     }
     
-    public static void wakeupSelect(Set<SelectionKey> keys)
+    static void wakeupSelect(Set<SelectionKey> keys)
     {
         OS os = LibraryLoader.getOS();
         switch (os)
@@ -144,11 +144,20 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         setTimeouts();
     }
     protected abstract void setTimeouts() throws IOException;
-        
+    /**
+     * Return the speed
+     * @param speed
+     * @return 
+     */    
     public static int getSpeed(Speed speed)
     {
         return Integer.parseInt(speed.name().substring(1));
     }
+    /**
+     * Return the speed
+     * @param speed
+     * @return 
+     */    
     public static Speed getSpeed(int speed)
     {
         return Speed.valueOf("B"+speed);
@@ -768,6 +777,9 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         }
 
     }
+    /**
+     * A class that is used to configure serial port and open it.
+     */
     public static class Builder
     {
         private String port;
