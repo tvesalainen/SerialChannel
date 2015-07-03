@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.TooManyListenersException;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+import static javax.comm.CommPortOwnershipListener.PORT_OWNED;
 import static javax.comm.CommPortOwnershipListener.PORT_OWNERSHIP_REQUESTED;
 import org.vesalainen.comm.channel.SerialChannel;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
@@ -102,6 +103,8 @@ public class CommPortIdentifier
             {
                 owner = appname;
                 commPort = new SerialPortImpl();
+                commPortMap.put(commPort, this);
+                fireListener(PORT_OWNED);
                 return commPort;
             }
             if (owner.equals(appname))
@@ -110,10 +113,12 @@ public class CommPortIdentifier
             }
             requesting = true;
             fireListener(PORT_OWNERSHIP_REQUESTED);
+            requesting = false;
             if (owner == null)
             {
                 owner = appname;
                 commPort = new SerialPortImpl();
+                commPortMap.put(commPort, this);
                 return commPort;
             }
             else
@@ -176,8 +181,6 @@ public class CommPortIdentifier
         private SerialChannel channel;
         private int inputBufferSize  = 4096;
         private int outputBufferSize  = 4096;
-        private int rcvTimeout = -1;
-        private int thresh = -1;
         private InputStream in;
         private OutputStream out;
         public SerialPortImpl()
@@ -185,6 +188,31 @@ public class CommPortIdentifier
             this.name = port;
             config = new Configuration();
             config.setSpeed(B9600);
+        }
+
+        @Override
+        public void close()
+        {
+            lock.lock();
+            try
+            {
+                channel.close();
+                commPort = null;
+                owner = null;
+                commPortMap.remove(this);
+                if (!requesting)
+                {
+                    fireListener(CommPortOwnershipListener.PORT_UNOWNED);
+                }
+            }
+            catch (IOException ex)
+            {
+                throw new IllegalArgumentException(ex);
+            }
+            finally
+            {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -497,63 +525,49 @@ public class CommPortIdentifier
         @Override
         public void enableReceiveThreshold(int thresh) throws UnsupportedCommOperationException
         {
-            if (thresh == 0)
-            {
-                this.thresh = thresh;
-            }
-            else
-            {
-                throw new UnsupportedCommOperationException("Supported only for 0 thresh.");
-            }
+            throw new UnsupportedCommOperationException("Not supported yet.");
         }
 
         @Override
         public void disableReceiveThreshold()
         {
-            this.thresh = -1;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         public boolean isReceiveThresholdEnabled()
         {
-            return thresh != -1;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         public int getReceiveThreshold()
         {
-            return thresh;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         public void enableReceiveTimeout(int rcvTimeout) throws UnsupportedCommOperationException
         {
-            if (rcvTimeout == 0)
-            {
-                this.rcvTimeout = rcvTimeout;
-            }
-            else
-            {
-                throw new UnsupportedCommOperationException("Supported only for 0 timeout.");
-            }
+            throw new UnsupportedCommOperationException("Not supported yet.");
         }
 
         @Override
         public void disableReceiveTimeout()
         {
-            this.rcvTimeout = -1;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         public boolean isReceiveTimeoutEnabled()
         {
-            return rcvTimeout != -1;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
         public int getReceiveTimeout()
         {
-            return rcvTimeout;
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override

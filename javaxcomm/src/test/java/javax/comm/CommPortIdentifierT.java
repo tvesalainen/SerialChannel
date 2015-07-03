@@ -48,6 +48,12 @@ public class CommPortIdentifierT
             SerialPort sp2 = (SerialPort) cpi2.open("app2", 0);
             assertNotNull(sp2);
             
+            CommPortIdentifier cpi3 = CommPortIdentifier.getPortIdentifier(cpi2.getName());
+            assertEquals(cpi2, cpi3);
+            
+            CommPortIdentifier cpi4 = CommPortIdentifier.getPortIdentifier(sp2);
+            assertEquals(cpi2, cpi4);
+            
             sp1.setSerialPortParams(4800, SerialPort.DATABITS_5, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
             assertEquals(4800, sp1.getBaudRate());
             assertEquals(SerialPort.DATABITS_5, sp1.getDataBits());
@@ -105,12 +111,16 @@ public class CommPortIdentifierT
             assertEquals(11, off);
             String got = new String(buf, 0, off);
             assertEquals(exp, got);
+            
+            sp1.close();
+            sp2.close();
         }
-        catch (IOException | PortInUseException | UnsupportedCommOperationException ex)
+        catch (IOException | NoSuchPortException | PortInUseException | UnsupportedCommOperationException ex)
         {
             fail(ex.getMessage());
             Logger.getLogger(CommPortIdentifierT.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
     
 }
