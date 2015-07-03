@@ -64,14 +64,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\src\main\resources\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\src\main\resources\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\comm\src\main\resources\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\comm\src\main\resources\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\src\main\resources\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\src\main\resources\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\comm\src\main\resources\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\comm\src\main\resources\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
@@ -114,7 +114,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PreBuildEvent>
-      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\target\classes org.vesalainen.comm.channel.winx.WinSerialChannel</Command>
+      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\comm\target\classes org.vesalainen.comm.channel.WinSerialChannel</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -136,7 +136,7 @@
       <SubSystem>Windows</SubSystem>
     </Link>
     <PreBuildEvent>
-      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\target\classes org.vesalainen.comm.channel.winx.WinSerialChannel</Command>
+      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\comm\target\classes org.vesalainen.comm.channel.WinSerialChannel</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -162,7 +162,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <PreBuildEvent>
-      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\target\classes org.vesalainen.comm.channel.winx.WinSerialChannel</Command>
+      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\comm\target\classes org.vesalainen.comm.channel.WinSerialChannel</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -187,7 +187,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
     </Link>
     <PreBuildEvent>
-      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\target\classes org.vesalainen.comm.channel.winx.WinSerialChannel</Command>
+      <Command>"c:\Program Files\Java\jdk1.7.0_75\bin\javah" -v -classpath ..\..\..\comm\target\classes org.vesalainen.comm.channel.WinSerialChannel</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -215,7 +215,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ntddser.h" />
-    <ClInclude Include="org_vesalainen_comm_channel_winx_WinSerialChannel.h" />
+    <ClInclude Include="org_vesalainen_comm_channel_WinSerialChannel.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="SerialChannel.h" />
     <ClInclude Include="stdafx.h" />

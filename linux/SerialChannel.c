@@ -19,7 +19,7 @@
 #undef __cplusplus
 
 #include "SerialChannel.h"
-#define MAX_BUFFERS org_vesalainen_comm_channel_linux_LinuxSerialChannel_MaxBuffers
+#define MAX_BUFFERS org_vesalainen_comm_channel_LinuxSerialChannel_MaxBuffers
 
 void hexdump(int count, char* buf, int len, int bufsize);
 
@@ -67,13 +67,13 @@ static void sighdl(int sig)
 {
     DEBUG("signal");
 }
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_setDebug
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {
     debug = on;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClearBuffers
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClearBuffers
 (JNIEnv *env, jobject obj, jlong ctx)
 {
 	CTX *c = (CTX*)ctx;
@@ -83,7 +83,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	}
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_staticInit
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_staticInit
   (JNIEnv *env, jclass cls)
 {
     sigset_t mask;
@@ -125,7 +125,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	CHECKV(midList_Add);
 }
 
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doSelect
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSelect
   (JNIEnv *env, jclass cls, jint readCount, jint writeCount, jobject reads, jobject writes, jint timeout)
 {
     jlong *readArr;
@@ -206,7 +206,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	return rc;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_wakeupSelect
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_wakeupSelect
   (JNIEnv *env, jclass cls)
 {
 
@@ -232,12 +232,12 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
  * Method:    version
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_version
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_version
   (JNIEnv *env, jobject obj)
 {
-    return org_vesalainen_comm_channel_linux_LinuxSerialChannel_VERSION;
+    return org_vesalainen_comm_channel_LinuxSerialChannel_VERSION;
 }
-JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doOpen(
+JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOpen(
     JNIEnv *env, 
     jobject obj, 
     jbyteArray port
@@ -277,7 +277,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChanne
 
     return (jlong)c;
 }
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doConfigure(
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doConfigure(
     JNIEnv *env, 
     jobject obj,
     jlong ctx, 
@@ -431,7 +431,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doClose
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClose
   (JNIEnv *env, jobject obj, jlong ctx)
 {
     CTX* c = (CTX*)ctx;
@@ -459,7 +459,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
     }
     free(c);
 }
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doRead
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRead
 (JNIEnv *env, jobject obj, jlong ctx, jobjectArray bba, jint offset, jint length)
 {
 	int pos[MAX_BUFFERS];
@@ -543,7 +543,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	return rc;
 }
 
-JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doWrite
+JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doWrite
 (JNIEnv *env, jobject obj, jlong ctx, jobjectArray bba, jint offset, jint length)
 {
     static int count = 0;
@@ -635,7 +635,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel
 	return rc;
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_doEnumPorts
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doEnumPorts
   (JNIEnv *env, jobject obj, jobject list)
 {
     jstring str;
@@ -705,7 +705,7 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
     }
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_linux_LinuxSerialChannel_timeouts
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_timeouts
   (JNIEnv *env, jobject obj, jlong ctx, jint min, jint time)
 {
     CTX* c = (CTX*)ctx;

@@ -28,7 +28,7 @@
 
 #include <stdlib.h>
 #include <malloc.h>
-#include "org_vesalainen_comm_channel_winx_WinSerialChannel.h"
+#include "org_vesalainen_comm_channel_WinSerialChannel.h"
 typedef struct _CTX
 {
 	HANDLE hComm;

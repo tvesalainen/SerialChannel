@@ -29,7 +29,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <sys/select.h>
-#include "org_vesalainen_comm_channel_linux_LinuxSerialChannel.h"
+#include "org_vesalainen_comm_channel_LinuxSerialChannel.h"
 
 typedef struct _CTX
 {
