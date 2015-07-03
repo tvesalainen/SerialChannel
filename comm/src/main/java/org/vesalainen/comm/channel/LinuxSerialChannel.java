@@ -35,7 +35,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class LinuxSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 1;
+    public static final int VERSION = 2;
     /**
      * The maximum number of buffers in Gathering or Scattering  operations.
      */
