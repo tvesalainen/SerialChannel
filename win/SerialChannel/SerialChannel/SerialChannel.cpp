@@ -178,14 +178,14 @@ jboolean replaceError
 	int framesize = 1;	// start bit
 
 	c->dcb.fBinary = TRUE;
-	c->dcb.fDtrControl = DTR_CONTROL_ENABLE;
+	c->dcb.fDtrControl = DTR_CONTROL_DISABLE;
 	c->dcb.fDsrSensitivity = FALSE;
 	c->dcb.fTXContinueOnXoff = FALSE;
 	c->dcb.fOutX = FALSE;
 	c->dcb.fInX = FALSE;
 	c->dcb.fErrorChar = FALSE;
 	c->dcb.fNull = FALSE;
-	c->dcb.fRtsControl = RTS_CONTROL_ENABLE;
+	c->dcb.fRtsControl = RTS_CONTROL_DISABLE;
 	c->dcb.fAbortOnError = FALSE;
 	c->dcb.fOutxCtsFlow = FALSE;
 	c->dcb.fOutxDsrFlow = FALSE;
