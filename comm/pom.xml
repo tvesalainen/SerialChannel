@@ -17,6 +17,10 @@
     <dependencies>
         <dependency>
             <groupId>org.vesalainen</groupId>
+            <artifactId>dev</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.vesalainen</groupId>
             <artifactId>util</artifactId>
         </dependency>
         <dependency>
