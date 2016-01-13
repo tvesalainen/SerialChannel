@@ -28,7 +28,7 @@ void hexdump(int count, char* buf, int len, int bufsize);
 
 #define ERRORRETURNV if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return;
 #define ERRORRETURN if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return 0;
-#define DEBUG(s) if (debug) {fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr)};
+#define DEBUG(s) if (debug) {fprintf(stderr, "%s at %d\n", (s), __LINE__);fflush(stderr);}
 
 #define CHECK(p)	if (!(p)) {ERRORRETURN;}
 #define CHECKV(p)	if (!(p)) {ERRORRETURNV;}
