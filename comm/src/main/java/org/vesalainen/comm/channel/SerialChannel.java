@@ -122,6 +122,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     
     static void wakeupSelect(Set<SelectionKey> keys)
     {
+        log.fine("wakeupSelect(%s)", keys);
         OS os = LibraryLoader.getOS();
         switch (os)
         {
@@ -444,13 +445,23 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         doClose();
     }
 
+    @Override
+    protected void finalize() throws Throwable
+    {
+        super.finalize();
+        if (address != -1)
+        {
+            free(address);
+        }
+    }
+
     protected void doClose() throws IOException
     {
         doClose(address);
-        address = -1;
     }
 
     protected abstract void doClose(long handle) throws IOException;
+    protected abstract void free(long handle);
 
     
     @Override

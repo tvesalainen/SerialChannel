@@ -143,7 +143,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_doOpen
 				0);
 	if (c->hComm == INVALID_HANDLE_VALUE)
 	{
-		free(c);
 		(*env)->ReleaseByteArrayElements(env, port, sPort, 0);
 		EXCEPTION(buf);
 	}
@@ -348,9 +347,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_doClose
 	DEBUG("CloseHandle");
 	if (!CloseHandle(c->hComm))
 	{
-		free(c);
 		EXCEPTIONV("CloseHandle failed");
 	}
+}
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_free
+  (JNIEnv *env, jobject obj, jlong ctx)
+{
+	DEBUG("free");
+	CTX *c = (CTX*)ctx;
 	free(c);
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_setEventMask

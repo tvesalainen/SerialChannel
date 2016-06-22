@@ -42,7 +42,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class WinSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 8;
+    public static final int VERSION = 9;
     public static final int MAXDWORD = 0xffffffff;
     public static final int EV_RXCHAR = 0x0001;
     public static final int MaxSelect = 64;
@@ -110,6 +110,9 @@ public class WinSerialChannel extends SerialChannel
     @Override
     protected native void doClose(long handle) throws IOException;
 
+    @Override
+    protected native void free(long handle);
+    
     protected void checkVersion()
     {
         int version = version();

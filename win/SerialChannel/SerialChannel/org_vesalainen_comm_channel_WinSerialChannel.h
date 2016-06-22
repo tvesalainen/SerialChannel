@@ -10,7 +10,7 @@ extern "C" {
 #undef org_vesalainen_comm_channel_WinSerialChannel_MaxSelectors
 #define org_vesalainen_comm_channel_WinSerialChannel_MaxSelectors 64L
 #undef org_vesalainen_comm_channel_WinSerialChannel_VERSION
-#define org_vesalainen_comm_channel_WinSerialChannel_VERSION 8L
+#define org_vesalainen_comm_channel_WinSerialChannel_VERSION 9L
 #undef org_vesalainen_comm_channel_WinSerialChannel_MAXDWORD
 #define org_vesalainen_comm_channel_WinSerialChannel_MAXDWORD -1L
 #undef org_vesalainen_comm_channel_WinSerialChannel_EV_RXCHAR
@@ -95,6 +95,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_doEnumP
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_doClose
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_WinSerialChannel
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_WinSerialChannel_free
   (JNIEnv *, jobject, jlong);
 
 /*

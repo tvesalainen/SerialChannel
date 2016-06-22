@@ -26,7 +26,6 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -35,7 +34,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class LinuxSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 2;
+    public static final int VERSION = 3;
     /**
      * The maximum number of buffers in Gathering or Scattering  operations.
      */
@@ -191,6 +190,9 @@ public class LinuxSerialChannel extends SerialChannel
     @Override
     protected native void doClose(long handle) throws IOException;
 
+    @Override
+    protected native void free(long handle);
+
     private static final byte[] errorReplacement = new byte[] {(byte)0xff, 0x00};
 
     public static byte[] errorReplacement()
@@ -217,6 +219,7 @@ public class LinuxSerialChannel extends SerialChannel
         for (SelectionKey sk : keys)
         {
             LinuxSerialChannel channel = (LinuxSerialChannel) sk.channel();
+            assert channel.address != -1;
             int interestOps = sk.interestOps();
             if ((interestOps & OP_READ) != 0)
             {
@@ -228,7 +231,6 @@ public class LinuxSerialChannel extends SerialChannel
             }
         }
         log.finest("select(%d, %d, %d)", readIndex, writeIndex, timeout);
-        debug(log.isLoggable(Level.FINEST));
         int rc = doSelect(readIndex, writeIndex, reads, writes, timeout);
         log.finest("rc=%d", rc);
         if (rc != 0)

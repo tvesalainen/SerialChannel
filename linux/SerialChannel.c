@@ -61,7 +61,12 @@ static jmethodID midList_Add;
 
 static pthread_t selectThread;
 static pthread_mutex_t  selectMutex = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK if (pthread_mutex_lock(&selectMutex) < 0) {EXCEPTION("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
+#define UNLOCK if (pthread_mutex_unlock(&selectMutex) < 0) {EXCEPTION("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
+
 static sigset_t origmask;
+static int wakeup;
+static int selectPending;
 
 static void sighdl(int sig)
 {
@@ -70,6 +75,7 @@ static void sighdl(int sig)
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {
+    fprintf(stderr, "debug(%d)\n", on);fflush(stderr);
     debug = on;
 }
 
@@ -86,22 +92,9 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCle
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_staticInit
   (JNIEnv *env, jclass cls)
 {
-    sigset_t mask;
-    struct sigaction act;
+    sigemptyset(&origmask);
     
-    bzero(&act, sizeof(act));
-    
-    act.sa_handler = sighdl;
-    
-    if (sigaction(SIGUSR1, &act, NULL) < 0)
-    {
-        EXCEPTIONV("sigaction");
-    }
-        
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGUSR1);
-    
-    if (pthread_sigmask(SIG_BLOCK, &mask, &origmask) < 0)
+    if (pthread_sigmask(SIG_BLOCK, NULL, &origmask) < 0)
     {
         EXCEPTIONV("sigprocmask");
     }
@@ -138,10 +131,45 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
     sigset_t sigmask;
     int ii, rc;
 
+    sigset_t mask;
+    sigset_t origmask;
+    struct sigaction act;
+    
+    if (wakeup)
+    {
+        wakeup = 0;
+        DEBUG("wakeup return");
+        return;
+    }
+    selectPending = 1;
+    
     bzero(&ts, sizeof(ts));
     
-    selectThread = pthread_self();
+    bzero(&act, sizeof(act));
     
+    act.sa_handler = sighdl;
+    
+    if (sigaction(SIGUSR1, &act, NULL) < 0)
+    {
+        selectPending = 0;
+        EXCEPTIONV("sigaction");
+    }
+    DEBUG("sigaction");
+        
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGUSR1);
+    
+    if (pthread_sigmask(SIG_BLOCK, &mask, NULL) < 0)
+    {
+        selectPending = 0;
+        EXCEPTIONV("sigprocmask");
+    }
+    DEBUG("pthread_sigmask");
+    
+    LOCK
+    selectThread = pthread_self();
+    UNLOCK
+            
     readArr = (*env)->GetDirectBufferAddress(env, reads);
     CHECK(readArr);
     writeArr = (*env)->GetDirectBufferAddress(env, writes);
@@ -168,16 +196,22 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
     }
     ts.tv_sec = timeout / 1000;
     ts.tv_nsec = (timeout % 1000)*1000000;
+    DEBUG("pselect");
     rc = pselect(nfds+1, &readfds, &writefds, NULL, &ts, &origmask);
     if (debug) fprintf(stderr, "sec=%d nsec=%d rc=%d\n", ts.tv_sec, ts.tv_nsec, rc);
     if (rc < 0)
     {
         if (errno != EINTR)
         {
+            LOCK
+            selectThread = 0;
+            UNLOCK
+            selectPending = 0;
             EXCEPTION("pselect");
         }
         else
         {
+            DEBUG("EINTR");
             rc = 0;
         }
     }
@@ -194,36 +228,32 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
             writeArr[ii] = FD_ISSET(c->fd, &writefds);
         }
     }
-    if (pthread_mutex_lock(&selectMutex) < 0)
-    {
-        EXCEPTION("pthread_mutex_lock");
-    }
+    LOCK
     selectThread = 0;
-    if (pthread_mutex_unlock(&selectMutex) < 0)
-    {
-        EXCEPTION("pthread_mutex_unlock");
-    }
+    UNLOCK
+    wakeup = 0;
+    selectPending = 0;
     return rc;
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_wakeupSelect
   (JNIEnv *env, jclass cls)
 {
-
-    if (pthread_mutex_lock(&selectMutex) < 0)
+    unsigned int sleep = 10;
+    wakeup = 1;
+    while (wakeup && selectPending)
     {
-        EXCEPTIONV("pthread_mutex_lock");
-    }
-    if (selectThread)
-    {
-        if (pthread_kill(selectThread, SIGUSR1) < 0)
+        if (debug) fprintf(stderr, "wakeup(%d %d 0x%x)\n", wakeup, selectPending, selectThread);fflush(stderr);
+        LOCK
+        if (selectThread)
         {
-            EXCEPTIONV("pthread_kill");
+            if (pthread_kill(selectThread, SIGUSR1) < 0)
+            {
+                EXCEPTIONV("pthread_kill");
+            }
         }
-    }
-    if (pthread_mutex_unlock(&selectMutex) < 0)
-    {
-        EXCEPTIONV("pthread_mutex_unlock");
+        UNLOCK
+        usleep(sleep);
     }
 }
 
@@ -245,6 +275,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
 {
     jsize size;
     jbyte* sPort; 
+    char buf[PATH_MAX];
     
     CTX *c = (CTX*)calloc(1, sizeof(CTX));
 
@@ -252,25 +283,33 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     sPort = (*env)->GetByteArrayElements(env, port, NULL);
     if (sPort == NULL)
     {
-        ERRORRETURN
+        free(c);
+        EXCEPTION("port == null");
     }
     size = (*env)->GetArrayLength(env, port);
     strncpy(c->szPort, sPort, size);
+    strncpy(buf, sPort, size);
 
     DEBUG("open");
     c->fd = open(c->szPort, O_RDWR | O_NOCTTY);
     if (c->fd < 0)
     {
+    DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
-        EXCEPTION(c->szPort);
+        free(c);
+        EXCEPTION(buf);
     }
     if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
+    DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+        free(c);
         EXCEPTION("tcgetattr failed");
     }
     if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
+    DEBUG("open");
+        free(c);
         EXCEPTION("tcflush failed");
     }
     (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
@@ -436,6 +475,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
 {
     CTX* c = (CTX*)ctx;
     DEBUG("close");
+    if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
     /*
     if (tcflush(c->fd, TCIFLUSH) < 0)
     {
@@ -457,6 +497,12 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
     {
         EXCEPTIONV("CloseHandle failed");
     }
+}
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
+  (JNIEnv *env, jobject obj, jlong ctx)
+{
+    CTX* c = (CTX*)ctx;
+    DEBUG("free");
     free(c);
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRead

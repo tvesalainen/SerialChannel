@@ -136,6 +136,7 @@ public class SerialSelector extends AbstractSelector
     public Selector wakeup()
     {
         SerialChannel.wakeupSelect(keys);
+        return this;
     }
 
     @Override

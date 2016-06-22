@@ -10,7 +10,7 @@ extern "C" {
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_MaxSelectors
 #define org_vesalainen_comm_channel_LinuxSerialChannel_MaxSelectors 64L
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_VERSION
-#define org_vesalainen_comm_channel_LinuxSerialChannel_VERSION 2L
+#define org_vesalainen_comm_channel_LinuxSerialChannel_VERSION 3L
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_MaxBuffers
 #define org_vesalainen_comm_channel_LinuxSerialChannel_MaxBuffers 16L
 /*
@@ -83,6 +83,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doEnu
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClose
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     org_vesalainen_comm_channel_LinuxSerialChannel
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
   (JNIEnv *, jobject, jlong);
 
 /*
