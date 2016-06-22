@@ -37,8 +37,6 @@ public class SerialSelector extends AbstractSelector
     private final Set<SelectionKey> keys = new ConcurrentArraySet<>();
     private final Set<SelectionKey> unmodifiableKeys = Collections.unmodifiableSet(keys);
     private final Set<SelectionKey> selected = new ConcurrentArraySet<>();
-    private final Set<Thread> threads = new ConcurrentArraySet<>();
-    private boolean wakeupPending;
     
     SerialSelector()
     {
@@ -53,13 +51,7 @@ public class SerialSelector extends AbstractSelector
     @Override
     protected void implCloseSelector() throws IOException
     {
-        synchronized(threads)
-        {
-            if (!threads.isEmpty())
-            {
-                wakeup();
-            }
-        }
+        wakeup();
     }
 
     @Override
@@ -102,24 +94,16 @@ public class SerialSelector extends AbstractSelector
     @Override
     public synchronized int select(long timeout) throws IOException
     {
-        if (wakeupPending)
-        {
-            wakeupPending = false;
-            return 0;
-        }
         handleCancelled();
         if (!keys.isEmpty())
         {
             begin();
-            Thread currentThread = Thread.currentThread();
-            threads.add(currentThread);
             try
             {
                 return SerialChannel.select(keys, selected, (int)timeout);
             }
             finally
             {
-                threads.remove(currentThread);
                 end();
                 handleCancelled();
             }
@@ -151,15 +135,7 @@ public class SerialSelector extends AbstractSelector
     @Override
     public Selector wakeup()
     {
-        if (!threads.isEmpty())
-        {
-            SerialChannel.wakeupSelect(keys);
-        }
-        else
-        {
-            wakeupPending = true;
-        }
-        return this;
+        SerialChannel.wakeupSelect(keys);
     }
 
     @Override
