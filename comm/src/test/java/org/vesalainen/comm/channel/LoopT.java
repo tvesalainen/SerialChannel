@@ -47,6 +47,7 @@ public class LoopT
     static OS os = LibraryLoader.getOS();
     public LoopT()
     {
+        SerialChannel.debug(true);
     }
 
     @After
@@ -448,6 +449,7 @@ public class LoopT
                                 assertEquals(Integer.valueOf(0), frec1.get(200, TimeUnit.SECONDS));
                                 assertEquals(Integer.valueOf(0), frec2.get(200, TimeUnit.SECONDS));
                             }
+                            System.gc();
                         }
                     }
                 }
