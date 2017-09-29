@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 
 /**
  *
- * @author tkv
+ * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 class SerialOutputStream extends OutputStream
 {

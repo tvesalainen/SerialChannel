@@ -40,7 +40,7 @@ import static org.vesalainen.loader.LibraryLoader.OS.Linux;
 
 /**
  * These test needs two serial ports connected together with null modem cable.
- * @author tkv
+ * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public class LoopT
 {

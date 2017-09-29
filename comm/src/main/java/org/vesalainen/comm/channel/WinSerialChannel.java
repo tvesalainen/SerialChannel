@@ -38,7 +38,7 @@ import org.vesalainen.loader.LibraryLoader;
  * applications, it is not problem at all. 
  * <p>If this class later implements AsynchronousChannel, the CancelIo has to be
  * implemented in another way!
- * @author tkv
+ * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public class WinSerialChannel extends SerialChannel
 {

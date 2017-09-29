@@ -43,7 +43,7 @@ import org.vesalainen.util.logging.JavaLogging;
  * 
  * <p>
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
- * @author tkv
+ * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
 {

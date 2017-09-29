@@ -21,7 +21,7 @@ import java.util.Random;
 /**
  * Utility that creates pseudo random characters. The seed is always the same. Therefore
  * the character sequence is also the same. This is used in SerialChannel testing.
- * @author tkv
+ * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public class RandomChar
 {
