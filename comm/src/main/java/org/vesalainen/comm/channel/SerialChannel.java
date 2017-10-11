@@ -27,6 +27,7 @@ import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -366,8 +367,8 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public static List<String> getFreePorts()
     {
         Builder builder = new Builder("", Speed.B57600);
-        List<String> allPorts = getAllPorts();
-        Iterator<String> iterator = allPorts.iterator();
+        List<String> freePorts = new ArrayList<>(getAllPorts());
+        Iterator<String> iterator = freePorts.iterator();
         while (iterator.hasNext())
         {
             String port = iterator.next();
@@ -381,7 +382,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
                 iterator.remove();
             }
         }
-        return allPorts;
+        return Collections.unmodifiableList(freePorts);
     }
     /**
      * Returns all available ports.
@@ -402,7 +403,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
             default:
                 throw new UnsupportedOperationException(os+" not supported");
         }
-        return list;
+        return Collections.unmodifiableList(list);
     }
 
     public DataBits getDataBits()
