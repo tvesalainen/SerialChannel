@@ -29,34 +29,75 @@ import org.vesalainen.loader.LibraryLoader;
 
 /**
  * A Windows implementation of SerialChannel
- * 
- * <p>Implementation notes:
- * <p>Scattering/Gathering IO is implemented in java.
- * <p>Select implementation uses CancelIo function which cancels all io for the
+ *
+ * <p>
+ * Implementation notes:
+ * <p>
+ * Scattering/Gathering IO is implemented in java.
+ * <p>
+ * Select implementation uses CancelIo function which cancels all io for the
  * channel. Currently this will cause problem if one thread calls read/write,
- * while another thread calls select. Since select is usually used in one thread 
- * applications, it is not problem at all. 
- * <p>If this class later implements AsynchronousChannel, the CancelIo has to be
+ * while another thread calls select. Since select is usually used in one thread
+ * applications, it is not problem at all.
+ * <p>
+ * If this class later implements AsynchronousChannel, the CancelIo has to be
  * implemented in another way!
+ *
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public class WinSerialChannel extends SerialChannel
 {
+
     public static final int VERSION = 9;
     public static final int MAXDWORD = 0xffffffff;
     public static final int EV_RXCHAR = 0x0001;
     public static final int MaxSelect = 64;
-    private static LongBuffer reads = ByteBuffer.allocateDirect(8*MaxSelectors)
+    private static LongBuffer reads = ByteBuffer.allocateDirect(8 * MaxSelectors)
             .order(ByteOrder.nativeOrder())
             .asLongBuffer();
-
+    /**
+     * The maximum time allowed to elapse before the arrival of the next byte on
+     * the communications line, in milliseconds. If the interval between the
+     * arrival of any two bytes exceeds this amount, the ReadFile operation is
+     * completed and any buffered data is returned. A value of zero indicates
+     * that interval time-outs are not used. A value of MAXDWORD, combined with
+     * zero values for both the ReadTotalTimeoutConstant and
+     * ReadTotalTimeoutMultiplier members, specifies that the read operation is
+     * to return immediately with the bytes that have already been received,
+     * even if no bytes have been received.
+     */
     private int readIntervalTimeout = MAXDWORD;
+    /**
+     * The multiplier used to calculate the total time-out period for read
+     * operations, in milliseconds. For each read operation, this value is
+     * multiplied by the requested number of bytes to be read.
+     */
     private int readTotalTimeoutMultiplier = MAXDWORD;
+    /**
+     * A constant used to calculate the total time-out period for read
+     * operations, in milliseconds. For each read operation, this value is added
+     * to the product of the ReadTotalTimeoutMultiplier member and the requested
+     * number of bytes. A value of zero for both the ReadTotalTimeoutMultiplier
+     * and ReadTotalTimeoutConstant members indicates that total time-outs are
+     * not used for read operations.
+     */
     private int readTotalTimeoutConstant = 100;
+    /**
+     * The multiplier used to calculate the total time-out period for write
+     * operations, in milliseconds. For each write operation, this value is
+     * multiplied by the number of bytes to be written.
+     */
     private int writeTotalTimeoutMultiplier;
+    /**
+     * A constant used to calculate the total time-out period for write
+     * operations, in milliseconds. For each write operation, this value is
+     * added to the product of the WriteTotalTimeoutMultiplier member and the
+     * number of bytes to be written. A value of zero for both the
+     * WriteTotalTimeoutMultiplier and WriteTotalTimeoutConstant members
+     * indicates that total time-outs are not used for write operations.
+     */
     private int writeTotalTimeoutConstant;
 
-    
     static
     {
         try
@@ -65,7 +106,7 @@ public class WinSerialChannel extends SerialChannel
         }
         catch (IOException | UnsatisfiedLinkError ex)
         {
-            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n"+ex.getMessage());
+            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n" + ex.getMessage());
         }
         staticInit();
     }
@@ -79,14 +120,14 @@ public class WinSerialChannel extends SerialChannel
     protected native void doClearBuffers(long address);
 
     private static native void staticInit();
-    
+
     @Override
     protected native void doConfigure(
             long handle,
-            int baudRate, 
-            int parity, 
-            int dataBits, 
-            int stopBits, 
+            int baudRate,
+            int parity,
+            int dataBits,
+            int stopBits,
             int flowControl,
             boolean replaceError
     ) throws IOException;
@@ -112,16 +153,16 @@ public class WinSerialChannel extends SerialChannel
 
     @Override
     protected native void free(long handle);
-    
+
     protected void checkVersion()
     {
         int version = version();
         if (version != VERSION)
         {
-            throw new UnsatisfiedLinkError("Loaded DLL version was "+version+" needed version "+VERSION);
+            throw new UnsatisfiedLinkError("Loaded DLL version was " + version + " needed version " + VERSION);
         }
     }
-    
+
     @Override
     protected void setTimeouts() throws IOException
     {
@@ -133,6 +174,7 @@ public class WinSerialChannel extends SerialChannel
                 writeTotalTimeoutConstant
         );
     }
+
     private native void timeouts(
             long handle,
             int readIntervalTimeout,
@@ -141,18 +183,18 @@ public class WinSerialChannel extends SerialChannel
             int writeTotalTimeoutMultiplier,
             int writeTotalTimeoutConstant
     ) throws IOException;
-    
+
     @Override
     public int validOps()
     {
         return OP_READ;
     }
-    
+
     static int doSelect(Set<SelectionKey> keys, Set<SelectionKey> selected, int timeout) throws IOException
     {
         int updated = 0;
         int readIndex = 0;
-        synchronized(keys)
+        synchronized (keys)
         {
             for (SelectionKey sk : keys)
             {
@@ -168,7 +210,7 @@ public class WinSerialChannel extends SerialChannel
         if (rc != 0)
         {
             readIndex = 0;
-            synchronized(keys)
+            synchronized (keys)
             {
                 for (SelectionKey sk : keys)
                 {
@@ -200,19 +242,22 @@ public class WinSerialChannel extends SerialChannel
         }
         return updated;
     }
+
     private native void setEventMask(long handle, int mask) throws IOException;
 
     private native int waitEvent(long handle, int mask) throws IOException;
 
     private static native int doSelect(int len, LongBuffer handles, int timeout) throws IOException;
 
-    private static final byte[] errorReplacement = new byte[] {(byte)0xff, (byte)0xff};
-    
+    private static final byte[] errorReplacement = new byte[]
+    {
+        (byte) 0xff, (byte) 0xff
+    };
+
     public static byte[] errorReplacement()
     {
         return errorReplacement;
     }
-
 
     @Override
     public int read(ByteBuffer dst) throws IOException
@@ -317,7 +362,7 @@ public class WinSerialChannel extends SerialChannel
     {
         try
         {
-            synchronized(keys)
+            synchronized (keys)
             {
                 for (SelectionKey sk : keys)
                 {
@@ -331,5 +376,5 @@ public class WinSerialChannel extends SerialChannel
             throw new IllegalArgumentException(ex);
         }
     }
-    
+
 }
