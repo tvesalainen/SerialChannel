@@ -60,6 +60,12 @@ public class PortMonitor
         ports.addAll(SerialChannel.getAllPorts());
     }
     
+    public void stop()
+    {
+        newPortConsumers.clear();
+        newFreePortConsumers.clear();
+        removePortConsumers.clear();
+    }
     public void addNewPortConsumer(Consumer<String> portConsumer)
     {
         this.newPortConsumers.add(portConsumer);

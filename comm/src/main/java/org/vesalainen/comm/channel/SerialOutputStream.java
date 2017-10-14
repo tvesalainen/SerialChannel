@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
  *
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
-class SerialOutputStream extends OutputStream
+public class SerialOutputStream extends OutputStream
 {
     private SerialChannel channel;
     private ByteBuffer buffer;
