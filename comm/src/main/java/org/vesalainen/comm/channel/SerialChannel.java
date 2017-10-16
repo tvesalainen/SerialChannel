@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
@@ -46,7 +47,7 @@ import org.vesalainen.util.logging.JavaLogging;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
-public abstract class SerialChannel extends AbstractSelectableChannel implements GatheringByteChannel, ScatteringByteChannel
+public abstract class SerialChannel extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel
 {
     /**
      * The maximum number of reads or writes in select
