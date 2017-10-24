@@ -1,0 +1,4 @@
+Create debian package by running command
+debuild -us -uc
+in this directory
+
