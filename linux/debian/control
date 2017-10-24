@@ -1,0 +1,13 @@
+Source: serial-channel-jni-lib
+Maintainer: Timo Vesalainen <timo.vesalainen@iki.fi>
+Build-Depends: debhelper (>= 9.0.0)
+Standards-Version: 3.9.6
+Section: java
+Priority: optional  
+
+Package: serial-channel-jni-lib
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: SerialChannel.jar JNI library
+ A JNI library containing native methods of org.vesalainen.comm
+ java jar
