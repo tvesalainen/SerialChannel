@@ -13,6 +13,9 @@
     <description>
         Library for serial communication
     </description>
+    <properties>
+        <org.vesalainen.installer.require>serial-channel-jni-lib</org.vesalainen.installer.require>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.vesalainen</groupId>
