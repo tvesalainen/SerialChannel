@@ -11,10 +11,12 @@
     <packaging>jar</packaging>
     <name>Serial communications library</name>
     <description>
-        Library for serial communication
+        Library for serial communications
     </description>
     <properties>
-        <org.vesalainen.installer.require>serial-channel-jni-lib</org.vesalainen.installer.require>
+        <org.vesalainen.installer.require>
+            serial-channel-jni-lib (= ${version})
+        </org.vesalainen.installer.require>
     </properties>
     <dependencies>
         <dependency>
