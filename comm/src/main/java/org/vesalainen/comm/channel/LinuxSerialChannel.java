@@ -45,6 +45,8 @@ public class LinuxSerialChannel extends SerialChannel
     private static LongBuffer writes = ByteBuffer.allocateDirect(8*MaxSelectors)
             .order(ByteOrder.nativeOrder())
             .asLongBuffer();
+    private ByteBuffer[] readBuffer = new ByteBuffer[1];
+    
     /**
      *        
      * MIN == 0, TIME == 0 (polling read)
@@ -155,19 +157,25 @@ public class LinuxSerialChannel extends SerialChannel
         }
     }
 
-    static ByteBuffer[] readBuffer = new ByteBuffer[1];
-    
     @Override
     protected int doRead(long handle, ByteBuffer dst) throws IOException
     {
+        String str = dst.toString();
         readBuffer[0] = dst;
         int count = 0;
         readLock.lock();
         try
         {
             begin();
-            count = doRead(address, readBuffer, 0, 1);
-            return count;
+            try
+            {
+                count = doRead(address, readBuffer, 0, 1);
+                return count;
+            }
+            catch (IllegalArgumentException ex)
+            {
+                throw new IllegalArgumentException(str+" "+dst);
+            }
         }
         finally
         {
