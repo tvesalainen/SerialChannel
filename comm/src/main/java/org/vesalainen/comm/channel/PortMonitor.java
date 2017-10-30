@@ -39,8 +39,10 @@ public class PortMonitor
     private List<Consumer<String>> newPortConsumers = new ArrayList<>();
     private List<Consumer<String>> newFreePortConsumers = new ArrayList<>();
     private List<Consumer<String>> removePortConsumers = new ArrayList<>();
+    private List<Consumer<String>> removeFreePortConsumers = new ArrayList<>();
     private ScheduledFuture<?> future;
     private Set<String> ports = new HashSet<>();
+    private Set<String> freePorts = new HashSet<>();
 
     public PortMonitor()
     {
@@ -78,6 +80,12 @@ public class PortMonitor
         ensureRunning();
     }
 
+    public void addRemoveFreePortConsumer(Consumer<String> portConsumer)
+    {
+        this.removeFreePortConsumers.add(portConsumer);
+        ensureRunning();
+    }
+
     public void addRemovePortConsumer(Consumer<String> portConsumer)
     {
         this.removePortConsumers.add(portConsumer);
@@ -93,6 +101,12 @@ public class PortMonitor
     public void removeNewFreePortConsumer(Consumer<String> portConsumer)
     {
         this.newFreePortConsumers.remove(portConsumer);
+        ensureRunning();
+    }
+
+    public void removeFreeRemovePortConsumer(Consumer<String> portConsumer)
+    {
+        this.removeFreePortConsumers.remove(portConsumer);
         ensureRunning();
     }
 
@@ -123,18 +137,19 @@ public class PortMonitor
     
     private void checkPorts()
     {
-        Set<String> updated = new HashSet<>(SerialChannel.getAllPorts());
-        if (!ports.equals(updated))
+        checkPorts(ports, new HashSet<>(SerialChannel.getAllPorts()), newPortConsumers, removePortConsumers);
+        checkPorts(freePorts, new HashSet<>(SerialChannel.getFreePorts()), newFreePortConsumers, removeFreePortConsumers);
+    }
+    private void checkPorts(Set<String> last, Set<String> now, List<Consumer<String>> newCons, List<Consumer<String>> removeCons)
+    {
+        if (!last.equals(now))
         {
-            Set<String> updatedFree = new HashSet<>(SerialChannel.getFreePorts());
-            Set<String> newPorts = Sets.difference(updated, ports);
-            Set<String> removedPorts = Sets.difference(ports, updated);
-            Set<String> newFreePorts = Sets.intersection(updatedFree, newPorts);
-            newPorts.forEach((p)->newPortConsumers.forEach((c)->c.accept(p)));
-            newFreePorts.forEach((p)->newFreePortConsumers.forEach((c)->c.accept(p)));
-            removedPorts.forEach((p)->removePortConsumers.forEach((c)->c.accept(p)));
-            ports.removeAll(removedPorts);
-            ports.addAll(newPorts);
+            Set<String> newPorts = Sets.difference(now, last);
+            Set<String> removedPorts = Sets.difference(last, now);
+            newPorts.forEach((p)->newCons.forEach((c)->c.accept(p)));
+            removedPorts.forEach((p)->removeCons.forEach((c)->c.accept(p)));
+            last.removeAll(removedPorts);
+            last.addAll(newPorts);
         }
     }
 }
