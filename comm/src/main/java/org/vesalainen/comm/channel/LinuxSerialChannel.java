@@ -46,6 +46,7 @@ public class LinuxSerialChannel extends SerialChannel
             .order(ByteOrder.nativeOrder())
             .asLongBuffer();
     private ByteBuffer[] readBuffer = new ByteBuffer[1];
+    private ByteBuffer[] writeBuffer = new ByteBuffer[1];
     
     /**
      *        
@@ -158,33 +159,21 @@ public class LinuxSerialChannel extends SerialChannel
     }
 
     @Override
-    protected int doRead(long handle, ByteBuffer dst) throws IOException
+    public int read(ByteBuffer dst) throws IOException
     {
-        String str = dst.toString();
-        readBuffer[0] = dst;
-        int count = 0;
         readLock.lock();
+        readBuffer[0] = dst;
         try
         {
-            begin();
-            try
-            {
-                count = doRead(address, readBuffer, 0, 1);
-                return count;
-            }
-            catch (IllegalArgumentException ex)
-            {
-                throw new IllegalArgumentException(str+" "+dst);
-            }
+            return (int) read(readBuffer, 0, 1);
         }
         finally
         {
             readLock.unlock();
-            end(count > 0);
         }
     }
 
-    protected native int doRead(long handle, ByteBuffer[] dsts, int offset, int length) throws IOException;
+    private native int doRead(long handle, ByteBuffer[] dsts, int offset, int length) throws IOException;
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
@@ -211,16 +200,14 @@ public class LinuxSerialChannel extends SerialChannel
         }
     }
 
-    static ByteBuffer[] writeBuffer = new ByteBuffer[1];
-    
     @Override
-    protected int doWrite(long handle, ByteBuffer src) throws IOException
+    public int write(ByteBuffer src) throws IOException
     {
         writeLock.lock();
         try
         {
             writeBuffer[0] = src;
-            return doWrite(address, writeBuffer, 0, 1);
+            return (int) write(writeBuffer, 0, 1);
         }
         finally
         {
@@ -228,7 +215,7 @@ public class LinuxSerialChannel extends SerialChannel
         }
     }
 
-    protected native int doWrite(long handle, ByteBuffer[] srcs, int offset, int length) throws IOException;
+    private native int doWrite(long handle, ByteBuffer[] srcs, int offset, int length) throws IOException;
 
     public static native void setDebug(boolean on);
 

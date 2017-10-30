@@ -281,66 +281,6 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
      * @return Number of bytes read.
      * @throws IOException 
      */
-    @Override
-    public int read(ByteBuffer dst) throws IOException
-    {
-        if (address != -1)
-        {
-            int count = 0;
-            readLock.lock();
-            try
-            {
-                begin();
-                count = doRead(address, dst);
-                return count;
-            }
-            finally
-            {
-                readLock.unlock();
-                end(count > 0);
-            }
-        }
-        else
-        {
-            throw new ClosedChannelException();
-        }
-    }
-
-    protected abstract int doRead(long handle, ByteBuffer dst) throws IOException;
-
-    /**
-     * Writes data at buffers position and then increments the position.
-     * @param src
-     * @return Returns number of characters written.
-     * @throws IOException 
-     */
-    @Override
-    public int write(ByteBuffer src) throws IOException
-    {
-        if (address != -1)
-        {
-            int count = 0;
-            writeLock.lock();
-            try
-            {
-                begin();
-                count = doWrite(address, src);
-                return count;
-            }
-            finally
-            {
-                writeLock.unlock();
-                end(count > 0);
-            }
-        }
-        else
-        {
-            throw new ClosedChannelException();
-        }
-    }
-
-    protected abstract int doWrite(long handle, ByteBuffer src) throws IOException;
-
     /**
      * Sets the debug state. When set to true, writes trace text to System.err
      * @param on 

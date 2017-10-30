@@ -138,11 +138,40 @@ public class WinSerialChannel extends SerialChannel
     @Override
     protected native long doOpen(byte[] port);
 
-    @Override
-    protected native int doRead(long handle, ByteBuffer dst) throws IOException;
+    private native int doRead(long handle, ByteBuffer dst) throws IOException;
 
+    /**
+     * Writes data at buffers position and then increments the position.
+     * @param src
+     * @return Returns number of characters written.
+     * @throws IOException 
+     */
     @Override
-    protected native int doWrite(long handle, ByteBuffer src) throws IOException;
+    public int write(ByteBuffer src) throws IOException
+    {
+        if (address != -1)
+        {
+            int count = 0;
+            writeLock.lock();
+            try
+            {
+                begin();
+                count = doWrite(address, src);
+                return count;
+            }
+            finally
+            {
+                writeLock.unlock();
+                end(count > 0);
+            }
+        }
+        else
+        {
+            throw new ClosedChannelException();
+        }
+    }
+
+    private native int doWrite(long handle, ByteBuffer src) throws IOException;
 
     public static native void setDebug(boolean on);
 
