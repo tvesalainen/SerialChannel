@@ -3,5 +3,5 @@ DH_VERBOSE = 1
 %:  
 	dh $@
 override_dh_auto_install:
-	install -D -m 0755 SerialChannel.so $$(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/SerialChannel.so
+	install -D -m 0755 SerialChannel.so $$(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/libSerialChannel.so
 

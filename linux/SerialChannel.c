@@ -296,14 +296,21 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     c->fd = open(c->szPort, O_RDWR | O_NOCTTY);
     if (c->fd < 0)
     {
-    DEBUG("open");
+        DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION(buf);
     }
+    if (flock(c->fd, LOCK_EX|LOCK_NB) < 0)
+    {
+        DEBUG("flock");
+        (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
+        free(c);
+        EXCEPTION("flock failed");
+    }
     if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
-    DEBUG("open");
+        DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION("tcgetattr failed");

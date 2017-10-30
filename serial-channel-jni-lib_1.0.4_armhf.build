@@ -40,7 +40,7 @@ dh binary
    dh_prep
    debian/rules override_dh_auto_install
 make[1]: Entering directory '/home/pi/SerialChannel/linux'
-install -D -m 0755 SerialChannel.so $(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/SerialChannel.so
+install -D -m 0755 SerialChannel.so $(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/libSerialChannel.so
 make[1]: Leaving directory '/home/pi/SerialChannel/linux'
    dh_installdocs
    dh_installchangelogs
@@ -62,8 +62,8 @@ dpkg-genchanges: including full source code in upload
  dpkg-source --after-build linux
 dpkg-buildpackage: full upload; Debian-native package (full source is included)
 Now running lintian...
-W: serial-channel-jni-lib: hardening-no-relro opt/org.vesalainen/lib/SerialChannel.so
+W: serial-channel-jni-lib: hardening-no-relro opt/org.vesalainen/lib/libSerialChannel.so
 E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/
 E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/
-E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/SerialChannel.so
+E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/libSerialChannel.so
 Finished running lintian.
