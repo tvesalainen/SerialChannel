@@ -504,7 +504,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
     */
     if (close(c->fd) < 0)
     {
-        EXCEPTIONV("CloseHandle failed");
+        EXCEPTIONV("close failed");
     }
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
