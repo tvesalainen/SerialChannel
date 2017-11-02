@@ -87,8 +87,8 @@ public class LinuxSerialChannel extends SerialChannel
               after the call.
 
      */
-    private int min=1;
-    private int time;
+    private int min=0;
+    private int time=10;
     
     static
     {                                       

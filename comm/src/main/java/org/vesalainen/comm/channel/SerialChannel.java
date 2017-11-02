@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.channels.SelectionKey;
@@ -194,6 +193,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     protected void open() throws IOException
     {
         address = doOpen(port.getBytes());
+        setTimeouts();
     }
     protected abstract long doOpen(byte[] port);
     
