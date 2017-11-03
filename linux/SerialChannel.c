@@ -60,10 +60,10 @@ static jclass clsList;
 static jmethodID midList_Add;
 
 static pthread_mutex_t  selectMutex = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK if (pthread_mutex_lock(&selectMutex) < 0) {EXCEPTION("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
-#define UNLOCK if (pthread_mutex_unlock(&selectMutex) < 0) {EXCEPTION("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
-#define LOCKV if (pthread_mutex_lock(&selectMutex) < 0) {EXCEPTIONV("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
-#define UNLOCKV if (pthread_mutex_unlock(&selectMutex) < 0) {EXCEPTIONV("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
+#define LOCK(lock) if (pthread_mutex_lock(&(lock)) < 0) {EXCEPTION("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
+#define UNLOCK(lock) if (pthread_mutex_unlock(&(lock)) < 0) {EXCEPTION("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
+#define LOCKV(lock) if (pthread_mutex_lock(&(lock)) < 0) {EXCEPTIONV("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
+#define UNLOCKV(lock) if (pthread_mutex_unlock(&(lock)) < 0) {EXCEPTIONV("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
 
 static pthread_t selectThread;
 static sigset_t origmask;
@@ -179,9 +179,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
     }
     DEBUG("pthread_sigmask");
     
-    LOCK
+    LOCK(selectMutex)
     selectThread = pthread_self();
-    UNLOCK
+    UNLOCK(selectMutex)
             
     readArr = (*env)->GetDirectBufferAddress(env, reads);
     CHECK(readArr);
@@ -216,9 +216,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
     {
         if (errno != EINTR)
         {
-            LOCK
+            LOCK(selectMutex)
             selectThread = 0;
-            UNLOCK
+            UNLOCK(selectMutex)
             selectPending = 0;
             EXCEPTION("pselect");
         }
@@ -241,9 +241,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
             writeArr[ii] = FD_ISSET(c->fd, &writefds);
         }
     }
-    LOCK
+    LOCK(selectMutex)
     selectThread = 0;
-    UNLOCK
+    UNLOCK(selectMutex)
     wakeup = 0;
     selectPending = 0;
     return rc;
@@ -252,12 +252,12 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_wakeupSelect
   (JNIEnv *env, jclass cls)
 {
-    unsigned int sleep = 10;
+    unsigned int sleep = 100;
     wakeup = 1;
     while (wakeup && selectPending)
     {
         //if (debug) fprintf(stderr, "wakeup(%d %d 0x%x)\n", wakeup, selectPending, selectThread);fflush(stderr);
-        LOCKV
+        LOCKV(selectMutex)
         if (selectThread)
         {
             if (pthread_kill(selectThread, SIGUSR1) < 0)
@@ -265,7 +265,7 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_wakeu
                 EXCEPTIONV("pthread_kill");
             }
         }
-        UNLOCKV
+        UNLOCKV(selectMutex)
         usleep(sleep);
     }
 }
@@ -291,6 +291,11 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     char buf[PATH_MAX];
     
     CTX *c = (CTX*)calloc(1, sizeof(CTX));
+
+    if (pthread_mutex_init(&c->readMutex, NULL) <0)
+    {
+        EXCEPTION("pthread_mutex_init");
+    }
 
     DEBUG("initialize");
     sPort = (*env)->GetByteArrayElements(env, port, NULL);
@@ -493,18 +498,18 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCon
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClose
   (JNIEnv *env, jobject obj, jlong ctx)
 {
-    unsigned int sleep = 10;
+    unsigned int sleep = 150000;  // micro seconds
     CTX* c = (CTX*)(intptr_t)ctx;
 
     if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
     while (c->readThread)
     {
-        LOCKV
+        LOCKV(selectMutex)
         if (pthread_kill(c->readThread, SIGUSR1) < 0)
         {
             EXCEPTIONV("pthread_kill");
         }
-        UNLOCKV
+        UNLOCKV(selectMutex)
         usleep(sleep);
     }
     if (close(c->fd) < 0)
@@ -562,13 +567,13 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
     }
 
     DEBUG("read");
-    LOCK
+    LOCK(selectMutex)
     c->readThread = pthread_self();
-    UNLOCK
+    UNLOCK(selectMutex)
     rc = readv(c->fd, vec, length);
-    LOCK
+    LOCK(selectMutex)
     c->readThread = 0;
-    UNLOCK
+    UNLOCK(selectMutex)
     if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
         rc = 0;
