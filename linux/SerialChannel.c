@@ -493,25 +493,24 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCon
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClose
   (JNIEnv *env, jobject obj, jlong ctx)
 {
+    unsigned int sleep = 10;
     CTX* c = (CTX*)(intptr_t)ctx;
-    DEBUG("close");
+
     if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
-    LOCKV
-    if (c->readThread)
+    while (c->readThread)
     {
+        LOCKV
         if (pthread_kill(c->readThread, SIGUSR1) < 0)
         {
             EXCEPTIONV("pthread_kill");
         }
+        UNLOCKV
+        usleep(sleep);
     }
-    else
+    if (close(c->fd) < 0)
     {
-        if (close(c->fd) < 0)
-        {
-            EXCEPTIONV("close failed");
-        }
+        EXCEPTIONV("close failed");
     }
-    UNLOCKV
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
   (JNIEnv *env, jobject obj, jlong ctx)
@@ -570,7 +569,7 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
     LOCK
     c->readThread = 0;
     UNLOCK
-    if (rc < 0 && errno == EAGAIN)
+    if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
         rc = 0;
     }
