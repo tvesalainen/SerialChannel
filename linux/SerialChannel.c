@@ -504,12 +504,12 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
     if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
     while (c->readThread)
     {
-        LOCKV(selectMutex)
+        LOCKV(c->readMutex)
         if (pthread_kill(c->readThread, SIGUSR1) < 0)
         {
             EXCEPTIONV("pthread_kill");
         }
-        UNLOCKV(selectMutex)
+        UNLOCKV(c->readMutex)
         usleep(sleep);
     }
     if (close(c->fd) < 0)
@@ -567,13 +567,13 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
     }
 
     DEBUG("read");
-    LOCK(selectMutex)
+    LOCK(c->readMutex)
     c->readThread = pthread_self();
-    UNLOCK(selectMutex)
+    UNLOCK(c->readMutex)
     rc = readv(c->fd, vec, length);
-    LOCK(selectMutex)
+    LOCK(c->readMutex)
     c->readThread = 0;
-    UNLOCK(selectMutex)
+    UNLOCK(c->readMutex)
     if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
         rc = 0;
