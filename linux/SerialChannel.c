@@ -292,7 +292,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     
     CTX *c = (CTX*)calloc(1, sizeof(CTX));
 
-    if (pthread_mutex_init(&c->ioMutex, NULL) <0)
+    if (pthread_mutex_init(&c->readMutex, NULL) <0)
     {
         EXCEPTION("pthread_mutex_init");
     }
@@ -505,13 +505,13 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
     if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
     while (1)
     {
-        rc = pthread_mutex_trylock(&c->ioMutex);
+        rc = pthread_mutex_trylock(&c->readMutex);
         fprintf(stderr, "pthread_mutex_trylock = %d\n", rc);
         if (rc != 0)
         {
            if (rc == EBUSY) // read/write is going
            { 
-                if (pthread_kill(c->ioThread, SIGUSR1) < 0)
+                if (pthread_kill(c->readThread, SIGUSR1) < 0)
                 {
                     EXCEPTIONV("pthread_kill");
                 }
@@ -527,10 +527,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
         {
             if (close(c->fd) < 0)
             {
-                UNLOCKV(c->ioMutex)
+                UNLOCKV(c->readMutex)
                 EXCEPTIONV("close failed");
             }
-            UNLOCKV(c->ioMutex)
+            UNLOCKV(c->readMutex)
             break;
         }
     }
@@ -585,11 +585,11 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
     }
 
     DEBUG("read");
-    LOCK(c->ioMutex)
-    c->ioThread = pthread_self();
+    LOCK(c->readMutex)
+    c->readThread = pthread_self();
     rc = readv(c->fd, vec, length);
-    c->ioThread = 0;
-    UNLOCK(c->ioMutex)
+    c->readThread = 0;
+    UNLOCK(c->readMutex)
     if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
         rc = 0;
