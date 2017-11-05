@@ -37,8 +37,8 @@ typedef struct _CTX
     char szPort[PATH_MAX];
     struct termios oldtio;
     struct termios newtio;
-    pthread_t readThread;
-    pthread_mutex_t readMutex;
+    pthread_t ioThread;
+    pthread_mutex_t ioMutex;
 } CTX;
 void exception(JNIEnv * env, const char* clazz, const char* message);
 

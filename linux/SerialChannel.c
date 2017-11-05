@@ -60,10 +60,10 @@ static jclass clsList;
 static jmethodID midList_Add;
 
 static pthread_mutex_t  selectMutex = PTHREAD_MUTEX_INITIALIZER;
-#define LOCK(lock) if (pthread_mutex_lock(&(lock)) < 0) {EXCEPTION("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
-#define UNLOCK(lock) if (pthread_mutex_unlock(&(lock)) < 0) {EXCEPTION("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
-#define LOCKV(lock) if (pthread_mutex_lock(&(lock)) < 0) {EXCEPTIONV("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
-#define UNLOCKV(lock) if (pthread_mutex_unlock(&(lock)) < 0) {EXCEPTIONV("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
+#define LOCK(lock) if (pthread_mutex_lock(&(lock)) != 0) {EXCEPTION("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
+#define UNLOCK(lock) if (pthread_mutex_unlock(&(lock)) != 0) {EXCEPTION("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
+#define LOCKV(lock) if (pthread_mutex_lock(&(lock)) != 0) {EXCEPTIONV("pthread_mutex_lock");}//fprintf(stderr,"lock %d\n", __LINE__);
+#define UNLOCKV(lock) if (pthread_mutex_unlock(&(lock)) != 0) {EXCEPTIONV("pthread_mutex_unlock");}//fprintf(stderr,"unlock %d\n", __LINE__);
 
 static pthread_t selectThread;
 static sigset_t origmask;
@@ -292,7 +292,7 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     
     CTX *c = (CTX*)calloc(1, sizeof(CTX));
 
-    if (pthread_mutex_init(&c->readMutex, NULL) <0)
+    if (pthread_mutex_init(&c->ioMutex, NULL) <0)
     {
         EXCEPTION("pthread_mutex_init");
     }
@@ -499,22 +499,40 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
   (JNIEnv *env, jobject obj, jlong ctx)
 {
     unsigned int sleep = 150000;  // micro seconds
+    int rc;
     CTX* c = (CTX*)(intptr_t)ctx;
 
     if (debug) fprintf(stderr, "close(%s)\n", c->szPort);
-    while (c->readThread)
+    while (1)
     {
-        LOCKV(c->readMutex)
-        if (pthread_kill(c->readThread, SIGUSR1) < 0)
+        rc = pthread_mutex_trylock(&c->ioMutex);
+        fprintf(stderr, "pthread_mutex_trylock = %d\n", rc);
+        if (rc != 0)
         {
-            EXCEPTIONV("pthread_kill");
+           if (rc == EBUSY) // read/write is going
+           { 
+                if (pthread_kill(c->ioThread, SIGUSR1) < 0)
+                {
+                    EXCEPTIONV("pthread_kill");
+                }
+                usleep(sleep);
+           }
+           else
+           {
+               EXCEPTIONV("pthread_mutex_trylock");
+
+           }
         }
-        UNLOCKV(c->readMutex)
-        usleep(sleep);
-    }
-    if (close(c->fd) < 0)
-    {
-        EXCEPTIONV("close failed");
+        else
+        {
+            if (close(c->fd) < 0)
+            {
+                UNLOCKV(c->ioMutex)
+                EXCEPTIONV("close failed");
+            }
+            UNLOCKV(c->ioMutex)
+            break;
+        }
     }
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
@@ -567,13 +585,11 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
     }
 
     DEBUG("read");
-    LOCK(c->readMutex)
-    c->readThread = pthread_self();
-    UNLOCK(c->readMutex)
+    LOCK(c->ioMutex)
+    c->ioThread = pthread_self();
     rc = readv(c->fd, vec, length);
-    LOCK(c->readMutex)
-    c->readThread = 0;
-    UNLOCK(c->readMutex)
+    c->ioThread = 0;
+    UNLOCK(c->ioMutex)
     if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
         rc = 0;
