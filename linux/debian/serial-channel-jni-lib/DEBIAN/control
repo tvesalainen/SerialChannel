@@ -2,7 +2,7 @@ Package: serial-channel-jni-lib
 Version: 1.0.4
 Architecture: armhf
 Maintainer: Timo Vesalainen <timo.vesalainen@iki.fi>
-Installed-Size: 54
+Installed-Size: 55
 Depends: libc6 (>= 2.15)
 Section: java
 Priority: optional

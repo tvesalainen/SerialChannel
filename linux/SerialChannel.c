@@ -294,7 +294,11 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
 
     if (pthread_mutex_init(&c->readMutex, NULL) <0)
     {
-        EXCEPTION("pthread_mutex_init");
+        EXCEPTION("pthread_mutex_init read");
+    }
+    if (pthread_mutex_init(&c->writeMutex, NULL) <0)
+    {
+        EXCEPTION("pthread_mutex_init write");
     }
 
     DEBUG("initialize");
@@ -525,11 +529,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
         }
         else
         {
+            LOCKV(c->writeMutex)
             if (close(c->fd) < 0)
             {
+                UNLOCKV(c->writeMutex)
                 UNLOCKV(c->readMutex)
                 EXCEPTIONV("close failed");
             }
+            UNLOCKV(c->writeMutex)
             UNLOCKV(c->readMutex)
             break;
         }
@@ -674,8 +681,9 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doWri
         vec[ii].iov_base = addr;
         vec[ii].iov_len = len[ii];
     }
-
+    LOCK(c->writeMutex)
     rc = writev(c->fd, vec, length);
+    UNLOCK(c->writeMutex)
     if (rc < 0 && errno == EAGAIN)
     {
         rc = 0;

@@ -39,6 +39,7 @@ typedef struct _CTX
     struct termios newtio;
     pthread_t readThread;
     pthread_mutex_t readMutex;
+    pthread_mutex_t writeMutex;
 } CTX;
 void exception(JNIEnv * env, const char* clazz, const char* message);
 
