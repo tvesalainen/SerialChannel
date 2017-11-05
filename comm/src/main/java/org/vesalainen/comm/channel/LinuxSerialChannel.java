@@ -26,8 +26,6 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import static java.util.logging.Level.FINE;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -36,7 +34,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class LinuxSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
     /**
      * The maximum number of buffers in Gathering or Scattering  operations.
      */
@@ -119,14 +117,39 @@ public class LinuxSerialChannel extends SerialChannel
     protected native void doClearBuffers(long address);
 
     @Override
-    protected native void doConfigure(
+    public void configure(Configuration config) throws IOException
+    {
+        this.configuration = config;
+        doConfigure(address,
+                getSpeed(configuration.speed),
+                configuration.parity.ordinal(),
+                configuration.dataBits.ordinal(),
+                configuration.stopBits.ordinal(),
+                configuration.flowControl.ordinal(),
+                configuration.replaceError,
+                configuration.canonical,
+                configuration.min,
+                configuration.time,
+                configuration.eof,
+                configuration.eol,
+                configuration.eol2
+        );
+    }
+
+    private native void doConfigure(
             long handle,
             int baudRate, 
             int parity, 
             int dataBits, 
             int stopBits, 
             int flowControl,
-            boolean replaceError
+            boolean replaceError,
+            boolean canonical,
+            byte min,
+            byte time,
+            byte eof,
+            byte eol,
+            byte eol2
     ) throws IOException;
 
     @Override
@@ -317,24 +340,16 @@ public class LinuxSerialChannel extends SerialChannel
     private static native int doSelect(int readCount, int writeCount, LongBuffer reads, LongBuffer writes, int timeout);
 
     @Override
-    protected void setTimeouts() throws IOException
+    protected void doBlocking() throws IOException
     {
         if (address != -1)
         {
-            if (block)
-            {
-                timeouts(address, min, time);
-            }
-            else
-            {
-                timeouts(address, 0, 10);
-            }
+            doBlocking(address, block);
         }
     }
-    private native void timeouts(
+    private native void doBlocking(
             long handle,
-            int min,
-            int time
+            boolean block
     ) throws IOException;
     
     @Override

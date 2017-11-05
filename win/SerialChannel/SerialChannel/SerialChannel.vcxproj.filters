@@ -38,20 +38,14 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="org_vesalainen_comm_channel_WinSerialChannel.h">
+    <ClInclude Include="..\..\..\..\..\..\..\..\Program Files\Java\jdk1.8.0_144\include\jni.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram1.cd" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="SerialChannel.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <Text Include="ReadMe.txt" />
   </ItemGroup>
 </Project>

@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import org.vesalainen.comm.channel.SerialChannel.Builder;
 import org.vesalainen.comm.channel.SerialChannel.Configuration;
+import org.vesalainen.lang.Casts;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import org.vesalainen.util.OperatingSystem;
@@ -42,27 +43,49 @@ import org.vesalainen.util.logging.AttachedLogger;
 import org.vesalainen.util.logging.JavaLogging;
 
 /**
- * A class for making connection to a serial port E.g RS232. You make the connection 
- * by using SerialChannel.Builder
- * 
+ * A class for making connection to a serial port E.g RS232. You make the
+ * connection by using SerialChannel.Builder
+ *
  * <p>
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
+ *
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
 public abstract class SerialChannel<B extends Builder, C extends Configuration> extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel, AttachedLogger
 {
+
     /**
      * The maximum number of reads or writes in select
      */
     public static final int MaxSelectors = 64;
+
     /**
      * Baud rate. Depends on used devices which are supported.
      */
-    public enum Speed {B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B230400, B256000};
-    public enum Parity {NONE, ODD, EVEN, MARK, SPACE};
-    public enum DataBits {DATABITS_4, DATABITS_5, DATABITS_6, DATABITS_7, DATABITS_8};
-    public enum StopBits {STOPBITS_1, STOPBITS_1_5, STOPBITS_2};
-    public enum FlowControl {NONE, XONXOFF, RTSCTS, DSRDTR};
+    public enum Speed
+    {
+        B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800, B9600, B14400, B19200, B38400, B57600, B115200, B128000, B230400, B256000
+    };
+
+    public enum Parity
+    {
+        NONE, ODD, EVEN, MARK, SPACE
+    };
+
+    public enum DataBits
+    {
+        DATABITS_4, DATABITS_5, DATABITS_6, DATABITS_7, DATABITS_8
+    };
+
+    public enum StopBits
+    {
+        STOPBITS_1, STOPBITS_1_5, STOPBITS_2
+    };
+
+    public enum FlowControl
+    {
+        NONE, XONXOFF, RTSCTS, DSRDTR
+    };
 
     protected long address = -1;
     protected String port;
@@ -70,10 +93,10 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
 
     protected boolean block = true;
     protected boolean clearOnClose;
-    
+
     protected ReentrantLock readLock = new ReentrantLock();
     protected ReentrantLock writeLock = new ReentrantLock();
-    
+
     protected static final JavaLogging log = new JavaLogging("org.vesalainen.comm.channel");
 
     protected SerialChannel()
@@ -82,6 +105,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
     }
 
     protected abstract int version();
+
     /**
      * Clears input and output buffers.
      */
@@ -89,11 +113,13 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
     {
         doClearBuffers(address);
     }
-    
+
     protected abstract void doClearBuffers(long address);
+
     /**
      * Returns the current configuration
-     * @return 
+     *
+     * @return
      */
     public Configuration getConfiguration()
     {
@@ -120,10 +146,10 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             case Linux:
                 return LinuxSerialChannel.doSelect(keys, selected, timeout);
             default:
-                throw new UnsupportedOperationException(os+" not supported");
+                throw new UnsupportedOperationException(os + " not supported");
         }
     }
-    
+
     static void wakeupSelect(Set<SelectionKey> keys)
     {
         log.fine("wakeupSelect(%s)", keys);
@@ -137,69 +163,84 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
                 LinuxSerialChannel.wakeupSelect(keys);
                 break;
             default:
-                throw new UnsupportedOperationException(os+" not supported");
+                throw new UnsupportedOperationException(os + " not supported");
         }
     }
+
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException
     {
         this.block = block;
-        setTimeouts();
+        doBlocking();
     }
-    protected abstract void setTimeouts() throws IOException;
+
+    protected abstract void doBlocking() throws IOException;
+
     /**
      * Return the speed
+     *
      * @param speed
-     * @return 
-     */    
+     * @return
+     */
     public static int getSpeed(Speed speed)
     {
         return Integer.parseInt(speed.name().substring(1));
     }
+
     /**
      * Return the speed
+     *
      * @param speed
-     * @return 
-     */    
+     * @return
+     */
     public static Speed getSpeed(int speed)
     {
-        return Speed.valueOf("B"+speed);
+        return Speed.valueOf("B" + speed);
     }
+
     public static DataBits getDataBits(int bits)
     {
-        return DataBits.valueOf("DATABITS_"+bits);
+        return DataBits.valueOf("DATABITS_" + bits);
     }
+
     public static StopBits getStopBits(int bits)
     {
-        return StopBits.valueOf("STOPBITS_"+bits);
+        return StopBits.valueOf("STOPBITS_" + bits);
     }
+
     public static Parity getParity(String parity)
     {
         return Parity.valueOf(parity);
     }
+
     public static FlowControl getFlowControl(String flow)
     {
         return FlowControl.valueOf(flow);
     }
+
     /**
      * Returns the port.
-     * @return 
+     *
+     * @return
      */
     public String getPort()
     {
         return port;
     }
+
     /**
      * Creates actual connection.
-     * @throws IOException 
+     *
+     * @throws IOException
      */
     protected void open() throws IOException
     {
         address = doOpen(port.getBytes());
-        setTimeouts();
+        doBlocking();
     }
+
     protected abstract long doOpen(byte[] port);
-    
+
     public static byte[] getErrorReplacement()
     {
         OS os = LibraryLoader.getOS();
@@ -210,44 +251,26 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             case Linux:
                 return LinuxSerialChannel.errorReplacement();
             default:
-                throw new UnsupportedOperationException(os+" not supported");
+                throw new UnsupportedOperationException(os + " not supported");
         }
     }
 
     /**
      * Change channel configuration
+     *
      * @param config
-     * @throws IOException 
+     * @throws IOException
      */
-    public void configure(Configuration config) throws IOException
-    {
-        this.configuration = config;
-        doConfigure(address,
-                getSpeed(configuration.speed), 
-                configuration.parity.ordinal(), 
-                configuration.dataBits.ordinal(), 
-                configuration.stopBits.ordinal(), 
-                configuration.flowControl.ordinal(),
-                configuration.replaceError
-        );
-    }
-
-    protected abstract void doConfigure(
-            long handle,
-            int baudRate, 
-            int parity, 
-            int dataBits, 
-            int stopBits, 
-            int flowControl,
-            boolean replaceError
-    ) throws IOException;
+    public abstract void configure(Configuration config) throws IOException;
 
     /**
-     * Returns InputStream. Allocates direct ByteBuffer bufferSize length. 
-     * Note! closing the stream doesn't close the channel.
-     * <p>Using streams is not allowed in non-blocking mode.
+     * Returns InputStream. Allocates direct ByteBuffer bufferSize length. Note!
+     * closing the stream doesn't close the channel.
+     * <p>
+     * Using streams is not allowed in non-blocking mode.
+     *
      * @param bufferSize
-     * @return 
+     * @return
      * @throws IllegalStateException if in non-blocking mode.
      */
     public InputStream getInputStream(int bufferSize)
@@ -260,13 +283,15 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
     }
 
     /**
-     * Returns OutputStream. Allocates direct ByteBuffer bufferSize length. Note 
+     * Returns OutputStream. Allocates direct ByteBuffer bufferSize length. Note
      * that write doesn't actually write anything before the buffer comes full.
-     * Use flush to flush the buffer. Note! closing the stream doesn't close the 
+     * Use flush to flush the buffer. Note! closing the stream doesn't close the
      * channel.
-     * <p>Using streams is not allowed in non-blocking mode.
+     * <p>
+     * Using streams is not allowed in non-blocking mode.
+     *
      * @param bufferSize
-     * @return 
+     * @return
      * @throws IllegalStateException if in non-blocking mode.
      */
     public OutputStream getOutputStream(int bufferSize)
@@ -280,13 +305,15 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
 
     /**
      * Reads data at buffers position and then increments the position.
+     *
      * @param dst
      * @return Number of bytes read.
-     * @throws IOException 
+     * @throws IOException
      */
     /**
      * Sets the debug state. When set to true, writes trace text to System.err
-     * @param on 
+     *
+     * @param on
      */
     public static void debug(boolean on)
     {
@@ -300,13 +327,14 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
                 LinuxSerialChannel.setDebug(on);
                 break;
             default:
-                throw new UnsupportedOperationException(os+" not supported");
+                throw new UnsupportedOperationException(os + " not supported");
         }
     }
 
     /**
      * Returns all ports that can be opened.
-     * @return 
+     *
+     * @return
      */
     public static List<String> getFreePorts()
     {
@@ -319,7 +347,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             builder.setPort(port);
             try (SerialChannel sc = builder.get())
             {
-                
+
             }
             catch (IOException ex)
             {
@@ -328,9 +356,11 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         }
         return Collections.unmodifiableList(freePorts);
     }
+
     /**
      * Returns all available ports.
-     * @return 
+     *
+     * @return
      */
     public static List<String> getAllPorts()
     {
@@ -339,13 +369,15 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         switch (os)
         {
             case Windows:
-                WinSerialChannel.doEnumPorts(list);;
+                WinSerialChannel.doEnumPorts(list);
+                ;
                 break;
             case Linux:
-                LinuxSerialChannel.doEnumPorts(list);;
+                LinuxSerialChannel.doEnumPorts(list);
+                ;
                 break;
             default:
-                throw new UnsupportedOperationException(os+" not supported");
+                throw new UnsupportedOperationException(os + " not supported");
         }
         return Collections.unmodifiableList(list);
     }
@@ -407,9 +439,9 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
     }
 
     protected abstract void doClose(long handle) throws IOException;
+
     protected abstract void free(long handle);
 
-    
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length) throws IOException
     {
@@ -417,9 +449,9 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         try
         {
             long res = 0;
-            for  (int ii=0;ii<length;ii++)
+            for (int ii = 0; ii < length; ii++)
             {
-                ByteBuffer bb = srcs[ii+offset];
+                ByteBuffer bb = srcs[ii + offset];
                 if (bb.hasRemaining())
                 {
                     res += write(bb);
@@ -450,9 +482,9 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         try
         {
             long res = 0;
-            for  (int ii=0;ii<length;ii++)
+            for (int ii = 0; ii < length; ii++)
             {
-                ByteBuffer bb = dsts[ii+offset];
+                ByteBuffer bb = dsts[ii + offset];
                 if (bb.hasRemaining())
                 {
                     int rc = read(bb);
@@ -487,7 +519,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
     {
         return read(dsts, 0, dsts.length);
     }
-    
+
     public static Builder builder(String port)
     {
         return new Builder(port, new Configuration());
@@ -495,7 +527,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
 
     public static Builder builder(String port, int speed)
     {
-        return builder(port, Speed.valueOf("B"+speed));
+        return builder(port, Speed.valueOf("B" + speed));
     }
 
     public static Builder builder(String port, Speed speed)
@@ -510,13 +542,80 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
 
     public static class Configuration
     {
+
         protected Speed speed;
         protected Parity parity = Parity.NONE;
         protected StopBits stopBits = StopBits.STOPBITS_1;
         protected DataBits dataBits = DataBits.DATABITS_8;
         protected FlowControl flowControl = FlowControl.NONE;
         protected boolean replaceError;
-        
+        protected boolean canonical;
+        protected byte min;
+        protected byte time = 10;
+        protected byte eof = 04;
+        protected byte eol;
+        protected byte eol2;
+
+        public boolean isCanonical()
+        {
+            return canonical;
+        }
+
+        public void setCanonical(boolean canonical)
+        {
+            this.canonical = canonical;
+        }
+
+        public byte getMin()
+        {
+            return min;
+        }
+
+        public void setMin(int min)
+        {
+            this.min = Casts.castUnsignedByte(min);
+        }
+
+        public byte getTime()
+        {
+            return time;
+        }
+
+        public void setTime(int time)
+        {
+            this.time = Casts.castUnsignedByte(time);
+        }
+
+        public byte getEof()
+        {
+            return eof;
+        }
+
+        public void setEof(byte eof)
+        {
+            this.eof = eof;
+        }
+
+        public byte getEol()
+        {
+            return eol;
+        }
+
+        public void setEol(byte eol)
+        {
+            this.eol = eol;
+        }
+
+        public byte getEol2()
+        {
+            return eol2;
+        }
+
+        public void setEol2(byte eol2)
+        {
+            this.eol2 = eol2;
+        }
+
         public float getFrameSize()
         {
             float size = 1;   // start
@@ -559,10 +658,12 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             }
             return size;
         }
+
         public int getBytesPerSecond()
         {
-            return (int) (SerialChannel.getSpeed(speed)/getFrameSize());
+            return (int) (SerialChannel.getSpeed(speed) / getFrameSize());
         }
+
         public Configuration setDataBits(DataBits dataBits)
         {
             this.dataBits = dataBits;
@@ -633,7 +734,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
-            sb.append("baud="+SerialChannel.getSpeed(speed));
+            sb.append("baud=" + SerialChannel.getSpeed(speed));
             switch (parity)
             {
                 case NONE:
@@ -752,29 +853,37 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         }
 
     }
+
     /**
      * A class that is used to configure serial port and open it.
      */
     public static class Builder<C extends Configuration>
     {
+
         protected String port;
         protected boolean block = true;
         protected C configuration;
+
         /**
          * @deprecated Use SerialChannel builder
          * @param port
-         * @param speed 
-         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, int) 
+         * @param speed
+         * @see
+         * org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String,
+         * int)
          */
         public Builder(String port, int speed)
         {
-            this(port, Speed.valueOf("B"+speed));
+            this(port, Speed.valueOf("B" + speed));
         }
+
         /**
          * @deprecated Use SerialChannel builder
          * @param port
-         * @param speed 
-         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, org.vesalainen.comm.channel.SerialChannel.Speed) 
+         * @param speed
+         * @see
+         * org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String,
+         * org.vesalainen.comm.channel.SerialChannel.Speed)
          */
         public Builder(String port, Speed speed)
         {
@@ -782,11 +891,14 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             this.configuration = (C) new Configuration();
             this.configuration.setSpeed(speed);
         }
+
         /**
-         * 
+         *
          * @param port
-         * @param configuration 
-         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, org.vesalainen.comm.channel.SerialChannel.Configuration) 
+         * @param configuration
+         * @see
+         * org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String,
+         * org.vesalainen.comm.channel.SerialChannel.Configuration)
          */
         protected Builder(String port, C configuration)
         {
@@ -799,25 +911,28 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             this.configuration = configuration;
             return this;
         }
+
         /**
          * @deprecated Use build
          * @return
-         * @throws IOException 
-         * @see org.vesalainen.comm.channel.SerialChannel.Builder#build() 
+         * @throws IOException
+         * @see org.vesalainen.comm.channel.SerialChannel.Builder#build()
          */
         public SerialChannel get() throws IOException
         {
             return build();
         }
+
         /**
          * Opens and configures new SerialChannel
+         *
          * @return
-         * @throws IOException 
+         * @throws IOException
          */
         public SerialChannel build() throws IOException
         {
             SerialChannel channel;
-            
+
             switch (OperatingSystem.getOperatingSystem())
             {
                 case Windows:
@@ -834,16 +949,19 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
             channel.configureBlocking(block);
             return channel;
         }
+
         /**
          * Sets the port.
-         * @param port 
-         * @return  
+         *
+         * @param port
+         * @return
          */
         public Builder setPort(String port)
         {
             this.port = port;
             return this;
         }
+
         public Builder setBlocking(boolean block)
         {
             this.block = block;
@@ -905,6 +1023,163 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
         {
             return configuration.getBytesPerSecond();
         }
-        
+
+        public boolean isCanonical()
+        {
+            return configuration.isCanonical();
+        }
+
+        /**
+         * In canonical mode
+         * <p>
+         * Input is made available line by line. An input line is available when
+         * one of the line delimiters is typed (NL, EOL, EOL2; or EOF at the
+         * start of line). Except in the case of EOF, the line delimiter is
+         * included in the buffer returned by read
+         * <p>
+         * In noncanonical mode input is available immediately (without the user
+         * having to type a line-delimiter character), no input processing is
+         * performed, and line editing is dis‐ abled. The settings of MIN
+         * (c_cc[VMIN]) and TIME (c_cc[VTIME]) determine the circum‐ stances in
+         * which a read(2) completes; there are four distinct cases:
+         * <p>
+         * MIN == 0, TIME == 0 (polling read) If data is available, read(2)
+         * returns immediately, with the lesser of the num‐ ber of bytes
+         * available, or the number of bytes requested. If no data is avail‐
+         * able, read(2) returns 0.
+         * <p>
+         * MIN > 0, TIME == 0 (blocking read) read(2) blocks until MIN bytes are
+         * available, and returns up to the number of bytes requested.
+         * <p>
+         * MIN == 0, TIME > 0 (read with timeout) TIME specifies the limit for a
+         * timer in tenths of a second. The timer is started when read(2) is
+         * called. read(2) returns either when at least one byte of data is
+         * available, or when the timer expires. If the timer expires without
+         * any input becoming available, read(2) returns 0. If data is already
+         * available at the time of the call to read(2), the call behaves as
+         * though the data was received immediately after the call.
+         * <p>
+         * MIN > 0, TIME > 0 (read with interbyte timeout) TIME specifies the
+         * limit for a timer in tenths of a second. Once an initial byte of
+         * input becomes available, the timer is restarted after each further
+         * byte is received. read(2) returns when any of the following
+         * conditions is met:
+         * <p>
+         * MIN bytes have been received.
+         * <p>
+         * The interbyte timer expires.
+         * <p>
+         * The number of bytes requested by read(2) has been received. (POSIX
+         * does not specify this termination condition, and on some other
+         * implementations read(2) does not return in this case.)
+         * <p>
+         * Because the timer is started only after the initial byte becomes
+         * available, at least one byte will be read. If data is already
+         * available at the time of the call to read(2), the call behaves as
+         * though the data was received immediately after the call.
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param canonical
+         * @return
+         */
+        public Builder setCanonical(boolean canonical)
+        {
+            configuration.setCanonical(canonical);
+            return this;
+        }
+
+        public int getMin()
+        {
+            return configuration.getMin();
+        }
+        /**
+         * Sets minimum number of bytes read receives
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param min
+         * @return 
+         */
+        public Builder setMin(int min)
+        {
+            configuration.setMin(min);
+            return this;
+        }
+
+        public int getTime()
+        {
+            return configuration.getTime();
+        }
+        /**
+         * Receive timer in tenth of seconds
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param time
+         * @return 
+         */
+        public Builder setTime(int time)
+        {
+            configuration.setTime(time);
+            return this;
+        }
+
+        public byte getEof()
+        {
+            return configuration.getEof();
+        }
+        /**
+         * Sets end-of-file EOF character
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param eof
+         * @return 
+         */
+        public Builder setEof(byte eof)
+        {
+            configuration.setEof(eof);
+            return this;
+        }
+
+        public byte getEol()
+        {
+            return configuration.getEol();
+        }
+        /**
+         * Sets end-of-line character other than '\\n'.
+         * <p>
+         * In canonical mode read returns when end-of-line character is received.
+         * Setting end-of-line enables using other than '\\n' character as message
+         * terminator.
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param eol
+         * @return 
+         */
+        public Builder setEol(byte eol)
+        {
+            configuration.setEol(eol);
+            return this;
+        }
+
+        public byte getEol2()
+        {
+            return configuration.getEol2();
+        }
+        /**
+         * Sets another end-of-line character other than '\\n'.
+         * <p>
+         * In canonical mode read returns when end-of-line character is received.
+         * Setting end-of-line enables using other than '\\n' character as message
+         * terminator.
+         * <p>
+         * Note! Implemented currently only in linux.
+         * @param eol2
+         * @return 
+         */
+        public Builder setEol2(byte eol2)
+        {
+            configuration.setEol2(eol2);
+            return this;
+        }
+
     }
 }

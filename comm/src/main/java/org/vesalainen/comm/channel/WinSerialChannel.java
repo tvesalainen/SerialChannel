@@ -121,8 +121,27 @@ public class WinSerialChannel extends SerialChannel
 
     private static native void staticInit();
 
+    /**
+     * Change channel configuration
+     *
+     * @param config
+     * @throws IOException
+     */
     @Override
-    protected native void doConfigure(
+    public void configure(Configuration config) throws IOException
+    {
+        this.configuration = config;
+        doConfigure(address,
+                getSpeed(configuration.speed),
+                configuration.parity.ordinal(),
+                configuration.dataBits.ordinal(),
+                configuration.stopBits.ordinal(),
+                configuration.flowControl.ordinal(),
+                configuration.replaceError
+        );
+    }
+
+    private native void doConfigure(
             long handle,
             int baudRate,
             int parity,
