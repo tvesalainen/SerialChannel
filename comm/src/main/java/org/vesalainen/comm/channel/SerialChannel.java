@@ -33,9 +33,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import org.vesalainen.comm.channel.SerialChannel.Builder;
+import org.vesalainen.comm.channel.SerialChannel.Configuration;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
-import static org.vesalainen.loader.LibraryLoader.getOS;
+import org.vesalainen.util.OperatingSystem;
+import org.vesalainen.util.logging.AttachedLogger;
 import org.vesalainen.util.logging.JavaLogging;
 
 /**
@@ -46,7 +49,7 @@ import org.vesalainen.util.logging.JavaLogging;
  * It is also possible to use Streams. Use getInputStream and getOutputStream.
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
-public abstract class SerialChannel extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel
+public abstract class SerialChannel<B extends Builder, C extends Configuration> extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel, AttachedLogger
 {
     /**
      * The maximum number of reads or writes in select
@@ -332,7 +335,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     public static List<String> getAllPorts()
     {
         List<String> list = new ArrayList<>();
-        OS os = LibraryLoader.getOS();
+        OperatingSystem os = OperatingSystem.getOperatingSystem();
         switch (os)
         {
             case Windows:
@@ -399,6 +402,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
 
     protected void doClose() throws IOException
     {
+        fine("doClose %s", this);
         doClose(address);
     }
 
@@ -484,6 +488,26 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         return read(dsts, 0, dsts.length);
     }
     
+    public static Builder builder(String port)
+    {
+        return new Builder(port, new Configuration());
+    }
+
+    public static Builder builder(String port, int speed)
+    {
+        return builder(port, Speed.valueOf("B"+speed));
+    }
+
+    public static Builder builder(String port, Speed speed)
+    {
+        return builder(port).setSpeed(speed);
+    }
+
+    public static <C extends Configuration> Builder builder(String port, C configuration)
+    {
+        return builder(port).setConfiguration(configuration);
+    }
+
     public static class Configuration
     {
         protected Speed speed;
@@ -731,39 +755,70 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
     /**
      * A class that is used to configure serial port and open it.
      */
-    public static class Builder
+    public static class Builder<C extends Configuration>
     {
-        private String port;
-        private boolean block = true;
-        private Configuration configuration;
-
+        protected String port;
+        protected boolean block = true;
+        protected C configuration;
+        /**
+         * @deprecated Use SerialChannel builder
+         * @param port
+         * @param speed 
+         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, int) 
+         */
         public Builder(String port, int speed)
         {
             this(port, Speed.valueOf("B"+speed));
         }
-
+        /**
+         * @deprecated Use SerialChannel builder
+         * @param port
+         * @param speed 
+         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, org.vesalainen.comm.channel.SerialChannel.Speed) 
+         */
         public Builder(String port, Speed speed)
         {
             this.port = port;
-            this.configuration = new Configuration();
+            this.configuration = (C) new Configuration();
             this.configuration.setSpeed(speed);
         }
-
-        public Builder(String port, Configuration configuration)
+        /**
+         * 
+         * @param port
+         * @param configuration 
+         * @see org.vesalainen.comm.channel.SerialChannel#builder(java.lang.String, org.vesalainen.comm.channel.SerialChannel.Configuration) 
+         */
+        protected Builder(String port, C configuration)
         {
             this.port = port;
             this.configuration = configuration;
         }
 
-        public void setConfiguration(Configuration configuration)
+        public Builder setConfiguration(C configuration)
         {
             this.configuration = configuration;
+            return this;
         }
-        
+        /**
+         * @deprecated Use build
+         * @return
+         * @throws IOException 
+         * @see org.vesalainen.comm.channel.SerialChannel.Builder#build() 
+         */
         public SerialChannel get() throws IOException
         {
+            return build();
+        }
+        /**
+         * Opens and configures new SerialChannel
+         * @return
+         * @throws IOException 
+         */
+        public SerialChannel build() throws IOException
+        {
             SerialChannel channel;
-            switch (getOS())
+            
+            switch (OperatingSystem.getOperatingSystem())
             {
                 case Windows:
                     channel = new WinSerialChannel(port);

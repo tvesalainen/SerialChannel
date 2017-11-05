@@ -26,6 +26,8 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import static java.util.logging.Level.FINE;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
