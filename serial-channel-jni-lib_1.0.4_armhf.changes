@@ -15,14 +15,14 @@ Changes:
  .
    * Initial release.
 Checksums-Sha1:
- d2ca3e5aad109c05fc67f93aa9288e461f89ac45 595 serial-channel-jni-lib_1.0.4.dsc
- 7b1ab9679b7d5218e40ba22b98a817a12adab3e0 15436 serial-channel-jni-lib_1.0.4.tar.gz
- bbbed9c61ca7710375c58bd60479482237a41af3 8110 serial-channel-jni-lib_1.0.4_armhf.deb
+ f1fcb847376a0059c4e2e11217154092932ca5f9 595 serial-channel-jni-lib_1.0.4.dsc
+ 3dda8330ddd2f8eb93d84146f835b25c8d7107e8 15487 serial-channel-jni-lib_1.0.4.tar.gz
+ f7c29875773282ef7154d002c6f7462d60c0053a 8100 serial-channel-jni-lib_1.0.4_armhf.deb
 Checksums-Sha256:
- d8c273524bed05a431f9cc89a865fc2c0e17f90ea0c798c5383469922b48034b 595 serial-channel-jni-lib_1.0.4.dsc
- b867b6e4cf1f9a29785743888c17fd860605fa24974874479758c76790708693 15436 serial-channel-jni-lib_1.0.4.tar.gz
- 6adb051558c5812320676127ea6eb2cd43ee7fe71644342543a97f49cefc5b51 8110 serial-channel-jni-lib_1.0.4_armhf.deb
+ d70b1095ad3247750b9124741d61eb431efd5b18ef7331acb768b7168a439d8a 595 serial-channel-jni-lib_1.0.4.dsc
+ 552f33ccefd005d8f5203e923e4580e906f16427fd9ef752ae87e120904d7a88 15487 serial-channel-jni-lib_1.0.4.tar.gz
+ de0506c8007fb0d774e181ec49fb307ca76516f85afb7cc59d2957e7179dd779 8100 serial-channel-jni-lib_1.0.4_armhf.deb
 Files:
- a312c9bc0bde6eafada498fcdb5f26ae 595 java optional serial-channel-jni-lib_1.0.4.dsc
- 3eeca175b404c4425325037f24ffdfa5 15436 java optional serial-channel-jni-lib_1.0.4.tar.gz
- 2f47049ad4545667a7232a828b0ef179 8110 java optional serial-channel-jni-lib_1.0.4_armhf.deb
+ fc9a795548e2ab8d0591fc546876c36b 595 java optional serial-channel-jni-lib_1.0.4.dsc
+ decadd1e09c67002d2704494f57c1605 15487 java optional serial-channel-jni-lib_1.0.4.tar.gz
+ 37ffe0e0898cf622923d17bc1df68088 8100 java optional serial-channel-jni-lib_1.0.4_armhf.deb
