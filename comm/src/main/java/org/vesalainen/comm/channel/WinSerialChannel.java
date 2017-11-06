@@ -212,7 +212,7 @@ public class WinSerialChannel extends SerialChannel
     }
 
     @Override
-    protected void setTimeouts() throws IOException
+    protected void doBlocking() throws IOException
     {
         timeouts(address,
                 readIntervalTimeout,

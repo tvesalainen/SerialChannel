@@ -338,7 +338,7 @@ public abstract class SerialChannel<B extends Builder, C extends Configuration> 
      */
     public static List<String> getFreePorts()
     {
-        Builder builder = new Builder("", Speed.B57600);
+        Builder builder = SerialChannel.builder("").setSpeed(Speed.B57600);
         List<String> freePorts = new ArrayList<>(getAllPorts());
         Iterator<String> iterator = freePorts.iterator();
         while (iterator.hasNext())
