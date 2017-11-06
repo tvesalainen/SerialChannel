@@ -72,13 +72,13 @@ static int selectPending;
 
 static void sighdl(int sig)
 {
-    DEBUG("signal");
+    if (debug) fprintf(stderr, "signal(%d)\n", sig);
 }
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_setDebug
   (JNIEnv *env, jobject obj, jboolean on)
 {
-    fprintf(stderr, "debug(%d)\n", on);fflush(stderr);
     debug = on;
+    if (debug) fprintf(stderr, "debug(%d)\n", on);
 }
 
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClearBuffers
@@ -301,7 +301,6 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
         EXCEPTION("pthread_mutex_init write");
     }
 
-    DEBUG("initialize");
     sPort = (*env)->GetByteArrayElements(env, port, NULL);
     if (sPort == NULL)
     {
@@ -312,32 +311,28 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     strncpy(c->szPort, sPort, size);
     strncpy(buf, sPort, size);
 
-    DEBUG("open");
     c->fd = open(c->szPort, O_RDWR | O_NOCTTY);
+    if (debug) fprintf(stderr, "open(%s) = %d\n", c->szPort, c->fd);
     if (c->fd < 0)
     {
-        DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION(buf);
     }
     if (flock(c->fd, LOCK_EX|LOCK_NB) < 0)
     {
-        DEBUG("flock");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION("flock failed");
     }
     if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
-        DEBUG("open");
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION("tcgetattr failed");
     }
     if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
-        DEBUG("open");
         free(c);
         EXCEPTION("tcflush failed");
     }
@@ -354,13 +349,20 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCon
     jint databits, 
     jint stopbits, 
     jint flow,
-    jboolean replaceError
+    jboolean replaceError,
+    jboolean canonical,
+    jbyte min,
+    jbyte time,
+    jbyte eof,
+    jbyte eol,
+    jbyte eol2
 	)
 {
     CTX *c = (CTX*)(intptr_t)ctx;
     
     bzero(&c->newtio, sizeof(c->newtio));
     
+    if (debug) fprintf(stderr, "speed = %d\n", bauds);
     switch (bauds)
     {
         case 50:
@@ -491,8 +493,20 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCon
     c->newtio.c_cflag |= CLOCAL | CREAD;
     c->newtio.c_cc[VSTART] = 0x11;
     c->newtio.c_cc[VSTOP] = 0x13;
-    c->newtio.c_cc[VMIN] = 1;   // block is default
-    
+    if (canonical)
+    {
+        if (debug) fprintf(stderr, "icanon\n");
+        c->newtio.c_lflag |= ICANON;
+        c->newtio.c_cc[VEOF] = eof;
+        c->newtio.c_cc[VEOL] = eol;
+        c->newtio.c_cc[VEOL2] = eol2;
+    }
+    else
+    {
+        if (debug) fprintf(stderr, "-icanon min=%d time=%d\n", min, time);
+        c->newtio.c_cc[VMIN] = min;
+        c->newtio.c_cc[VTIME] = time;
+    }
     if (tcsetattr(c->fd, TCSAFLUSH, &c->newtio) < 0)
     {
         EXCEPTIONV("tcsetattr failed");
@@ -510,10 +524,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doClo
     while (1)
     {
         rc = pthread_mutex_trylock(&c->readMutex);
-        fprintf(stderr, "pthread_mutex_trylock = %d\n", rc);
+        if (debug) fprintf(stderr, "pthread_mutex_trylock = %d\n", rc);
         if (rc != 0)
         {
-           if (rc == EBUSY) // read/write is going
+           if (rc == EBUSY) // read is active
            { 
                 if (pthread_kill(c->readThread, SIGUSR1) < 0)
                 {
@@ -546,7 +560,6 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_free
   (JNIEnv *env, jobject obj, jlong ctx)
 {
     CTX* c = (CTX*)(intptr_t)ctx;
-    DEBUG("free");
     free(c);
 }
 JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRead
@@ -566,7 +579,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
 
     ssize_t rc;
     CTX* c = (CTX*)(intptr_t)ctx;
-    DEBUG("init read");
     for (ii = 0; ii < length; ii++)
     {
         bb[ii] = (*env)->GetObjectArrayElement(env, bba, ii+offset);
@@ -591,11 +603,10 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRea
         vec[ii].iov_len = len[ii];
     }
 
-    DEBUG("read");
     LOCK(c->readMutex)
     c->readThread = pthread_self();
     rc = readv(c->fd, vec, length);
-    c->readThread = 0;
+    if (debug) fprintf(stderr, "readv(%d) = %d\n", c->fd, rc);
     UNLOCK(c->readMutex)
     if (rc < 0 && (errno == EAGAIN || errno == EINTR))
     {
@@ -657,7 +668,6 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doWri
 
     CTX* c = (CTX*)(intptr_t)ctx;
     
-    DEBUG("write");
     for (ii = 0; ii < length; ii++)
     {
         bb[ii] = (*env)->GetObjectArrayElement(env, bba, ii + offset);
@@ -800,36 +810,19 @@ void exception(JNIEnv * env, const char* clazz, const char* message)
     }
 }
 
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_timeouts
-  (JNIEnv *env, jobject obj, jlong ctx, jint min, jint time)
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doBlocking
+  (JNIEnv *env, jobject obj, jlong ctx, jboolean block)
 {
     CTX* c = (CTX*)(intptr_t)ctx;
     int flags = 0;
     
-    c->newtio.c_cc[VMIN] = min;
-    c->newtio.c_cc[VTIME] = time;
-    
-    if (tcsetattr(c->fd, TCSANOW, &c->newtio) < 0)
-    {
-        exception(env, "java/io/IOException", "tcsetattr failed");
-        ERRORRETURNV;
-    }
     flags = fcntl(c->fd, F_GETFL, 0);
     if (flags < 0)
     {
         exception(env, "java/io/IOException", "fcntl failed");
         ERRORRETURNV;
     }
-/*
-    if (!min)
-    {
-        if (fcntl(c->fd, F_SETFL, flags | O_NONBLOCK) < 0)
-        {
-            exception(env, "java/io/IOException", "fcntl failed");
-            ERRORRETURNV;
-        }
-    }
-    else
+    if (block)
     {
         if (fcntl(c->fd, F_SETFL, flags & ~O_NONBLOCK) < 0)
         {
@@ -837,7 +830,14 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_timeo
             ERRORRETURNV;
         }
     }
-*/
+    else
+    {
+        if (fcntl(c->fd, F_SETFL, flags | O_NONBLOCK) < 0)
+        {
+            exception(env, "java/io/IOException", "fcntl failed");
+            ERRORRETURNV;
+        }
+    }
 }
 
 void hexdump(int count, char* buf, int len, int bufsize)

@@ -10,7 +10,7 @@ extern "C" {
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_MaxSelectors
 #define org_vesalainen_comm_channel_LinuxSerialChannel_MaxSelectors 64L
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_VERSION
-#define org_vesalainen_comm_channel_LinuxSerialChannel_VERSION 3L
+#define org_vesalainen_comm_channel_LinuxSerialChannel_VERSION 4L
 #undef org_vesalainen_comm_channel_LinuxSerialChannel_MaxBuffers
 #define org_vesalainen_comm_channel_LinuxSerialChannel_MaxBuffers 16L
 /*
@@ -24,10 +24,10 @@ JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doCle
 /*
  * Class:     org_vesalainen_comm_channel_LinuxSerialChannel
  * Method:    doConfigure
- * Signature: (JIIIIIZ)V
+ * Signature: (JIIIIIZZBBBBB)V
  */
 JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doConfigure
-  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint, jboolean);
+  (JNIEnv *, jobject, jlong, jint, jint, jint, jint, jint, jboolean, jboolean, jbyte, jbyte, jbyte, jbyte, jbyte);
 
 /*
  * Class:     org_vesalainen_comm_channel_LinuxSerialChannel
@@ -111,11 +111,11 @@ JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSel
 
 /*
  * Class:     org_vesalainen_comm_channel_LinuxSerialChannel
- * Method:    timeouts
- * Signature: (JII)V
+ * Method:    doBlocking
+ * Signature: (JZ)V
  */
-JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_timeouts
-  (JNIEnv *, jobject, jlong, jint, jint);
+JNIEXPORT void JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doBlocking
+  (JNIEnv *, jobject, jlong, jboolean);
 
 /*
  * Class:     org_vesalainen_comm_channel_LinuxSerialChannel

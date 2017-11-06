@@ -37,7 +37,7 @@ typedef struct _CTX
     char szPort[PATH_MAX];
     struct termios oldtio;
     struct termios newtio;
-    pthread_t readThread;
+    volatile pthread_t readThread;
     pthread_mutex_t readMutex;
     pthread_mutex_t writeMutex;
 } CTX;

@@ -14,7 +14,7 @@ CLASS=org.vesalainen.comm.channel.LinuxSerialChannel
 install:	SerialChannel.so
 	install -m 0755 SerialChannel.so $(RESOURCES)/libSerialChannel$(MACHINE).so
 
-SerialChannel.o:	SerialChannel.c
+SerialChannel.o:	SerialChannel.c $(HEADER)
 SerialChannel.so:	SerialChannel.o
 	ld -shared -o SerialChannel.so SerialChannel.o -lc
 
