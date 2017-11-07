@@ -51,7 +51,7 @@ import org.vesalainen.util.logging.JavaLogging;
  *
  * @author Timo Vesalainen <timo.vesalainen@iki.fi>
  */
-public abstract class SerialChannel<B extends Builder, C extends Configuration> extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel, AttachedLogger
+public abstract class SerialChannel extends AbstractSelectableChannel implements ByteChannel, GatheringByteChannel, ScatteringByteChannel, AttachedLogger
 {
 
     /**
