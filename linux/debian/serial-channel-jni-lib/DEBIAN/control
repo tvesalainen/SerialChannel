@@ -3,7 +3,7 @@ Version: 1.0.4
 Architecture: armhf
 Maintainer: Timo Vesalainen <timo.vesalainen@iki.fi>
 Installed-Size: 55
-Depends: libc6 (>= 2.15)
+Depends: libc6 (>= 2.13-28)
 Section: java
 Priority: optional
 Description: SerialChannel.jar JNI library

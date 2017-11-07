@@ -1,7 +1,6 @@
  dpkg-buildpackage -rfakeroot -D -us -uc
 dpkg-buildpackage: source package serial-channel-jni-lib
 dpkg-buildpackage: source version 1.0.4
-dpkg-buildpackage: source distribution unstable
 dpkg-buildpackage: source changed by Timo Vesalainen <timo.vesalainen@iki.fi>
  dpkg-source --before-build linux
 dpkg-buildpackage: host architecture armhf
@@ -9,7 +8,6 @@ dpkg-buildpackage: host architecture armhf
 dh clean
    dh_testdir
    dh_auto_clean
-	make -j1 distclean
 make[1]: Entering directory '/home/pi/SerialChannel/linux'
 rm *.o
 rm *.so
@@ -24,12 +22,10 @@ dpkg-source: info: building serial-channel-jni-lib in serial-channel-jni-lib_1.0
  debian/rules build
 dh build
    dh_testdir
-   dh_update_autotools_config
    dh_auto_configure
    dh_auto_build
-	make -j1
 make[1]: Entering directory '/home/pi/SerialChannel/linux'
-cc -g -O2 -fstack-protector-strong -Wformat -Werror=format-security -I .  -D_FORTIFY_SOURCE=2  -c -o SerialChannel.o SerialChannel.c
+cc -g -O2 -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security -I .  -D_FORTIFY_SOURCE=2  -c -o SerialChannel.o SerialChannel.c
 ld -shared -o SerialChannel.so SerialChannel.o -lc
 install -m 0755 SerialChannel.so ../comm/src/main/resources/libSerialChannelarmv7l.so
 make[1]: Leaving directory '/home/pi/SerialChannel/linux'
@@ -38,15 +34,42 @@ make[1]: Leaving directory '/home/pi/SerialChannel/linux'
 dh binary
    dh_testroot
    dh_prep
+   dh_installdirs
    debian/rules override_dh_auto_install
 make[1]: Entering directory '/home/pi/SerialChannel/linux'
 install -D -m 0755 SerialChannel.so $(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/libSerialChannel.so
 make[1]: Leaving directory '/home/pi/SerialChannel/linux'
+   dh_install
    dh_installdocs
    dh_installchangelogs
+   dh_installexamples
+   dh_installman
+   dh_installcatalogs
+   dh_installcron
+   dh_installdebconf
+   dh_installemacsen
+   dh_installifupdown
+   dh_installinfo
+   dh_installinit
+   dh_installmenu
+   dh_installmime
+   dh_installmodules
+   dh_installlogcheck
+   dh_installlogrotate
+   dh_installpam
+   dh_installppp
+   dh_installudev
+   dh_installwm
+   dh_installxfonts
+   dh_installgsettings
+   dh_bugfiles
+   dh_ucf
+   dh_lintian
+   dh_gconf
+   dh_icons
    dh_perl
+   dh_usrlocal
    dh_link
-   dh_strip_nondeterminism
    dh_compress
    dh_fixperms
    dh_strip
@@ -62,6 +85,7 @@ dpkg-genchanges: including full source code in upload
  dpkg-source --after-build linux
 dpkg-buildpackage: full upload; Debian-native package (full source is included)
 Now running lintian...
+W: serial-channel-jni-lib source: newer-standards-version 3.9.6 (current is 3.9.4)
 W: serial-channel-jni-lib: hardening-no-relro opt/org.vesalainen/lib/libSerialChannel.so
 E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/
 E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/
