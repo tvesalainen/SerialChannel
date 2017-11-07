@@ -26,8 +26,6 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import static java.util.logging.Level.FINE;
 import org.vesalainen.loader.LibraryLoader;
 
 /**
@@ -36,7 +34,7 @@ import org.vesalainen.loader.LibraryLoader;
  */
 public class LinuxSerialChannel extends SerialChannel
 {
-    public static final int VERSION = 3;
+    public static final int VERSION = 4;
     /**
      * The maximum number of buffers in Gathering or Scattering  operations.
      */
@@ -49,48 +47,6 @@ public class LinuxSerialChannel extends SerialChannel
             .asLongBuffer();
     private ByteBuffer[] readBuffer = new ByteBuffer[1];
     private ByteBuffer[] writeBuffer = new ByteBuffer[1];
-    
-    /**
-     *        
-     * MIN == 0, TIME == 0 (polling read)
-              If data is available, read(2) returns immediately, with the lesser of the num‐
-              ber of bytes available, or the number of  bytes  requested.   If  no  data  is
-              available, read(2) returns 0.
-
-       MIN > 0, TIME == 0 (blocking read)
-              read(2)  blocks until MIN bytes are available, and returns up to the number of
-              bytes requested.
-
-       MIN == 0, TIME > 0 (read with timeout)
-              TIME specifies the limit for a timer in tenths of  a  second.   The  timer  is
-              started when read(2) is called.  read(2) returns either when at least one byte
-              of data is available, or when the timer expires.  If the timer expires without
-              any input becoming available, read(2) returns 0.  If data is already available
-              at the time of the call to read(2), the call behaves as though  the  data  was
-              received immediately after the call.
-
-       MIN > 0, TIME > 0 (read with interbyte timeout)
-              TIME  specifies  the limit for a timer in tenths of a second.  Once an initial
-              byte of input becomes available, the timer is  restarted  after  each  further
-              byte  is  received.   read(2)  returns when any of the following conditions is
-              met:
-
-              *  MIN bytes have been received.
-
-              *  The interbyte timer expires.
-
-              *  The number of bytes requested by read(2) has been  received.   (POSIX  does
-                 not  specify  this termination condition, and on some other implementations
-                 read(2) does not return in this case.)
-
-              Because the timer is started only after the initial byte becomes available, at
-              least  one byte will be read.  If data is already available at the time of the
-              call to read(2), the call behaves as though the data was received  immediately
-              after the call.
-
-     */
-    private int min=0;
-    private int time=10;
     
     static
     {                                       
@@ -119,14 +75,39 @@ public class LinuxSerialChannel extends SerialChannel
     protected native void doClearBuffers(long address);
 
     @Override
-    protected native void doConfigure(
+    public void configure(Configuration config) throws IOException
+    {
+        this.configuration = config;
+        doConfigure(address,
+                getSpeed(configuration.speed),
+                configuration.parity.ordinal(),
+                configuration.dataBits.ordinal(),
+                configuration.stopBits.ordinal(),
+                configuration.flowControl.ordinal(),
+                configuration.replaceError,
+                configuration.canonical,
+                configuration.min,
+                configuration.time,
+                configuration.eof,
+                configuration.eol,
+                configuration.eol2
+        );
+    }
+
+    private native void doConfigure(
             long handle,
             int baudRate, 
             int parity, 
             int dataBits, 
             int stopBits, 
             int flowControl,
-            boolean replaceError
+            boolean replaceError,
+            boolean canonical,
+            byte min,
+            byte time,
+            byte eof,
+            byte eol,
+            byte eol2
     ) throws IOException;
 
     @Override
@@ -317,24 +298,16 @@ public class LinuxSerialChannel extends SerialChannel
     private static native int doSelect(int readCount, int writeCount, LongBuffer reads, LongBuffer writes, int timeout);
 
     @Override
-    protected void setTimeouts() throws IOException
+    protected void doBlocking() throws IOException
     {
         if (address != -1)
         {
-            if (block)
-            {
-                timeouts(address, min, time);
-            }
-            else
-            {
-                timeouts(address, 0, 10);
-            }
+            doBlocking(address, block);
         }
     }
-    private native void timeouts(
+    private native void doBlocking(
             long handle,
-            int min,
-            int time
+            boolean block
     ) throws IOException;
     
     @Override
