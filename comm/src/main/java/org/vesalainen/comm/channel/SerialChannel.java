@@ -345,7 +345,7 @@ public abstract class SerialChannel extends AbstractSelectableChannel implements
         {
             String port = iterator.next();
             builder.setPort(port);
-            try (SerialChannel sc = builder.get())
+            try (SerialChannel sc = builder.build())
             {
 
             }
