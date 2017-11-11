@@ -321,18 +321,21 @@ JNIEXPORT jlong JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOp
     }
     if (flock(c->fd, LOCK_EX|LOCK_NB) < 0)
     {
+        close(c->fd);
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION("flock failed");
     }
     if (tcgetattr(c->fd, &c->oldtio) < 0)
     {
+        close(c->fd);
         (*env)->ReleaseByteArrayElements(env, port, sPort, 0);
         free(c);
         EXCEPTION("tcgetattr failed");
     }
     if (tcflush(c->fd, TCIOFLUSH) < 0)
     {
+        close(c->fd);
         free(c);
         EXCEPTION("tcflush failed");
     }

@@ -9,8 +9,8 @@ Build-Depends: debhelper (>= 9.0.0)
 Package-List: 
  serial-channel-jni-lib deb java optional
 Checksums-Sha1: 
- 9339e94e830841c41e36c1ba57fb575f23d6d5db 15849 serial-channel-jni-lib_1.0.4.tar.gz
+ 654ca9e1582653c808b8d1b42d8047e7766cbc78 15819 serial-channel-jni-lib_1.0.4.tar.gz
 Checksums-Sha256: 
- 0b94e730b2d4dd2d6369bb1ca93a0cb593d6fa7bf534b6f2d83f7abf35894e37 15849 serial-channel-jni-lib_1.0.4.tar.gz
+ 6f9f9e561d7c422db8a91e92a33416c4f720cad69dd7747160fa1a16f63feb79 15819 serial-channel-jni-lib_1.0.4.tar.gz
 Files: 
- 54cf80eb1b5e4d920694a514bb4fe88e 15849 serial-channel-jni-lib_1.0.4.tar.gz
+ 6aec3b0481e3a412f49beaee96789687 15819 serial-channel-jni-lib_1.0.4.tar.gz
