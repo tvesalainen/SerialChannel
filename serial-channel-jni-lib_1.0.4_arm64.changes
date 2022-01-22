@@ -1,0 +1,31 @@
+Format: 1.8
+Date: Tue, 24 Oct 2017 13:54:14 +0000
+Source: serial-channel-jni-lib
+Binary: serial-channel-jni-lib
+Architecture: source arm64
+Version: 1.0.4
+Distribution: unstable
+Urgency: low
+Maintainer: Timo Vesalainen <timo.vesalainen@iki.fi>
+Changed-By: Timo Vesalainen <timo.vesalainen@iki.fi>
+Description:
+ serial-channel-jni-lib - SerialChannel.jar JNI library
+Changes:
+ serial-channel-jni-lib (1.0.4) unstable; urgency=low
+ .
+   * Initial release.
+Checksums-Sha1:
+ d541835b0d5a850eb4e9f061f90cc4a1a5dbbe7e 595 serial-channel-jni-lib_1.0.4.dsc
+ beea34d9b2e77a6d65d446ebd143815165aa7cbe 15493 serial-channel-jni-lib_1.0.4.tar.gz
+ 0a9039a1855eee460e1478bbacf2ae13f22a0a85 4977 serial-channel-jni-lib_1.0.4_arm64.buildinfo
+ d970d5ccc273bab33d1df08b953c8cad5350882f 8964 serial-channel-jni-lib_1.0.4_arm64.deb
+Checksums-Sha256:
+ a6060335e6be7ade3b374c126805e498c4c8714037deae9c543eb15a5f96d73c 595 serial-channel-jni-lib_1.0.4.dsc
+ c119f67f4cca399c3b9b34953849aba36983813796e076593e33e1f588cd6b85 15493 serial-channel-jni-lib_1.0.4.tar.gz
+ db068041eecd15c6cba0ec1fce212b5bba4ac9ba0557037567da76367920c13a 4977 serial-channel-jni-lib_1.0.4_arm64.buildinfo
+ 7ae0c0f75e8ce8809c6eb674b522071b656bd601ae180e380b244270c95ff3b4 8964 serial-channel-jni-lib_1.0.4_arm64.deb
+Files:
+ 1b7657ffa310eb67ee750ec6e0d02a6d 595 java optional serial-channel-jni-lib_1.0.4.dsc
+ 2ec8de2e5ae1b6af0a60a45ef4966136 15493 java optional serial-channel-jni-lib_1.0.4.tar.gz
+ ef49e4dfe31745ca25c12aeff4380084 4977 java optional serial-channel-jni-lib_1.0.4_arm64.buildinfo
+ f0739e86d044063b7c47da4c3ea8dc84 8964 java optional serial-channel-jni-lib_1.0.4_arm64.deb

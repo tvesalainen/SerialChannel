@@ -1,0 +1,135 @@
+ dpkg-buildpackage -us -uc -ui
+dpkg-buildpackage: info: source package serial-channel-jni-lib
+dpkg-buildpackage: info: source version 1.0.4
+dpkg-buildpackage: info: source distribution unstable
+dpkg-buildpackage: info: source changed by Timo Vesalainen <timo.vesalainen@iki.fi>
+ dpkg-source --before-build .
+dpkg-buildpackage: info: host architecture arm64
+ debian/rules clean
+dh clean
+dh: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_auto_clean
+dh_auto_clean: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+	make -j1 distclean
+make[1]: Entering directory '/home/pi/SerialChannel/linux'
+rm *.o
+rm *.so
+make[1]: Leaving directory '/home/pi/SerialChannel/linux'
+   dh_clean
+dh_clean: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+ dpkg-source -b .
+dpkg-source: warning: no source format specified in debian/source/format, see dpkg-source(1)
+dpkg-source: warning: source directory 'linux' is not <sourcepackage>-<upstreamversion> 'serial-channel-jni-lib-1.0.4'
+dpkg-source: info: using source format '1.0'
+dpkg-source: info: building serial-channel-jni-lib in serial-channel-jni-lib_1.0.4.tar.gz
+dpkg-source: info: building serial-channel-jni-lib in serial-channel-jni-lib_1.0.4.dsc
+ debian/rules build
+dh build
+dh: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_update_autotools_config
+   dh_auto_configure
+dh_auto_configure: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_auto_build
+dh_auto_build: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+	make -j1
+make[1]: Entering directory '/home/pi/SerialChannel/linux'
+cc -g -O2 -ffile-prefix-map=/home/pi/SerialChannel/linux=. -fstack-protector-strong -Wformat -Werror=format-security -I .  -Wdate-time -D_FORTIFY_SOURCE=2  -c -o SerialChannel.o SerialChannel.c
+SerialChannel.c: In function ‘Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSelect’:
+SerialChannel.c:155:9: warning: ‘return’ with no value, in function returning non-void
+  155 |         return;
+      |         ^~~~~~
+SerialChannel.c:134:24: note: declared here
+  134 | JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSelect
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SerialChannel.c:29:76: warning: ‘return’ with no value, in function returning non-void
+   29 | #define ERRORRETURNV if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return;
+      |                                                                            ^~~~~~
+SerialChannel.c:39:64: note: in expansion of macro ‘ERRORRETURNV’
+   39 | #define EXCEPTIONV(m) exception(env, "java/io/IOException", m);ERRORRETURNV;
+      |                                                                ^~~~~~~~~~~~
+SerialChannel.c:168:9: note: in expansion of macro ‘EXCEPTIONV’
+  168 |         EXCEPTIONV("sigaction");
+      |         ^~~~~~~~~~
+SerialChannel.c:134:24: note: declared here
+  134 | JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSelect
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SerialChannel.c:29:76: warning: ‘return’ with no value, in function returning non-void
+   29 | #define ERRORRETURNV if (debug) fprintf(stderr, "Error at %d\n", __LINE__);return;
+      |                                                                            ^~~~~~
+SerialChannel.c:39:64: note: in expansion of macro ‘ERRORRETURNV’
+   39 | #define EXCEPTIONV(m) exception(env, "java/io/IOException", m);ERRORRETURNV;
+      |                                                                ^~~~~~~~~~~~
+SerialChannel.c:178:9: note: in expansion of macro ‘EXCEPTIONV’
+  178 |         EXCEPTIONV("sigprocmask");
+      |         ^~~~~~~~~~
+SerialChannel.c:134:24: note: declared here
+  134 | JNIEXPORT jint JNICALL Java_org_vesalainen_comm_channel_LinuxSerialChannel_doSelect
+      |                        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SerialChannel.c: In function ‘Java_org_vesalainen_comm_channel_LinuxSerialChannel_doOpen’:
+SerialChannel.c:322:9: warning: implicit declaration of function ‘flock’; did you mean ‘clock’? [-Wimplicit-function-declaration]
+  322 |     if (flock(c->fd, LOCK_EX|LOCK_NB) < 0)
+      |         ^~~~~
+      |         clock
+SerialChannel.c: In function ‘Java_org_vesalainen_comm_channel_LinuxSerialChannel_doRead’:
+SerialChannel.c:612:46: warning: format ‘%d’ expects argument of type ‘int’, but argument 4 has type ‘ssize_t’ {aka ‘long int’} [-Wformat=]
+  612 |     if (debug) fprintf(stderr, "readv(%d) = %d\n", c->fd, rc);
+      |                                             ~^            ~~
+      |                                              |            |
+      |                                              int          ssize_t {aka long int}
+      |                                             %ld
+SerialChannel.c: In function ‘Java_org_vesalainen_comm_channel_LinuxSerialChannel_doEnumPorts’:
+SerialChannel.c:772:25: warning: implicit declaration of function ‘isupper’ [-Wimplicit-function-declaration]
+  772 |                         isupper(de->d_name[3])
+      |                         ^~~~~~~
+ld -shared -o SerialChannel.so SerialChannel.o -lc
+install -m 0755 SerialChannel.so ../comm/src/main/resources/libSerialChannelaarch64.so
+make[1]: Leaving directory '/home/pi/SerialChannel/linux'
+   dh_auto_test
+dh_auto_test: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+ debian/rules binary
+dh binary
+dh: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_testroot
+   dh_prep
+   debian/rules override_dh_auto_install
+make[1]: Entering directory '/home/pi/SerialChannel/linux'
+install -D -m 0755 SerialChannel.so $(pwd)/debian/serial-channel-jni-lib/opt/org.vesalainen/lib/libSerialChannel.so
+make[1]: Leaving directory '/home/pi/SerialChannel/linux'
+   dh_installdocs
+dh_installdocs: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_installchangelogs
+   dh_perl
+   dh_link
+   dh_strip_nondeterminism
+   dh_compress
+dh_compress: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_fixperms
+   dh_missing
+dh_missing: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_strip
+dh_strip: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+dh_strip: warning: Could not find the BuildID in debian/serial-channel-jni-lib/opt/org.vesalainen/lib/libSerialChannel.so
+   dh_makeshlibs
+dh_makeshlibs: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_shlibdeps
+dh_shlibdeps: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_installdeb
+dh_installdeb: warning: Compatibility levels before 10 are deprecated (level 9 in use)
+   dh_gencontrol
+   dh_md5sums
+   dh_builddeb
+dpkg-deb: building package 'serial-channel-jni-lib' in '../serial-channel-jni-lib_1.0.4_arm64.deb'.
+ dpkg-genbuildinfo
+ dpkg-genchanges  >../serial-channel-jni-lib_1.0.4_arm64.changes
+dpkg-genchanges: info: including full source code in upload
+ dpkg-source --after-build .
+dpkg-buildpackage: info: full upload; Debian-native package (full source is included)
+Now running lintian serial-channel-jni-lib_1.0.4_arm64.changes ...
+warning: running with root privileges is not recommended!
+E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/
+E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/
+E: serial-channel-jni-lib: dir-or-file-in-opt opt/org.vesalainen/lib/libSerialChannel.so
+W: serial-channel-jni-lib source: ancient-standards-version 3.9.6 (released 2014-09-17) (current is 4.5.1)
+W: serial-channel-jni-lib source: missing-debian-source-format
+W: serial-channel-jni-lib source: package-uses-deprecated-debhelper-compat-version 9
+Finished running lintian.
