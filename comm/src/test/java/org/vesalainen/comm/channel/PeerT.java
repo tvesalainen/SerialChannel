@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.vesalainen.comm.channel.SerialChannel.Speed;
+import org.vesalainen.util.CollectionHelp;
 
 /**
  * These test needs two hosts connected together with a null modem cable.
@@ -39,7 +40,7 @@ public class PeerT
     public void regressionTest()
     {
         //SerialChannel.debug(true);
-        List<String> ports = SerialChannel.getFreePorts();
+        List<String> ports = CollectionHelp.create("COM27", "COM28");    //SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue("no ports", ports.size() > 0);
         if (ports.size() >= 1)

@@ -37,6 +37,7 @@ import org.vesalainen.comm.channel.SerialChannel.Speed;
 import org.vesalainen.loader.LibraryLoader;
 import org.vesalainen.loader.LibraryLoader.OS;
 import static org.vesalainen.loader.LibraryLoader.OS.Linux;
+import org.vesalainen.util.CollectionHelp;
 
 /**
  * These test needs two serial ports connected together with null modem cable.
@@ -45,9 +46,10 @@ import static org.vesalainen.loader.LibraryLoader.OS.Linux;
 public class LoopT
 {
     static OS os = LibraryLoader.getOS();
+    ExecutorService exec = Executors.newCachedThreadPool();
     public LoopT()
     {
-        SerialChannel.debug(true);
+        //SerialChannel.debug(true);
     }
 
     @After
@@ -55,7 +57,7 @@ public class LoopT
     {
         wait(5000);
     }
-    @Test
+    //@Test
     public void testSelectWrite()
     {
         if (os == Linux)
@@ -221,7 +223,7 @@ public class LoopT
         list.add(ByteBuffer.allocateDirect(size));
         return list.toArray(new ByteBuffer[list.size()]);
     }
-    @Test
+    //@Test
     public void testReplaceError()
     {
         List<String> ports = SerialChannel.getFreePorts();
@@ -310,11 +312,10 @@ public class LoopT
             fail(ex.getMessage());
         }
     }
-    @Test
+    //@Test
     public void testSelect()
     {
         //SerialChannel.debug(true);
-        final ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() >= 2);
@@ -408,11 +409,17 @@ public class LoopT
         }
     }
     @Test
-    public void regressionTest()
+    public void regressionTest1() throws InterruptedException
     {
-        //SerialChannel.debug(true);
-        ExecutorService exec = Executors.newCachedThreadPool();
-        List<String> ports = SerialChannel.getFreePorts();
+        List<String> ports = CollectionHelp.create("COM27", "COM28");    //SerialChannel.getFreePorts();
+        List<String> ports2 = CollectionHelp.create("COM29", "COM30");    //SerialChannel.getFreePorts();
+        exec.submit(()->regressionTest(ports));
+        exec.submit(()->regressionTest(ports2));
+        exec.awaitTermination(1, TimeUnit.MINUTES);
+    }
+    public void regressionTest(List<String> ports)
+    {
+        System.err.println("regressionTest "+ports);
         assertNotNull(ports);
         assertTrue(ports.size() >= 2);
         try 
@@ -465,8 +472,6 @@ public class LoopT
     //@Test
     public synchronized void autoConfTest() throws InterruptedException
     {
-        //SerialChannel.debug(true);
-        ExecutorService exec = Executors.newCachedThreadPool();
         List<String> ports = SerialChannel.getFreePorts();
         assertNotNull(ports);
         assertTrue(ports.size() >= 2);
