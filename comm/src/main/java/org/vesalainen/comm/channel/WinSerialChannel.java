@@ -106,7 +106,7 @@ public class WinSerialChannel extends SerialChannel
         }
         catch (IOException | UnsatisfiedLinkError ex)
         {
-            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll \n" + ex.getMessage());
+            throw new UnsatisfiedLinkError("Can't load either 32 or 64 .dll or Visual Studio 2013 (VC++ 12.0)\n" + ex.getMessage());
         }
         staticInit();
     }
